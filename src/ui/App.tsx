@@ -41,7 +41,9 @@ function useShortcuts() {
         else undo();
         return;
       }
-      if (mod || e.altKey) return;
+      if (mod) return;
+      // Alt: sadece harf/rakam olmayan karakterlerde (Türkçe Mac klavyesinde [ ] Option ile yazılır)
+      if (e.altKey && (e.key.length !== 1 || /[\p{L}\p{N}]/u.test(e.key))) return;
       // X36: çizgi aracı tuşları
       if (get().tool === 'line' && get().line.anchors.length) {
         if (e.key === 'Enter') {

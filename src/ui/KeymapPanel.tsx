@@ -11,8 +11,8 @@ export function KeymapEditor() {
     setCapturing(cmd);
     shortcutCapture.active = true;
     const onKey = (e: KeyboardEvent) => {
-      // tek başına Shift bekleniyor: harfi bekle
-      if (e.key === 'Shift') return;
+      // tek başına Shift/Option: asıl tuşu bekle
+      if (e.key === 'Shift' || e.key === 'Alt') return;
       e.preventDefault();
       e.stopPropagation();
       window.removeEventListener('keydown', onKey, true);
@@ -20,7 +20,8 @@ export function KeymapEditor() {
       setCapturing(null);
       const key = keyName(e);
       if (e.key === 'Escape') return;
-      if (isReservedKey(key) || e.metaKey || e.ctrlKey || e.altKey) {
+      const altLetter = e.altKey && (e.key.length !== 1 || /[\p{L}\p{N}]/u.test(e.key));
+      if (isReservedKey(key) || e.metaKey || e.ctrlKey || altLetter) {
         notify('warn', `${key} atanamaz (0–9 slotlar, değiştirici tuşlar ve Esc ayrılmış).`);
         return;
       }

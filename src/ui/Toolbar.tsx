@@ -1,6 +1,7 @@
 import {
   autoSmartScale,
   gapFillSelected,
+  mirrorOffset,
   removePin,
   updatePin,
   setSmartAngle,
@@ -54,6 +55,9 @@ export function ToolOptions() {
   const pin = useStore((s) => s.pins[s.selectedPin]);
   const selectedPin = useStore((s) => s.selectedPin);
   const cut = useStore((s) => s.cut);
+  const mirror = useStore((s) => s.mirror);
+  useStore((s) => s.parts);
+  const paintTool = tool === 'smart' || tool === 'brush' || tool === 'erase' || tool === 'smooth' || tool === 'bucket';
   const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
   useStore((s) => s.selectedPartId);
   const info = TOOLS.find((t) => t.id === tool);
@@ -170,6 +174,45 @@ export function ToolOptions() {
             Pimi sil
           </button>
         </>
+      )}
+      {paintTool && (
+        <span className="mirror-group">
+          <Toggle
+            label="Ayna"
+            checked={mirror.enabled}
+            title="Boyama karşı tarafa da uygulanır (göz, kulak gibi çift özellikler)"
+            onChange={(v) => set((s) => ({ mirror: { ...s.mirror, enabled: v } }))}
+          />
+          {mirror.enabled && (
+            <>
+              {(['X', 'Y', 'Z'] as const).map((name, axis) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={mirror.axis === axis ? 'active' : ''}
+                  onClick={() => set((s) => ({ mirror: { ...s.mirror, axis: axis as 0 | 1 | 2, offset: null } }))}
+                >
+                  {name}
+                </button>
+              ))}
+              <NumberField
+                label="Konum"
+                value={mirrorOffset()}
+                min={-10000}
+                max={10000}
+                step={0.1}
+                unit="mm"
+                title="Ayna düzleminin konumu; varsayılan parçanın ortası"
+                onChange={(v) => set((s) => ({ mirror: { ...s.mirror, offset: v } }))}
+              />
+              {mirror.offset !== null && (
+                <button type="button" onClick={() => set((s) => ({ mirror: { ...s.mirror, offset: null } }))}>
+                  Ortala
+                </button>
+              )}
+            </>
+          )}
+        </span>
       )}
       <span className="tool-hint">{info?.hint}</span>
     </div>

@@ -19,7 +19,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 
 | # | İş | Neden | Durum |
 | --- | --- | --- | --- |
-| B8 | Mirror boyama: simetri düzlemi (X/Y/Z + konum), boyama araçları aynı anda karşı tarafa da uygulanır | Göz, kulak, kaş gibi çift özellikler | [ ] |
+| B8 | Mirror boyama: simetri düzlemi (X/Y/Z + konum), boyama araçları aynı anda karşı tarafa da uygulanır | Göz, kulak, kaş gibi çift özellikler | [x] |
 | X5 | Kesim modu önerisi: bölge kalınlığına göre Keys/Socket öner | Dokümandaki karar ağacı | [ ] |
 | D5 | Kesim hatasında sorunlu bölgeyi göster | Hata mesajı nereye bakılacağını söylemiyor | [ ] |
 | C12 | Link all: kapalıyken her ada kendi ayarıyla (derinlik) | Aynı slotta farklı boyda bölgeler | [ ] |
@@ -89,7 +89,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | B5 | Gap Fill | 1 | [x] | |
 | B6 | Smooth sınır | 2 | [x] | Eğri tabanlı, alan koruyan (`src/core/smooth.ts`). Üçgenler kesilmez; sınır köşeleri eğriye kaydırılır |
 | B7 | Arka yüz / X-ray boyama | 3 | [ ] | |
-| B8 | Mirror boyama | 3 | [ ] | |
+| B8 | Mirror boyama | 3 | [x] | Smart Fill, Fırça, Silgi, Kova, Yumuşat; düzlem X/Y/Z, konum varsayılan parçanın ortası |
 | B9 | Auto-paint | 3 | [ ] | |
 
 ### C. Kesim
@@ -163,3 +163,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X6: ince duvar kontrolü | `41d6fa2` |
 | 2026-09-25 | X7: 1–2M üçgen performansı | `4ca0cd5` |
 | 2026-09-25 | X24: Worker manifold önbelleği | `4b2b740` |
+| 2026-09-25 | X8: Playwright smoke testi | `ac8bc4e` |

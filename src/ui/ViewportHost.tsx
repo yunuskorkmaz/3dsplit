@@ -7,6 +7,7 @@ import {
   bucketAt,
   endSmoothStroke,
   endStroke,
+  mirrorOffset,
   regionFrame,
   removePin,
   setSocketDirection,
@@ -223,6 +224,13 @@ export function ViewportHost() {
     const frame = show ? regionFrame() : null;
     vp.showDirection(frame?.center ?? null, direction ?? frame?.normal ?? [0, 0, 1], directionGizmo, (d) => setSocketDirection(d));
   }, [cutMode, direction, directionGizmo, preview, activeSlot, selectedPartId, paintVersion, tool, pins, selectedPin]);
+
+  // ayna düzlemi
+  const mirror = useStore((s) => s.mirror);
+  useEffect(() => {
+    const paintTool = tool === 'smart' || tool === 'brush' || tool === 'erase' || tool === 'smooth' || tool === 'bucket';
+    vpRef.current?.setMirrorPlane(mirror.enabled && paintTool ? { axis: mirror.axis, offset: mirrorOffset() } : null);
+  }, [mirror, tool, parts, selectedPartId]);
 
   const pinRadius = useStore((s) => s.cut.pinRadius);
   useEffect(() => {

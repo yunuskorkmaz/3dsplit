@@ -29,7 +29,9 @@ import {
   set,
 } from './store';
 import { smoothBoundaryAt, smoothRegionBoundary } from '../core/smooth';
-import { concavityOf, refreshGeometry, type Topology, topologyOf } from './topologyCache';
+import { boundingBox } from '../core/geometry';
+import { mirrorPoint } from '../core/spatial';
+import { concavityOf, gridOf, refreshGeometry, type Topology, topologyOf } from './topologyCache';
 
 // ---------- dosya ----------
 
@@ -184,7 +186,34 @@ interface Stroke {
 
 let stroke: Stroke | null = null;
 /** Son Smart Fill; eşik değişince canlı yeniden hesaplanır. */
-let lastSmart: { partId: string; seed: number; entry: Extract<HistoryEntry, { kind: 'paint' }> } | null = null;
+let lastSmart: { partId: string; seeds: number[]; entry: Extract<HistoryEntry, { kind: 'paint' }> } | null = null;
+
+// ---------- ayna (B8) ----------
+
+/** Ayna düzleminin konumu: elle verilmediyse parçanın sınır kutusunun ortası. */
+export function mirrorOffset(part: Part | undefined = selectedPart()): number {
+  const { mirror } = get();
+  if (mirror.offset !== null) return mirror.offset;
+  if (!part) return 0;
+  const { min, max } = boundingBox(part.mesh.positions);
+  return (min[mirror.axis] + max[mirror.axis]) / 2;
+}
+
+/** Aynadaki karşılık: nokta ve en yakın üçgen. Ayna kapalıysa veya karşılık yoksa null. */
+function mirrored(part: Part, point: Vec3): { point: Vec3; tri: number } | null {
+  const { mirror } = get();
+  if (!mirror.enabled) return null;
+  const q = mirrorPoint(point, mirror.axis, mirrorOffset(part));
+  const topo = topologyOf(part.mesh);
+  // karşı taraf yüzeyde değilse (asimetrik model) çok uzağa atlamasın
+  const tri = gridOf(part.mesh).nearest(q, topo.meanEdge * 6);
+  return tri < 0 ? null : { point: q, tri };
+}
+
+function triCenter(part: Part, t: number): Vec3 {
+  const c = topologyOf(part.mesh).centroids;
+  return [c[3 * t], c[3 * t + 1], c[3 * t + 2]];
+}
 
 function partById(id: string): Part | undefined {
   return get().parts.find((p) => p.id === id);
@@ -241,13 +270,18 @@ export function brushAt(partId: string, tri: number, point: Vec3, erase: boolean
   const topo = topologyOf(part.mesh);
   const tris = brushSelect(topo.adj, topo.centroids, tri, point, get().brushRadius);
   applyLabels(part, tris, paintLabel(erase));
+  const m = mirrored(part, point);
+  if (m) applyLabels(part, brushSelect(topo.adj, topo.centroids, m.tri, m.point, get().brushRadius), paintLabel(erase));
 }
 
 export function bucketAt(partId: string, tri: number, erase: boolean): void {
   const part = partById(partId);
   if (!part) return;
   beginStroke(partId);
+  const m = mirrored(part, triCenter(part, tri));
+  const mirrorTris = m ? bucketFill(topologyOf(part.mesh).adj, part.mesh.labels, m.tri) : [];
   applyLabels(part, bucketFill(topologyOf(part.mesh).adj, part.mesh.labels, tri), paintLabel(erase));
+  if (mirrorTris.length) applyLabels(part, mirrorTris, paintLabel(erase));
   endStroke();
 }
 
@@ -295,6 +329,17 @@ function smartSelect(topo: Topology, mesh: LabeledMesh, seed: number): Uint32Arr
   return Uint32Array.from(closeHoles(topo.adj, topo.areas, tris, { maxHoleFraction: 0.05, accept: same }).tris);
 }
 
+/** Birden çok tohum (ayna): hepsi aynı etiket durumunda hesaplanıp birleştirilir. */
+function smartSelectMany(topo: Topology, mesh: LabeledMesh, seeds: number[]): Uint32Array {
+  if (seeds.length === 1) return smartSelect(topo, mesh, seeds[0]);
+  const all = new Set<number>();
+  for (const s of seeds) {
+    if (all.has(s)) continue;
+    for (const t of smartSelect(topo, mesh, s)) all.add(t);
+  }
+  return Uint32Array.from(all);
+}
+
 /** Otomatik ölçekte seçili parçanın kullanacağı değer (arayüzde göstermek için). */
 export function autoSmartScale(): number {
   const { smartAutoScale } = get();
@@ -308,10 +353,12 @@ export function smartFillAt(partId: string, tri: number, erase: boolean): void {
   if (!part) return;
   const topo = topologyOf(part.mesh);
   beginStroke(partId);
-  const tris = smartSelect(topo, part.mesh, tri);
+  const m = mirrored(part, triCenter(part, tri));
+  const seeds = m && m.tri !== tri ? [tri, m.tri] : [tri];
+  const tris = smartSelectMany(topo, part.mesh, seeds);
   applyLabels(part, tris, paintLabel(erase));
   const entry = endStroke();
-  lastSmart = entry ? { partId, seed: tri, entry } : null;
+  lastSmart = entry ? { partId, seeds, entry } : null;
   warnIfLeaked(tris.length, part.mesh.labels.length);
 }
 
@@ -344,7 +391,7 @@ export function setSmartOptions(patch: {
   onLabelsChanged?.(part.id, entry.tris);
   const label = entry.after[0];
   const topo = topologyOf(part.mesh);
-  const tris = smartSelect(topo, part.mesh, lastSmart.seed);
+  const tris = smartSelectMany(topo, part.mesh, lastSmart.seeds);
   entry.tris = tris;
   entry.before = Uint16Array.from(tris, (t) => labels[t]);
   for (let i = 0; i < tris.length; i++) labels[tris[i]] = label;
@@ -468,6 +515,20 @@ export function smoothAt(point: Vec3): void {
     (t) => labels[t] === BASE_SLOT,
     (t) => neighborLabel(adj, labels, t, slot),
   );
+  const part = partById(partId);
+  const m = part ? mirrored(part, point) : null;
+  if (m) {
+    const more = smoothBoundaryAt(
+      mesh,
+      slot,
+      m.point,
+      brushRadius,
+      smoothStrength,
+      (t) => labels[t] === BASE_SLOT,
+      (t) => neighborLabel(adj, labels, t, slot),
+    );
+    for (const t of more) tris.push(t);
+  }
   if (tris.length) onGeometryChanged?.(partId, tris);
 }
 

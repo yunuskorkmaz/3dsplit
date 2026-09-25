@@ -1,5 +1,6 @@
 import { faceCentroids, faceNormalsAndAreas } from '../core/geometry';
 import { meanEdgeLength, triangleConcavity } from '../core/paint';
+import { TriangleGrid } from '../core/spatial';
 import { buildAdjacency } from '../core/topology';
 import type { LabeledMesh } from '../core/types';
 
@@ -53,4 +54,18 @@ export function refreshGeometry(mesh: LabeledMesh, from?: LabeledMesh): void {
   const { normals, areas } = faceNormalsAndAreas(mesh);
   cache.set(mesh, { adj, normals, areas, centroids: faceCentroids(mesh), meanEdge: meanEdgeLength(mesh) });
   concavityCache.delete(mesh);
+  gridCache.delete(mesh);
+}
+
+const gridCache = new WeakMap<LabeledMesh, TriangleGrid>();
+
+/** En yakın üçgen araması için ızgara (ayna boyama). */
+export function gridOf(mesh: LabeledMesh): TriangleGrid {
+  let g = gridCache.get(mesh);
+  if (!g) {
+    const topo = topologyOf(mesh);
+    g = new TriangleGrid(topo.centroids, topo.meanEdge * 2);
+    gridCache.set(mesh, g);
+  }
+  return g;
 }

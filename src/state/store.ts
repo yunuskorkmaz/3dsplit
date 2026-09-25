@@ -92,6 +92,8 @@ export interface AppState {
   pins: PinPlacement[];
   /** Pim aracında seçili pim (-1: yok). */
   selectedPin: number;
+  /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
+  mirror: { enabled: boolean; axis: 0 | 1 | 2; offset: number | null };
   /** Socket yön gizmosu açık mı. */
   directionGizmo: boolean;
   preview: CutPreview | null;
@@ -133,6 +135,7 @@ export const useStore = create<AppState>(() => ({
   },
   pins: [],
   selectedPin: -1,
+  mirror: { enabled: false, axis: 0, offset: null },
   directionGizmo: false,
   preview: null,
   busy: null,

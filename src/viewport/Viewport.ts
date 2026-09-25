@@ -60,6 +60,7 @@ export class Viewport {
   private dirArrow: THREE.ArrowHelper;
   private gizmo: TransformControls;
   private onDirectionChange: ((dir: Vec3) => void) | null = null;
+  private mirrorPlane: THREE.Mesh | null = null;
 
   constructor(
     private container: HTMLElement,
@@ -357,6 +358,39 @@ export class Viewport {
       this.gizmo.size = 0.8;
     } else {
       this.gizmo.detach();
+    }
+    this.requestRender();
+  }
+
+  /** Ayna düzlemi (B8): `axis` eksenine dik, `offset` konumunda; null gizler. */
+  setMirrorPlane(plane: { axis: 0 | 1 | 2; offset: number } | null): void {
+    if (this.mirrorPlane) {
+      this.scene.remove(this.mirrorPlane);
+      this.mirrorPlane.geometry.dispose();
+      this.mirrorPlane = null;
+    }
+    if (plane) {
+      const box = new THREE.Box3();
+      for (const p of this.parts.values()) if (p.mesh.visible) box.expandByObject(p.mesh);
+      if (box.isEmpty()) return;
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const other = [0, 1, 2].filter((k) => k !== plane.axis);
+      const g = new THREE.PlaneGeometry(size.getComponent(other[0]) * 1.2, size.getComponent(other[1]) * 1.2);
+      const m = new THREE.Mesh(
+        g,
+        new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false }),
+      );
+      // düzlemin normali (varsayılan +Z) ayna eksenine çevrilir
+      const n = new THREE.Vector3();
+      n.setComponent(plane.axis, 1);
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
+      m.position.copy(center);
+      m.position.setComponent(plane.axis, plane.offset);
+      m.renderOrder = 3;
+      m.raycast = () => {}; // seçimi engellemesin
+      this.mirrorPlane = m;
+      this.scene.add(m);
     }
     this.requestRender();
   }

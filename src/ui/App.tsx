@@ -54,10 +54,12 @@ export function App() {
         <PartsPanel />
       </aside>
       <main>
-        <ViewportHost />
         <ToolOptions />
-        <ToolBar />
-        <StatusBar />
+        <div className="viewport-area">
+          <ViewportHost />
+          <ToolBar />
+          <StatusBar />
+        </div>
       </main>
       <aside className="right">
         <SlotPanel />

@@ -15,7 +15,25 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 → Socket (göz, kaş) veya Keys (kol, kafa) → Kes → yeni parçada sonraki bölge → Dışa aktar
 ```
 
-## Sprint 2 — seçim kalitesi ve sonrası (sırayla)
+## Sprint 3 — kalan özellikler (sırayla)
+
+| # | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| B8 | Mirror boyama: simetri düzlemi (X/Y/Z + konum), boyama araçları aynı anda karşı tarafa da uygulanır | Göz, kulak, kaş gibi çift özellikler | [ ] |
+| X5 | Kesim modu önerisi: bölge kalınlığına göre Keys/Socket öner | Dokümandaki karar ağacı | [ ] |
+| D5 | Kesim hatasında sorunlu bölgeyi göster | Hata mesajı nereye bakılacağını söylemiyor | [ ] |
+| C12 | Link all: kapalıyken her ada kendi ayarıyla (derinlik) | Aynı slotta farklı boyda bölgeler | [ ] |
+| C11 | Snap pim (yapıştırıcısız, esnek dilli) | Faz 2 kalanı | [ ] |
+| E1 | Kamera: ters yakınlaştırma, Blender tarzı (orta tuş döndür) seçeneği | Faz 1 kalanı | [ ] |
+| B7 | X-ray boyama: arkadaki yüzleri de boya | Faz 3 | [ ] |
+| X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği | [ ] |
+| A2 | Voxel yedek onarım (kapanmayan mesh için) | A2'nin eksiği | [ ] |
+| E2 | Kısayolları özelleştirme | Faz 3 | [ ] |
+| C7 | Socket: tam yüzey / sadece iç kısım seçeneği | Faz 3 | [ ] |
+| C6 | Socket: Ring Selection | Faz 3 | [ ] |
+| B9 | Auto-paint: açılışta özellik önerisi | Faz 3 | [ ] |
+
+## Sprint 2 — seçim kalitesi ve sonrası (bitti)
 
 | # | İş | Neden | Durum |
 | --- | --- | --- | --- |

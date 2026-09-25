@@ -1,3 +1,4 @@
+import { IntTripleTable } from './hashTable';
 import type { MeshData } from './types';
 
 /** Kenarın komşusu yok (açık sınır). */
@@ -12,32 +13,26 @@ export const NON_MANIFOLD = -2;
 export function buildAdjacency(mesh: MeshData): Int32Array {
   const idx = mesh.indices;
   const heCount = idx.length;
-  const vCount = mesh.positions.length / 3;
   const adj = new Int32Array(heCount).fill(NO_NEIGHBOR);
-  const keys = new Float64Array(heCount);
-  // anahtar: küçük*V + büyük
-  const first = new Map<number, number>();
-  const second = new Map<number, number>();
-  const nonManifold = new Set<number>();
+  // kenar (küçük, büyük köşe) -> ilk yarım kenar; tipli dizili hash tablosu
+  const table = new IntTripleTable(heCount / 2 + 1);
+  const slotOf = new Int32Array(heCount);
+  const count = new Uint8Array(table.values.length);
   for (let he = 0; he < heCount; he++) {
-    const t = Math.floor(he / 3);
+    const t = (he / 3) | 0;
     const a = idx[he];
     const b = idx[3 * t + ((he - 3 * t + 1) % 3)];
-    const key = a < b ? a * vCount + b : b * vCount + a;
-    keys[he] = key;
-    if (!first.has(key)) first.set(key, he);
-    else if (!second.has(key)) second.set(key, he);
-    else nonManifold.add(key);
+    const h = a < b ? table.slot(a, b, 0, he) : table.slot(b, a, 0, he);
+    slotOf[he] = h;
+    if (count[h] < 3) count[h]++;
+    if (count[h] === 2) {
+      const first = table.values[h];
+      adj[first] = t;
+      adj[he] = (first / 3) | 0;
+    }
   }
-  for (const [key, he2] of second) {
-    if (nonManifold.has(key)) continue;
-    const he1 = first.get(key) as number;
-    adj[he1] = Math.floor(he2 / 3);
-    adj[he2] = Math.floor(he1 / 3);
-  }
-  if (nonManifold.size) {
-    for (let he = 0; he < heCount; he++) if (nonManifold.has(keys[he])) adj[he] = NON_MANIFOLD;
-  }
+  // ikiden fazla üçgenin paylaştığı kenarlar
+  for (let he = 0; he < heCount; he++) if (count[slotOf[he]] > 2) adj[he] = NON_MANIFOLD;
   return adj;
 }
 

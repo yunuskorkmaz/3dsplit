@@ -46,6 +46,22 @@ describe('onarım', () => {
   });
 });
 
+describe('onarım (karışık)', () => {
+  it('rastgele ters üçgenler + delik: kapalı, dışa bakan mesh', () => {
+    const cube = subdividedCube(20, 6);
+    const idx = new Uint32Array(cube.indices);
+    let seed = 7;
+    for (let t = 0; t < idx.length / 3; t++) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      if (seed % 3 === 0) [idx[3 * t + 1], idx[3 * t + 2]] = [idx[3 * t + 2], idx[3 * t + 1]];
+    }
+    const { mesh, report } = repairMesh(cube.positions, idx.slice(6));
+    expect(report.filledHoles).toBe(1);
+    expect(signedVolume(mesh)).toBeCloseTo(8000, 0);
+    expect(() => toManifold(mesh).delete()).not.toThrow();
+  });
+});
+
 describe('boyama', () => {
   const cube = subdividedCube(20, 4);
   const adj = buildAdjacency(cube);

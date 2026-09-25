@@ -12,6 +12,9 @@ export interface SmartFillOptions {
   scale: number;
   /** true: sadece içbükey (çukur) kıvrımlarda durur; tümsek tepelerinden geçer. */
   concaveOnly: boolean;
+  /** Seçilen alan bunu aşınca tarama bırakılır (taşma; `areas` ile birlikte). */
+  maxArea?: number;
+  areas?: Float32Array;
 }
 
 /**
@@ -32,11 +35,15 @@ export function smartFill(
   const parent = new Int32Array(triCount).fill(-1);
   const out: number[] = [seed];
   visited[seed] = 1;
+  const limit = opts.maxArea ?? Infinity;
+  const scale2 = opts.scale * opts.scale;
+  let area = opts.areas ? opts.areas[seed] : 0;
   for (let i = 0; i < out.length; i++) {
+    if (area > limit) break;
     const t = out[i];
     // karşılaştırma yapılacak ata: t'den geriye, `scale` içinde kalan en uzak üçgen
     let a = t;
-    while (parent[a] >= 0 && dist(centroids, parent[a], t) <= opts.scale) a = parent[a];
+    while (parent[a] >= 0 && dist2(centroids, parent[a], t) <= scale2) a = parent[a];
     for (let e = 0; e < 3; e++) {
       const n = adj[3 * t + e];
       if (n < 0 || visited[n]) continue;
@@ -54,6 +61,7 @@ export function smartFill(
       visited[n] = 1;
       parent[n] = t;
       out.push(n);
+      if (opts.areas) area += opts.areas[n];
     }
   }
   return Uint32Array.from(out);
@@ -80,18 +88,19 @@ export function chooseSmartScale(
 ): { scale: number; tris: Uint32Array; leaked: boolean } {
   let total = 0;
   for (let t = 0; t < areas.length; t++) total += areas[t];
+  const limit = total * leakFraction;
   const results: { scale: number; tris: Uint32Array; area: number }[] = [];
   const run = (i: number) => {
     if (!results[i]) {
       const scale = meanEdge * AUTO_SCALE_MULTIPLES[i];
-      const tris = smartFill(adj, normals, centroids, seed, { ...opts, scale });
+      // taşan denemeler tüm modeli dolaşmasın: sınır aşılınca tarama bırakılır
+      const tris = smartFill(adj, normals, centroids, seed, { ...opts, scale, areas, maxArea: limit });
       let area = 0;
       for (let k = 0; k < tris.length; k++) area += areas[tris[k]];
       results[i] = { scale, tris, area };
     }
     return results[i];
   };
-  const limit = total * leakFraction;
   let firstOk = -1;
   for (let i = 0; i < AUTO_SCALE_MULTIPLES.length; i++) {
     const r = run(i);
@@ -103,11 +112,16 @@ export function chooseSmartScale(
     }
   }
   if (firstOk >= 0) return { ...results[firstOk], leaked: false };
-  return { ...run(0), leaked: true };
+  // hiçbiri tutmadı: en küçük ölçekle tam (sınırsız) doldurma
+  const scale = meanEdge * AUTO_SCALE_MULTIPLES[0];
+  return { scale, tris: smartFill(adj, normals, centroids, seed, { ...opts, scale }), leaked: true };
 }
 
-function dist(c: Float32Array, a: number, b: number): number {
-  return Math.hypot(c[3 * a] - c[3 * b], c[3 * a + 1] - c[3 * b + 1], c[3 * a + 2] - c[3 * b + 2]);
+function dist2(c: Float32Array, a: number, b: number): number {
+  const dx = c[3 * a] - c[3 * b];
+  const dy = c[3 * a + 1] - c[3 * b + 1];
+  const dz = c[3 * a + 2] - c[3 * b + 2];
+  return dx * dx + dy * dy + dz * dz;
 }
 
 /** Ortalama kenar uzunluğu; Smart Fill ölçeğinin otomatik değeri için. */

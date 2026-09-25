@@ -74,6 +74,13 @@ Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan at
 
 Köşe kaynaştırma → dejenere ve tekrarlı üçgen silme → yönelimi BFS ile eşitleme, bileşeni dışa baktırma → açık halkaları merkezden yelpazeyle kapama → manifold doğrulaması. Doğrulamadan geçmeyen parça `!` rozetiyle işaretlenir; boyanabilir ama kesim başarısız olabilir.
 
+## Performans
+
+- Büyük tablolar (köşe kaynaştırma, kenar komşuluğu, tekrar üçgen) `src/core/hashTable.ts` içindeki tipli dizili hash tablosuyla; `Map<string, …>` kullanılmaz.
+- Onarımda komşuluk bir kez hesaplanır; yönelim düzeltmede çevrilen üçgenlerin girişleri yerinde yeniden eşlenir.
+- Smart Fill iç döngüsünde kareli uzaklık; otomatik ölçek denemeleri taşma sınırını geçince bırakılır.
+- Ölçüm: `PERF=1 npx vitest run test/perf.test.ts` (samples/testa.stl'den 1.9M üçgenlik model üretir).
+
 ## Test
 
 - `npm test`: `test/` altında Vitest, çekirdek fonksiyonlar Node'da manifold-3d ile.

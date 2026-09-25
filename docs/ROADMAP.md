@@ -31,7 +31,8 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da ayrı filamentle açılsın | [x] |
 | X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [x] |
 | X6 | Pim/tapa duvar kalınlığı kontrolü, ince yeri önizlemede kırmızı gösterme | Baskıda kırılma riski | [x] |
-| X7 | 1–2M üçgen performansı (yükleme, komşuluk, BVH) | testa.stl 275k'da yükleme ~1 s; 2M'de 7–8 s beklenir | [ ] |
+| X7 | 1–2M üçgen performansı (yükleme, komşuluk, BVH) | 1.9M üçgen: onarım 6.1 → 0.6 s, komşuluk 1.4 → 0.19 s, otomatik ölçek 2.8 → 0.43 s; tarayıcıda yükleme 3.8 s, Smart Fill 0.15–0.56 s, Socket kesimi 6.5 s | [x] |
+| X24 | Worker'da parçanın manifold'unu önbellekle (faceID = üçgen indeksi, etiketler sonradan eşlenir) | 1.9M'de her önizleme/kesim modeli 2 s'de yeniden manifold'a çeviriyor | [ ] |
 | X8 | Playwright smoke testi: yükle → Smart Fill → Socket → dışa aktar | Arayüz regresyonları elle yakalanıyor | [ ] |
 
 ## Sprint 1 — ana akışın kalitesi (bitti)
@@ -141,3 +142,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | A3: Bambu/Orca için filament atamalı 3MF | `bb62b3e` |
 | 2026-09-25 | X23: yumuşatmada model kaybolması | `e33d261` |
 | 2026-09-25 | X16: pim başına boyut ve eksen | `8137890` |
+| 2026-09-25 | X6: ince duvar kontrolü | `41d6fa2` |

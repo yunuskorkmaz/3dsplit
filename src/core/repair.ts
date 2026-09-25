@@ -2,6 +2,7 @@ import { signedVolume } from './geometry';
 import { boundaryLoops, buildAdjacency, connectedComponents, NON_MANIFOLD } from './topology';
 import type { MeshData } from './types';
 import { weldVertices } from './weld';
+import { IntTripleTable } from './hashTable';
 
 export interface RepairReport {
   inputTriangles: number;
@@ -22,9 +23,11 @@ export function repairMesh(positions: Float32Array, indices?: Uint32Array): { me
   const inputTriangles = (indices ? indices.length : positions.length / 3) / 3;
   const welded = weldVertices(positions, indices);
   const cleaned = removeBadTriangles(welded);
-  const oriented = orientConsistently(cleaned.mesh);
-  const filled = fillHoles(oriented.mesh);
-  const adj = buildAdjacency(filled.mesh);
+  // komşuluk bir kez hesaplanır: yönelim düzeltmek komşulukları değiştirmez
+  const adj0 = buildAdjacency(cleaned.mesh);
+  const oriented = orientConsistently(cleaned.mesh, adj0);
+  const filled = fillHoles(oriented.mesh, adj0);
+  const adj = filled.holes ? buildAdjacency(filled.mesh) : adj0;
   let nonManifoldEdges = 0;
   for (let i = 0; i < adj.length; i++) if (adj[i] === NON_MANIFOLD) nonManifoldEdges++;
   return {
@@ -43,11 +46,13 @@ export function repairMesh(positions: Float32Array, indices?: Uint32Array): { me
 
 function removeBadTriangles(mesh: MeshData): { mesh: MeshData; degenerate: number; duplicate: number } {
   const { positions: p, indices: idx } = mesh;
-  const keep: number[] = [];
-  const seen = new Set<string>();
+  const triCount = idx.length / 3;
+  const keep = new Uint32Array(idx.length);
+  let kept = 0;
+  const seen = new IntTripleTable(triCount);
   let degenerate = 0;
   let duplicate = 0;
-  for (let t = 0; t < idx.length / 3; t++) {
+  for (let t = 0; t < triCount; t++) {
     const a = idx[3 * t];
     const b = idx[3 * t + 1];
     const c = idx[3 * t + 2];
@@ -61,21 +66,27 @@ function removeBadTriangles(mesh: MeshData): { mesh: MeshData; degenerate: numbe
     const vx = p[3 * c] - p[3 * a];
     const vy = p[3 * c + 1] - p[3 * a + 1];
     const vz = p[3 * c + 2] - p[3 * a + 2];
-    const area2 = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx);
-    if (area2 === 0) {
+    const cx = uy * vz - uz * vy;
+    const cy = uz * vx - ux * vz;
+    const cz = ux * vy - uy * vx;
+    if (cx === 0 && cy === 0 && cz === 0) {
       degenerate++;
       continue;
     }
-    const sorted = [a, b, c].sort((x, y) => x - y);
-    const key = `${sorted[0]},${sorted[1]},${sorted[2]}`;
-    if (seen.has(key)) {
+    // aynı üç köşeli üçgen (sıra fark etmez) tekrar sayılır
+    const lo = Math.min(a, b, c);
+    const hi = Math.max(a, b, c);
+    const mid = a + b + c - lo - hi;
+    seen.slot(lo, mid, hi, t);
+    if (!seen.inserted) {
       duplicate++;
       continue;
     }
-    seen.add(key);
-    keep.push(a, b, c);
+    keep[kept++] = a;
+    keep[kept++] = b;
+    keep[kept++] = c;
   }
-  return { mesh: { positions: p, indices: new Uint32Array(keep) }, degenerate, duplicate };
+  return { mesh: { positions: p, indices: keep.slice(0, kept) }, degenerate, duplicate };
 }
 
 function edgeDirection(idx: Uint32Array, t: number, a: number, b: number): number {
@@ -96,10 +107,15 @@ function flipTriangle(idx: Uint32Array, t: number): void {
 }
 
 /** Komşu üçgenlerin yönelimini BFS ile eşitler, sonra her bileşeni dışa baktırır. */
-function orientConsistently(mesh: MeshData): { mesh: MeshData; flipped: number } {
-  const idx = new Uint32Array(mesh.indices);
+/**
+ * Komşu üçgenlerin yönelimini BFS ile eşitler, sonra her bileşeni dışa
+ * baktırır. `adj` çevirmeden önceki kenar sırasına göredir; çevrilen
+ * üçgenlerin girişleri sonda yeni sıraya göre düzeltilir (yerinde).
+ */
+function orientConsistently(mesh: MeshData, adj: Int32Array): { mesh: MeshData; flipped: number } {
+  const src = mesh.indices;
+  const idx = new Uint32Array(src);
   const out: MeshData = { positions: mesh.positions, indices: idx };
-  const adj = buildAdjacency(out);
   const triCount = idx.length / 3;
   const visited = new Uint8Array(triCount);
   const flippedFlag = new Uint8Array(triCount);
@@ -113,8 +129,10 @@ function orientConsistently(mesh: MeshData): { mesh: MeshData; flipped: number }
       for (let e = 0; e < 3; e++) {
         const n = adj[3 * t + e];
         if (n < 0 || visited[n]) continue;
-        const a = idx[3 * t + e];
-        const b = idx[3 * t + ((e + 1) % 3)];
+        // kenar orijinal sıradan okunur; t çevrildiyse şu anki yönü terstir
+        let a = src[3 * t + e];
+        let b = src[3 * t + ((e + 1) % 3)];
+        if (flippedFlag[t]) [a, b] = [b, a];
         if (edgeDirection(idx, n, a, b) === 1) {
           flipTriangle(idx, n);
           flippedFlag[n] ^= 1;
@@ -136,13 +154,20 @@ function orientConsistently(mesh: MeshData): { mesh: MeshData; flipped: number }
     }
   }
   let flipped = 0;
-  for (let t = 0; t < triCount; t++) flipped += flippedFlag[t];
+  for (let t = 0; t < triCount; t++) {
+    if (!flippedFlag[t]) continue;
+    flipped++;
+    // (a,b,c) -> (a,c,b): yeni kenar 0 = eski kenar 2, yeni kenar 2 = eski kenar 0
+    const e0 = adj[3 * t];
+    adj[3 * t] = adj[3 * t + 2];
+    adj[3 * t + 2] = e0;
+  }
   return { mesh: out, flipped };
 }
 
 /** Açık sınır halkalarını merkez noktasından yelpaze üçgenlerle kapatır. */
-function fillHoles(mesh: MeshData): { mesh: MeshData; holes: number } {
-  const adj = buildAdjacency(mesh);
+function fillHoles(mesh: MeshData, adjIn: Int32Array): { mesh: MeshData; holes: number } {
+  const adj = new Int32Array(adjIn);
   const triCount = mesh.indices.length / 3;
   // non-manifold kenarlar delik değil: onları "komşusu var" gibi göster (tüm üçgenler maskede)
   for (let i = 0; i < adj.length; i++) if (adj[i] === NON_MANIFOLD) adj[i] = 0;

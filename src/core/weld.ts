@@ -1,4 +1,5 @@
 import { boundingBox } from './geometry';
+import { IntTripleTable } from './hashTable';
 import type { MeshData } from './types';
 
 /**
@@ -15,25 +16,27 @@ export function weldVertices(
   const { min, max } = boundingBox(positions);
   const diag = Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) || 1;
   const inv = 1 / (diag * relTolerance);
-  const map = new Map<string, number>();
-  const remap = new Uint32Array(positions.length / 3);
-  const out: number[] = [];
-  for (let v = 0; v < remap.length; v++) {
+  const vCount = positions.length / 3;
+  const table = new IntTripleTable(vCount);
+  const remap = new Uint32Array(vCount);
+  const out = new Float32Array(positions.length);
+  let next = 0;
+  for (let v = 0; v < vCount; v++) {
     const x = positions[3 * v];
     const y = positions[3 * v + 1];
     const z = positions[3 * v + 2];
-    const key = `${Math.round((x - min[0]) * inv)},${Math.round((y - min[1]) * inv)},${Math.round((z - min[2]) * inv)}`;
-    let id = map.get(key);
-    if (id === undefined) {
-      id = out.length / 3;
-      map.set(key, id);
-      out.push(x, y, z);
+    const h = table.slot(Math.round((x - min[0]) * inv), Math.round((y - min[1]) * inv), Math.round((z - min[2]) * inv), next);
+    if (table.inserted) {
+      out[3 * next] = x;
+      out[3 * next + 1] = y;
+      out[3 * next + 2] = z;
+      next++;
     }
-    remap[v] = id;
+    remap[v] = table.values[h];
   }
   const newIdx = new Uint32Array(srcIdx.length);
   for (let i = 0; i < srcIdx.length; i++) newIdx[i] = remap[srcIdx[i]];
-  return { positions: new Float32Array(out), indices: newIdx };
+  return { positions: out.slice(0, next * 3), indices: newIdx };
 }
 
 function sequentialIndices(n: number): Uint32Array {

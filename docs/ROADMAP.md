@@ -32,6 +32,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | E2 | Kısayolları özelleştirme | Faz 3 | [x] |
 | C7 | Socket: tam yüzey / sadece iç kısım seçeneği | Faz 3 | [x] |
 | C6 | Socket: Ring Selection | Faz 3 | [x] |
+| X4 | Fast/Keys düzlem kesimi: seçenek olarak ve kapak üretilemezse otomatik | Eğri halkada kapak başarısız olabilir; kol/kulakta düz kesim yüzeyi istenebilir | [x] |
 | B9 | Auto-paint: açılışta özellik önerisi | Faz 3 | [x] |
 
 ## Sprint 2 — seçim kalitesi ve sonrası (bitti)
@@ -127,15 +128,6 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | E1 | Kamera modları | 1 | [x] | Varsayılan (sağ döndür, orta kaydır) ve Blender (orta döndür, Shift+orta kaydır); ters yakınlaştırma; tarayıcıda hatırlanır |
 | E2 | Özelleştirilebilir kısayollar | 3 | [x] | Sol panelde Kısayollar: araçlar, önizleme, sığdır, fırça boyu; çakışmada yer değiştirir, tarayıcıda hatırlanır. Sabit: Ctrl/Cmd+Z, 0–9, Alt+tekerlek |
 
-## Sonraki sprintler için bekleyen ek işler
-
-| # | İş | Neden |
-| --- | --- | --- |
-| X4 | Keys için düzlemsel kesim yedeği: sınır halkası çok eğriyse en uygun düzlemle kes | Eğri halkada kapak kendini kesebilir |
-| X6 | Pim yerleştirmede duvar kalınlığı kontrolü, uyarıyı pim üzerinde göster | İnce duvarda kırılma riski |
-| X7 | 1–2M üçgen performansı: komşuluk ve kaynaştırma için Map yerine sıralama tabanlı yapı | Büyük modellerde yavaşlık |
-| X8 | Playwright smoke testi | Arayüz regresyonları |
-
 ## Tamamlananlar günlüğü
 
 | Tarih | İş | Commit |
@@ -175,3 +167,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | E2: özelleştirilebilir kısayollar | `fae5279` |
 | 2026-09-25 | C7: Socket ayak payı | `8e00bd2` |
 | 2026-09-25 | B9: çıkıntıları otomatik öner | `bf0faa2` |
+| 2026-09-25 | C6: tapa kesit şekli | `b7ae3cf` |

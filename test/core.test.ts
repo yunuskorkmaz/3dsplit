@@ -164,6 +164,24 @@ describe('kesim', () => {
     expect(snap.warnings.filter((w) => w.includes('dışına'))).toEqual([]);
   });
 
+  it('X4 düzlem kesimi: kesim yüzeyi düz, pim de çalışır', () => {
+    const r = cutRegion(capRegion, { ...baseOpts, mode: 'keys', planar: true });
+    expect(r.parts.length).toBe(1);
+    // parça düzlemin üstü: taban z'si tek bir değer (düz kesim)
+    const zs = new Set<string>();
+    const p = r.parts[0];
+    for (let t = 0; t < p.labels.length; t++) {
+      const z = [0, 1, 2].map((k) => p.positions[3 * p.indices[3 * t + k] + 2]);
+      // pimin ucu (z≈2) hariç, kesim yüzeyi bölgesi
+      if (z.every((v) => v > 3.5 && v < 6.5) && Math.max(...z) - Math.min(...z) < 1e-3) zs.add(z[0].toFixed(2));
+    }
+    expect(zs.size).toBe(1);
+    const pinVol = Math.PI * 4 * 6;
+    expect(volume(r.parts[0]) + volume(r.body)).toBeGreaterThan(8000 - pinVol);
+    expect(volume(r.parts[0]) + volume(r.body)).toBeLessThan(8000 + pinVol);
+    expect(r.warnings.filter((w) => w.includes('dışına'))).toEqual([]);
+  });
+
   it('Keys: pim ince duvara taşarsa uyarır', () => {
     const r = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, length: 14 } });
     expect(r.warnings.length).toBe(1);

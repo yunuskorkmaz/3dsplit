@@ -59,6 +59,11 @@ export interface CutOptions {
   pin: PinOptions;
   /** Keys: yüzeyde tıklanan pimler. Boşsa her adanın kapak merkezine bir pim. */
   pins?: PinPlacement[];
+  /**
+   * X4 (Fast/Keys): true ise sınır halkası yerine halkaya en uygun düzlemle
+   * kesilir (dümdüz kesim yüzeyi). Kapak üretilemezse otomatik de kullanılır.
+   */
+  planar?: boolean;
 }
 
 export interface CutResult {
@@ -720,10 +725,14 @@ function pinCenters(
         });
   // nokta, kapak normali boyunca kapak yüzeyine taşınır (kapak düz olmayabilir)
   return raw.map(({ island, pin }) => {
-    const cap = triangulateLoop(positions, island.mainLoop);
     const n = island.capNormal;
     const onPlane = sub(pin.point, scale(n, dot(sub(pin.point, island.capCenter), n)));
-    const center = lineCapIntersection(positions, cap, onPlane, n) ?? onPlane;
+    let center = onPlane;
+    try {
+      center = lineCapIntersection(positions, triangulateLoop(positions, island.mainLoop), onPlane, n) ?? onPlane;
+    } catch {
+      // kapak üçgenlenemedi (düzlem kesimi): pim düzlemde
+    }
     // eksen gövdeye doğru bakmalı (kapak normalinin tersi yönde)
     let axis = pin.axis ? normalize(pin.axis) : scale(n, -1);
     if (dot(axis, n) > 0) axis = scale(axis, -1);
@@ -862,6 +871,10 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
       }
     } else {
       for (const island of islands) {
+        if (opts.planar) {
+          volumes.push(planePatch(mesh.positions, island));
+          continue;
+        }
         const idx: number[] = [];
         for (const loop of island.loops) idx.push(...triangulateLoop(mesh.positions, loop));
         volumes.push(extractTriangles({ positions: mesh.positions, indices: Uint32Array.from(idx) }, range(idx.length / 3)).mesh);
@@ -958,19 +971,21 @@ function cutIslands(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scop
   {
     if (opts.mode === 'socket') return socketCut(mesh, islands, opts, scope, warnings);
 
-    const split = capSplit(mesh, islands);
     let body: Manifold;
     let parts: Manifold[];
-    try {
-      body = scope.keep(toManifold(split.body, split.body.origin));
-      parts = split.parts.map((p) => scope.keep(toManifold(p, p.origin)));
-    } catch (e) {
-      if (e instanceof KernelError) {
-        throw new CutError(
-          'Kapak üretilemedi: bölge sınırı düzgün tek bir halka değil (delikli veya kendine değen bölge). Sınırı düzeltin ya da Socket kullanın.',
-        );
+    if (opts.planar) {
+      ({ body, parts } = planeSplit(mesh, islands, scope));
+    } else {
+      try {
+        const split = capSplit(mesh, islands);
+        body = scope.keep(toManifold(split.body, split.body.origin));
+        parts = split.parts.map((p) => scope.keep(toManifold(p, p.origin)));
+      } catch (e) {
+        if (!(e instanceof KernelError || e instanceof CutError)) throw e;
+        // X4: sınırdan kapak olmadı, en uygun düzlemle kes
+        ({ body, parts } = planeSplit(mesh, islands, scope));
+        warnings.push('Sınır halkasından kapak üretilemedi; bölge en uygun düzlemle kesildi.');
       }
-      throw e;
     }
 
     if (opts.mode === 'keys') {
@@ -995,6 +1010,84 @@ function cutIslands(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scop
       warnings,
     };
   }
+}
+
+/**
+ * X4: her ada, sınır halkasının Newell düzlemiyle kesilir. Düzlemin bölge
+ * tarafı büyük bir kutuyla alınır (yeni yüzler CUT_FACE_ID taşır), parçalara
+ * ayrılır ve bölgeyi içeren parça seçilir. Gövde = model − parçalar.
+ */
+function planeSplit(mesh: LabeledMesh, islands: Island[], scope: Scope): { body: Manifold; parts: Manifold[] } {
+  const { Manifold } = kernel();
+  const model = modelOf(mesh, scope);
+  const { min, max } = boundingBoxOf(mesh.positions);
+  const R = Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) * 2 + 1;
+  const parts: Manifold[] = [];
+  for (const island of islands) {
+    const n = island.capNormal;
+    const [u, v] = orthoBasis(n);
+    const origin = island.capCenter;
+    // kutunun tabanı düzlemde, düzlemin normal tarafına uzanır
+    const box = scope.keep(Manifold.cube([2 * R, 2 * R, R], false).translate([-R, -R, 0]));
+    const m = [...u, 0, ...v, 0, ...n, 0, ...origin, 1] as unknown as Parameters<Manifold['transform']>[0];
+    const half = withFaceId(scope.keep(box.transform(m)), CUT_FACE_ID, scope);
+    const side = scope.keep(model.intersect(half));
+    // bölgeyi içeren parça: bölge üçgeninin biraz içindeki noktayı içeren bileşen
+    const probe = regionProbe(mesh, island);
+    const dot0 = scope.keep(Manifold.sphere(0.05, 8).translate(probe));
+    let chosen: Manifold | null = null;
+    for (const piece of side.decompose()) {
+      scope.keep(piece);
+      if (!chosen && scope.keep(piece.intersect(dot0)).volume() > 0) chosen = piece;
+    }
+    if (!chosen) throw new CutError('Düzlem kesimi bölgeyi içeren bir parça üretmedi (düzlem bölgenin arkasında kalıyor olabilir).');
+    parts.push(chosen);
+  }
+  const body = scope.keep(model.subtract(parts.length === 1 ? parts[0] : scope.keep(Manifold.union(parts))));
+  return { body, parts };
+}
+
+/** Önizleme için düzlem kesiminin düzlemi: halka boyutunda bir kare. */
+function planePatch(positions: Float32Array, island: Island): MeshData {
+  const n = island.capNormal;
+  const [u, v] = orthoBasis(n);
+  const c = island.capCenter;
+  let r = 0;
+  for (const i of island.mainLoop) r = Math.max(r, Math.hypot(...sub(vertexAt(positions, i), c)));
+  r *= 1.3;
+  const corners = [
+    [-r, -r],
+    [r, -r],
+    [r, r],
+    [-r, r],
+  ].flatMap(([a, b]) => add(c, add(scale(u, a), scale(v, b))));
+  return { positions: Float32Array.from(corners), indices: Uint32Array.from([0, 1, 2, 0, 2, 3]) };
+}
+
+/** Adanın en büyük üçgeninin merkezinden yüzeyin biraz içine giren nokta. */
+function regionProbe(mesh: MeshData, island: Island): Vec3 {
+  const { normals, areas } = faceNormalsAndAreas(mesh);
+  let best = island.tris[0];
+  for (const t of island.tris) if (areas[t] > areas[best]) best = t;
+  const c: Vec3 = [0, 0, 0];
+  for (let k = 0; k < 3; k++) {
+    const p = vertexAt(mesh.positions, mesh.indices[3 * best + k]);
+    c[0] += p[0] / 3;
+    c[1] += p[1] / 3;
+    c[2] += p[2] / 3;
+  }
+  const n: Vec3 = [normals[3 * best], normals[3 * best + 1], normals[3 * best + 2]];
+  return sub(c, scale(n, Math.min(0.1, Math.sqrt(areas[best]) * 0.2)));
+}
+
+function boundingBoxOf(positions: Float32Array) {
+  let min: Vec3 = [Infinity, Infinity, Infinity];
+  let max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < positions.length; i += 3) {
+    min = [Math.min(min[0], positions[i]), Math.min(min[1], positions[i + 1]), Math.min(min[2], positions[i + 2])];
+    max = [Math.max(max[0], positions[i]), Math.max(max[1], positions[i + 1]), Math.max(max[2], positions[i + 2])];
+  }
+  return { min, max };
 }
 
 function checkPinContainment(

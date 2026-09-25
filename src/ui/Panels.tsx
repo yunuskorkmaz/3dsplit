@@ -288,6 +288,12 @@ export function CutPanel() {
           />
         </>
       )}
+      {cut.mode !== 'socket' && (
+        <label className="field" title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)">
+          <input type="checkbox" checked={cut.planar} onChange={(e) => update({ planar: e.target.checked })} />
+          <span>Düzlemle kes</span>
+        </label>
+      )}
       {cut.mode !== 'fast' && (
         <NumberField
           label="Duvar"

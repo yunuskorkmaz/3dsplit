@@ -731,6 +731,7 @@ function cutOptions(): CutOptions {
     squeeze: cut.mode === 'socket' ? cut.squeeze : 0,
     inset: cut.mode === 'socket' ? cut.inset : 0,
     ringProfile: cut.mode === 'socket' ? cut.ringProfile : undefined,
+    planar: cut.mode !== 'socket' && cut.planar,
     minWall: cut.minWall,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
     pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart },

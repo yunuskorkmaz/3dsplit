@@ -35,6 +35,8 @@ export interface CutSettings {
   inset: number;
   /** C6: tapa alt halkasının 8 yönlü radyal düzeltmesi, mm. */
   ringProfile: number[];
+  /** X4: Fast/Keys düzlemle keser. */
+  planar: boolean;
   /** C12: açıkken tüm bölgeler aynı derinlikte; kapalıyken `islandDepths`. */
   linkAll: boolean;
   /** Ada anahtarı (en küçük üçgen numarası) -> derinlik. */
@@ -145,6 +147,7 @@ export const useStore = create<AppState>(() => ({
     minWall: 0.8,
     inset: 0,
     ringProfile: [0, 0, 0, 0, 0, 0, 0, 0],
+    planar: false,
     linkAll: true,
     islandDepths: {},
     direction: null,

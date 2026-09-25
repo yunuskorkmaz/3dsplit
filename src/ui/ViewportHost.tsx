@@ -236,6 +236,12 @@ export function ViewportHost() {
     vpRef.current?.setErrorLoops(errorLoops);
   }, [errorLoops]);
 
+  // X27: patlatılmış görünüm
+  const explode = useStore((s) => s.explode);
+  useEffect(() => {
+    vpRef.current?.setExplode(explode);
+  }, [explode]);
+
   // B7: X-ray
   const xray = useStore((s) => s.xray);
   useEffect(() => {

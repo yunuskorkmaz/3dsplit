@@ -108,6 +108,10 @@ export interface AppState {
   camera: { mode: 'default' | 'blender'; invertZoom: boolean };
   /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
   mirror: { enabled: boolean; axis: 0 | 1 | 2; offset: number | null };
+  /** X27: patlatılmış görünüm çarpanı (0: kapalı). Sadece görüntü. */
+  explode: number;
+  /** X26: yardım penceresi açık mı. */
+  helpOpen: boolean;
   /** Socket yön gizmosu açık mı. */
   directionGizmo: boolean;
   preview: CutPreview | null;
@@ -161,6 +165,8 @@ export const useStore = create<AppState>(() => ({
   mirror: { enabled: false, axis: 0, offset: null },
   camera: loadCameraPrefs(),
   xray: false,
+  explode: 0,
+  helpOpen: false,
   directionGizmo: false,
   preview: null,
   suggestion: null,

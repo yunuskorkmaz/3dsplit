@@ -15,7 +15,17 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 → Socket (göz, kaş) veya Keys (kol, kafa) → Kes → yeni parçada sonraki bölge → Dışa aktar
 ```
 
-## Sprint 3 — kalan özellikler (sırayla)
+## Sprint 4 — kullanılabilirlik ve kesim kalitesi (sırayla)
+
+| # | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| X26 | Yardım paneli (`?`): araçlar, fare hareketleri, kısayollar, iş akışı | Kullanıcı kısayolları unutunca bakacak yer istedi | [x] |
+| X27 | Parça görünürlüğü: göz simgesi, yalnız bunu göster (Alt+tık), tümünü göster, `H` / `Shift+H`, patlatılmış görünüm | Kesilen parçaları ayrı ayrı incelemek | [x] |
+| X28 | Tolerans: Clearance "Tolerans" adıyla, hazır ayarlar (sıkı 0.1 / normal 0.2 / gevşek 0.3 mm), ne işe yaradığı açık | Baskıda parça–yuva arası boşluk ayarı görünür olmalı | [x] |
+| X29 | Arayüz düzeni: üst çubukta dosya/geri al/yardım, katlanır paneller, adım sırası | Daha derli toplu program görünümü | [x] |
+| X30 | Sınırı üçgen içinden kesme: yumuşatılmış sınır üçgen kenarlarına bağlı kalmadan mesh'e işlenir (sıfır seviye çizgisi boyunca üçgen bölme) | testa'da kesim kenarı hâlâ tırtıklı | [ ] |
+
+## Sprint 3 — kalan özellikler (bitti)
 
 | # | İş | Neden | Durum |
 | --- | --- | --- | --- |

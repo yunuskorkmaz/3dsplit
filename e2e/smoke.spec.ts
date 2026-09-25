@@ -20,6 +20,15 @@ test('yükle → Smart Fill → Socket kes → 3MF', async ({ page }) => {
   await expect(page.locator('ul.parts li')).toHaveCount(1, { timeout: 30_000 });
   await expect(page.locator('ul.parts li input.name')).toHaveValue('figure');
 
+  // yardım penceresi açılıp kapanır
+  await page.getByRole('button', { name: /Yardım/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Yardım' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.keyboard.press('?');
+  await expect(page.getByRole('dialog', { name: 'Yardım' })).toBeVisible();
+  await page.keyboard.press('Escape');
+
   // kafanın önündeki burun: test figüründe (0, -14, 62)
   const nose = await screenOf(page, [0, -16.9, 62]);
   await page.keyboard.press('1');
@@ -37,9 +46,15 @@ test('yükle → Smart Fill → Socket kes → 3MF', async ({ page }) => {
   await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('ul.parts li')).toHaveCount(3);
   await expect(page.locator('.badge.source')).toHaveCount(1);
+  // yalnız yeni parçayı göster, sonra hepsini geri getir
+  await page.locator('ul.parts li').nth(2).locator('button.eye').click({ modifiers: ['Alt'] });
+  await expect(page.locator('ul.parts li.hidden-part')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Tümünü göster' }).click();
+  await expect(page.locator('ul.parts li.hidden-part')).toHaveCount(1);
 
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: '3MF', exact: true }).click();
+  await page.getByText('Dışa aktar').click();
+  await page.getByRole('button', { name: /3MF — Bambu/ }).click();
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/\.3mf$/);
   await page.screenshot({ path: 'test-results/smoke.png' });

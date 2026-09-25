@@ -1,89 +1,34 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { CutMode, PinShape } from '../core/cut';
-import { ACCEPTED_EXTENSIONS } from '../io/importFile';
 import {
+  activeIslands,
   addSlot,
+  autoSuggestFeatures,
   deletePart,
-  export3mf,
-  export3mfGeneric,
-  exportPartStl,
-  exportStlZip,
-  importFiles,
-  redo,
   refineSelected,
   renamePart,
   runCut,
-  activeIslands,
-  autoSuggestFeatures,
-  saveProject,
-  setSocketDirection,
   selectPart,
+  setSocketDirection,
+  showAllParts,
+  soloPart,
   splitSelected,
-  voxelRepairSelected,
   togglePreview,
   toggleVisible,
-  undo,
   updateSlot,
+  voxelRepairSelected,
 } from '../state/actions';
+import { useKeymap } from '../state/keymap';
 import { type CutSettings, dismiss, set, setCameraPrefs, useStore } from '../state/store';
 import { NumberField } from './fields';
+import { Group, Panel } from './Panel';
 import { RingEditor } from './RingEditor';
 import { cameraDirection } from './ViewportHost';
-
-export function FilePanel() {
-  const input = useRef<HTMLInputElement>(null);
-  const canUndo = useStore((s) => s.undoStack.length > 0);
-  const canRedo = useStore((s) => s.redoStack.length > 0);
-  return (
-    <section>
-      <h3>Dosya</h3>
-      <div className="row">
-        <button type="button" onClick={() => input.current?.click()}>
-          İçe aktar
-        </button>
-        <input
-          ref={input}
-          type="file"
-          accept={ACCEPTED_EXTENSIONS}
-          multiple
-          hidden
-          onChange={(e) => {
-            if (e.target.files) importFiles(e.target.files);
-            e.target.value = '';
-          }}
-        />
-        <button type="button" onClick={export3mf} title="Bambu Studio / OrcaSlicer projesi: renk başına filament, parçalar plakada dizili">
-          3MF
-        </button>
-        <button type="button" onClick={export3mfGeneric} title="Her slicer'da açılan düz çok nesneli 3MF (filament ataması yok)">
-          3MF (genel)
-        </button>
-        <button type="button" onClick={exportStlZip}>
-          STL (ZIP)
-        </button>
-      </div>
-      <div className="row">
-        <button type="button" onClick={saveProject} title="Boyama ve parçalarla birlikte kaydet (.3dsplit); İçe aktar ile açılır">
-          Projeyi kaydet
-        </button>
-      </div>
-      <div className="row">
-        <button type="button" disabled={!canUndo} onClick={undo} title="Ctrl+Z">
-          Geri al
-        </button>
-        <button type="button" disabled={!canRedo} onClick={redo} title="Ctrl+Shift+Z">
-          Yinele
-        </button>
-      </div>
-    </section>
-  );
-}
 
 export function CameraPanel() {
   const camera = useStore((s) => s.camera);
   return (
-    <section>
-      <h3>Kamera</h3>
+    <Panel id="camera" title="Kamera" defaultOpen={false}>
       <div className="row">
         <button
           type="button"
@@ -106,39 +51,91 @@ export function CameraPanel() {
         <input type="checkbox" checked={camera.invertZoom} onChange={(e) => setCameraPrefs({ ...camera, invertZoom: e.target.checked })} />
         <span>Ters yakınlaştırma</span>
       </label>
-    </section>
+    </Panel>
   );
 }
 
 export function PartsPanel() {
   const parts = useStore((s) => s.parts);
   const selected = useStore((s) => s.selectedPartId);
-  const refineEdge = useStore((s) => s.refineEdge);
+  const explode = useStore((s) => s.explode);
+  const keys = useKeymap((s) => s.map);
+  // kaynak parçalar kesimden sonra bilerek gizli: sayılmaz
+  const hidden = parts.filter((p) => !p.visible && (p.badge !== 'source' || parts.every((q) => q.badge === 'source'))).length;
   return (
-    <section className="grow">
-      <h3>Parçalar</h3>
-      {parts.length === 0 && <p className="hint">STL, OBJ veya 3MF dosyasını sürükleyip bırakın.</p>}
+    <Panel
+      id="parts"
+      grow
+      title={`Parçalar${parts.length ? ` (${parts.length})` : ''}`}
+      extra={
+        parts.length > 1 && (
+          <button type="button" disabled={!hidden} onClick={showAllParts} title={`Kaynaklar hariç hepsini göster (${keys['part.showAll']})`}>
+            Tümünü göster
+          </button>
+        )
+      }
+    >
+      {parts.length === 0 && <p className="hint">STL, OBJ veya 3MF dosyasını sürükleyip bırakın ya da üstte "Aç".</p>}
       <ul className="parts">
         {parts.map((p) => (
-          <li key={p.id} className={p.id === selected ? 'selected' : ''} onClick={() => selectPart(p.id)}>
-            <input type="checkbox" checked={p.visible} onChange={() => toggleVisible(p.id)} onClick={(e) => e.stopPropagation()} />
-            <input className="name" value={p.name} onChange={(e) => renamePart(p.id, e.target.value)} />
-            {p.badge === 'source' && <span className="badge source">kaynak</span>}
-            {p.badge === 'new' && <span className="badge new">yeni</span>}
-            {!p.manifold && <span className="badge bad" title="Kapalı mesh değil">!</span>}
-            <span className="tris">{(p.mesh.labels.length / 1000).toFixed(1)}k</span>
-            <button type="button" title="STL indir" onClick={(e) => (e.stopPropagation(), exportPartStl(p.id))}>
-              ↓
+          <li key={p.id} className={`${p.id === selected ? 'selected' : ''}${p.visible ? '' : ' hidden-part'}`} onClick={() => selectPart(p.id)}>
+            <button
+              type="button"
+              className="eye"
+              title={`Gizle/göster (${keys['part.hide']}) · Alt+tık: yalnız bunu göster (${keys['part.solo']})`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (e.altKey) soloPart(p.id);
+                else toggleVisible(p.id);
+              }}
+            >
+              {p.visible ? '👁' : '–'}
             </button>
-            <button type="button" title="Sil" onClick={(e) => (e.stopPropagation(), deletePart(p.id))}>
+            <input className="name" value={p.name} onChange={(e) => renamePart(p.id, e.target.value)} />
+            {p.badge === 'source' && (
+              <span className="badge source" title="Kesimden önceki hali; gizli tutulur, dışa aktarılmaz">
+                kaynak
+              </span>
+            )}
+            {p.badge === 'new' && <span className="badge new">yeni</span>}
+            {!p.manifold && (
+              <span className="badge bad" title="Kapalı mesh değil: Voxel onar'ı deneyin">
+                !
+              </span>
+            )}
+            <span className="tris">{(p.mesh.labels.length / 1000).toFixed(1)}k</span>
+            <button type="button" className="icon-btn" title="Yalnız bunu göster / hepsini geri getir" onClick={(e) => (e.stopPropagation(), soloPart(p.id))}>
+              ◎
+            </button>
+            <button type="button" className="icon-btn" title="Sil" onClick={(e) => (e.stopPropagation(), deletePart(p.id))}>
               ×
             </button>
           </li>
         ))}
       </ul>
+      {explode > 0 && (
+        <NumberField
+          label="Ayrıklık"
+          value={explode}
+          min={0.05}
+          max={3}
+          step={0.05}
+          unit="×"
+          title="Parçaların merkezden uzaklaşma oranı (sadece görüntü)"
+          onChange={(v) => set({ explode: v })}
+        />
+      )}
+    </Panel>
+  );
+}
+
+export function MeshToolsPanel() {
+  const refineEdge = useStore((s) => s.refineEdge);
+  return (
+    <Panel id="meshTools" title="Mesh araçları" defaultOpen={false}>
       <div className="row">
         <button type="button" onClick={splitSelected} title="Kopuk parçaları ayrı nesnelere böl">
-          Split
+          Kopukları ayır
         </button>
         <button
           type="button"
@@ -153,7 +150,7 @@ export function PartsPanel() {
         İncelt
       </button>
       <p className="hint">Sınır tırtıklıysa önce inceltin; etiketler korunur.</p>
-    </section>
+    </Panel>
   );
 }
 
@@ -161,8 +158,7 @@ export function SlotPanel() {
   const slots = useStore((s) => s.slots);
   const active = useStore((s) => s.activeSlot);
   return (
-    <section>
-      <h3>Slotlar</h3>
+    <Panel id="slots" title="Slotlar (renkler)">
       <ul className="slots">
         {slots.map((s) => (
           <li key={s.id} className={s.id === active ? 'selected' : ''} onClick={() => set({ activeSlot: s.id })}>
@@ -180,7 +176,32 @@ export function SlotPanel() {
           Çıkıntıları öner
         </button>
       </div>
-    </section>
+    </Panel>
+  );
+}
+
+const TOLERANCE_PRESETS = [
+  { label: 'Sıkı', value: 0.1, hint: 'Sıkı geçme; yapıştırıcı gerekmeyebilir, iyi kalibre yazıcı ister' },
+  { label: 'Normal', value: 0.2, hint: 'FDM için güvenli varsayılan: elle takılır' },
+  { label: 'Gevşek', value: 0.3, hint: 'Yazıcı fazla akıtıyorsa veya yapıştırılacaksa' },
+];
+
+/** Sağ panelin altına sabit: önizleme ve kesim düğmeleri. */
+export function CutActions() {
+  const previewOn = useStore((s) => s.preview !== null);
+  const activeSlot = useStore((s) => s.activeSlot);
+  const hasParts = useStore((s) => s.parts.length > 0);
+  const keys = useKeymap((s) => s.map);
+  const disabled = !hasParts || activeSlot === 0;
+  return (
+    <div className="cut-actions">
+      <button type="button" disabled={disabled} className={previewOn ? 'active' : ''} onClick={togglePreview} title={`Kesimi uygulamadan göster (${keys.preview})`}>
+        Önizleme
+      </button>
+      <button type="button" disabled={disabled} className="primary" onClick={runCut}>
+        Kes
+      </button>
+    </div>
   );
 }
 
@@ -199,14 +220,12 @@ export function CutPanel() {
   const [ringOpen, setRingOpen] = useState(false);
   useStore((s) => s.paintVersion);
   const islands = cut.mode === 'socket' ? activeIslands() : [];
-  const previewOn = useStore((s) => s.preview !== null);
   const activeSlot = useStore((s) => s.activeSlot);
   const slotName = useStore((s) => s.slots.find((x) => x.id === s.activeSlot)?.name);
   const update = (patch: Partial<CutSettings>) => set((s) => ({ cut: { ...s.cut, ...patch }, preview: null }));
   return (
-    <section>
-      <h3>Kesim — {activeSlot === 0 ? 'slot seçin' : slotName}</h3>
-      <div className="row">
+    <Panel id="cut" grow title={`Kesim — ${activeSlot === 0 ? 'slot seçin' : slotName}`}>
+      <div className="row segmented">
         {MODES.map((m) => (
           <button key={m.id} type="button" className={cut.mode === m.id ? 'active' : ''} onClick={() => update({ mode: m.id })} title={m.hint}>
             {m.label}
@@ -226,7 +245,7 @@ export function CutPanel() {
         </div>
       )}
       {cut.mode === 'socket' && (
-        <>
+        <Group title="Tapa">
           <NumberField label="Derinlik" value={cut.depth} min={0.4} max={30} step={0.1} unit="mm" onChange={(v) => update({ depth: v })} />
           {islands.length > 1 && (
             <label className="field">
@@ -286,7 +305,7 @@ export function CutPanel() {
             unit="%"
             onChange={(v) => update({ squeeze: v / 100 })}
           />
-        </>
+        </Group>
       )}
       {cut.mode !== 'socket' && (
         <label className="field" title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)">
@@ -307,10 +326,32 @@ export function CutPanel() {
         />
       )}
       {cut.mode !== 'fast' && (
-        <NumberField label="Clearance" value={cut.clearance} min={0} max={1} step={0.05} unit="mm" onChange={(v) => update({ clearance: v })} />
+        <Group title="Tolerans">
+          <NumberField
+            label="Boşluk"
+            value={cut.clearance}
+            min={0}
+            max={1}
+            step={0.01}
+            unit="mm"
+            title="Tapa/pim ile yuva arasında her yüzeyde bırakılan boşluk. Yuva bu kadar büyütülür, parça boyutu değişmez"
+            onChange={(v) => update({ clearance: Math.round(v * 100) / 100 })}
+          />
+          <div className="row segmented">
+            {TOLERANCE_PRESETS.map((t) => (
+              <button key={t.label} type="button" className={Math.abs(cut.clearance - t.value) < 1e-6 ? 'active' : ''} onClick={() => update({ clearance: t.value })} title={t.hint}>
+                {t.label} {t.value}
+              </button>
+            ))}
+          </div>
+          <p className="hint">
+            {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arasındaki boşluk. FDM'de 0.2 elle takılır; sıkı geçme için 0.1, yazıcı fazla akıtıyorsa
+            0.3. Reçinede 0.05–0.1.
+          </p>
+        </Group>
       )}
       {cut.mode === 'keys' && (
-        <>
+        <Group title="Pim">
           <label className="field">
             <span>Pim şekli</span>
             <select value={cut.pinShape} onChange={(e) => update({ pinShape: e.target.value as PinShape })}>
@@ -335,17 +376,9 @@ export function CutPanel() {
             </button>
           </div>
           <p className="hint">Bölgeye tıkla: pim ekle. Pime tıklayıp sürükle: taşı. Shift+tık: sil. Pim yoksa kesim yüzeyinin ortasına bir tane konur.</p>
-        </>
+        </Group>
       )}
-      <div className="row">
-        <button type="button" className={previewOn ? 'active' : ''} onClick={togglePreview} title="Space">
-          Önizleme
-        </button>
-        <button type="button" className="primary" onClick={runCut}>
-          Kes
-        </button>
-      </div>
-    </section>
+    </Panel>
   );
 }
 

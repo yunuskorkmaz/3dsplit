@@ -62,6 +62,14 @@ export class Viewport {
   private onDirectionChange: ((dir: Vec3) => void) | null = null;
   private mirrorPlane: THREE.Mesh | null = null;
   private errorLines = new THREE.Group();
+  /**
+   * Seçili parçaya bağlı yardımcılar (önizleme, pimler, yön oku, ayna, hata
+   * halkaları). Patlatılmış görünümde parçayla birlikte kayar.
+   */
+  private anchor = new THREE.Group();
+  /** X27: patlatılmış görünüm çarpanı (0: kapalı). */
+  private explode = 0;
+  private selectedId: string | null = null;
 
   constructor(
     private container: HTMLElement,
@@ -77,8 +85,9 @@ export class Viewport {
     key.position.set(1, 2, 3);
     this.camera.add(key);
     this.scene.add(this.camera);
-    this.scene.add(this.overlay);
-    this.scene.add(this.errorLines);
+    this.scene.add(this.anchor);
+    this.anchor.add(this.overlay);
+    this.anchor.add(this.errorLines);
 
     this.brushCursor = new THREE.Mesh(
       new THREE.RingGeometry(0.95, 1, 48),
@@ -135,7 +144,7 @@ export class Viewport {
     this.dirArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 10, 0xff9900);
     this.dirHandle.add(this.dirArrow);
     this.dirHandle.visible = false;
-    this.scene.add(this.dirHandle);
+    this.anchor.add(this.dirHandle);
     this.gizmo = new TransformControls(this.camera, el);
     this.gizmo.setMode('rotate');
     this.gizmo.setSpace('local');
@@ -190,6 +199,8 @@ export class Viewport {
       obj.mesh.material.emissive.set(v.selected ? '#202020' : '#000000');
       this.recolor(v.id, colors);
     }
+    this.selectedId = views.find((v) => v.selected)?.id ?? null;
+    this.applyExplode();
     if (!this.fitted && views.length) {
       this.fitView();
       this.fitted = true;
@@ -270,6 +281,41 @@ export class Viewport {
     posAttr.needsUpdate = true;
     nrmAttr.needsUpdate = true;
     this.recolor(partId, colors, tris);
+  }
+
+  /**
+   * X27: patlatılmış görünüm. Her görünür parça, merkezinin tüm görünür
+   * parçaların merkezinden uzaklığı `factor` ile çarpılarak dışarı kaydırılır.
+   * Sadece görüntü: mesh verisi değişmez, araçlar yerel koordinatla çalışır.
+   */
+  setExplode(factor: number): void {
+    this.explode = factor;
+    this.applyExplode();
+  }
+
+  private applyExplode(): void {
+    const centers = new Map<string, THREE.Vector3>();
+    const all = new THREE.Box3();
+    for (const [id, p] of this.parts) {
+      if (!p.mesh.geometry.boundingBox) p.mesh.geometry.computeBoundingBox();
+      const b = p.mesh.geometry.boundingBox as THREE.Box3;
+      centers.set(id, b.getCenter(new THREE.Vector3()));
+      if (p.mesh.visible) all.union(b);
+    }
+    const mid = all.isEmpty() ? new THREE.Vector3() : all.getCenter(new THREE.Vector3());
+    for (const [id, p] of this.parts) {
+      if (this.explode > 0) p.mesh.position.copy(centers.get(id) as THREE.Vector3).sub(mid).multiplyScalar(this.explode);
+      else p.mesh.position.set(0, 0, 0);
+      p.mesh.updateMatrixWorld();
+    }
+    const sel = this.selectedId ? this.parts.get(this.selectedId) : undefined;
+    this.anchor.position.copy(sel ? sel.mesh.position : new THREE.Vector3());
+    this.anchor.updateMatrixWorld();
+    this.requestRender();
+  }
+
+  private offsetOf(partId: string): THREE.Vector3 {
+    return this.parts.get(partId)?.mesh.position ?? new THREE.Vector3();
   }
 
   /** Görünür parçaları ekrana sığdırır; kamera sınırlarını modelin boyutuna göre ayarlar. */
@@ -433,13 +479,19 @@ export class Viewport {
   /** Ayna düzlemi (B8): `axis` eksenine dik, `offset` konumunda; null gizler. */
   setMirrorPlane(plane: { axis: 0 | 1 | 2; offset: number } | null): void {
     if (this.mirrorPlane) {
-      this.scene.remove(this.mirrorPlane);
+      this.anchor.remove(this.mirrorPlane);
       this.mirrorPlane.geometry.dispose();
       this.mirrorPlane = null;
     }
     if (plane) {
+      // parçanın kendi (yerel) sınır kutusu: düzlem, patlatılmış görünümde parçayla kayar
       const box = new THREE.Box3();
-      for (const p of this.parts.values()) if (p.mesh.visible) box.expandByObject(p.mesh);
+      const sel = this.selectedId ? this.parts.get(this.selectedId) : undefined;
+      for (const p of sel ? [sel] : this.parts.values()) {
+        if (!p.mesh.visible) continue;
+        if (!p.mesh.geometry.boundingBox) p.mesh.geometry.computeBoundingBox();
+        box.union(p.mesh.geometry.boundingBox as THREE.Box3);
+      }
       if (box.isEmpty()) return;
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
@@ -458,7 +510,7 @@ export class Viewport {
       m.renderOrder = 3;
       m.raycast = () => {}; // seçimi engellemesin
       this.mirrorPlane = m;
-      this.scene.add(m);
+      this.anchor.add(m);
     }
     this.requestRender();
   }
@@ -506,9 +558,10 @@ export class Viewport {
       return;
     }
     this.brushCursor.visible = true;
-    this.brushCursor.position.set(...hit.point);
+    const world = new THREE.Vector3(...hit.point).add(this.offsetOf(hit.partId));
+    this.brushCursor.position.copy(world);
     this.brushCursor.scale.setScalar(radius);
-    this.brushCursor.lookAt(new THREE.Vector3(...hit.point).add(new THREE.Vector3(...hit.normal)));
+    this.brushCursor.lookAt(world.clone().add(new THREE.Vector3(...hit.normal)));
     this.requestRender();
   }
 
@@ -524,7 +577,8 @@ export class Viewport {
       partId: hit.object.userData.partId,
       // geometri indekssiz: köşe 3t+k, BVH'nin yeniden sıraladığı indeksten bağımsız
       tri: Math.floor(hit.face.a / 3),
-      point: hit.point.toArray() as Vec3,
+      // patlatılmış görünümde parça kaydırılmış olabilir: araçlar mesh'in kendi koordinatını ister
+      point: hit.point.clone().sub(hit.object.position).toArray() as Vec3,
       normal: hit.face.normal.toArray() as Vec3,
     };
   }

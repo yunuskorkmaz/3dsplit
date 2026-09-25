@@ -3,15 +3,16 @@ import { assignKey, COMMANDS, type Command, isReservedKey, keyName, resetKeymap,
 import { notify } from '../state/store';
 
 /** E2: kısayolları değiştirme. "Değiştir"e basıp yeni tuşa basılır; çakışan kısayolla yer değiştirir. */
-export function KeymapPanel() {
+export function KeymapEditor() {
   const map = useKeymap((s) => s.map);
-  const [open, setOpen] = useState(false);
   const [capturing, setCapturing] = useState<Command | null>(null);
 
   const capture = (cmd: Command) => {
     setCapturing(cmd);
     shortcutCapture.active = true;
     const onKey = (e: KeyboardEvent) => {
+      // tek başına Shift bekleniyor: harfi bekle
+      if (e.key === 'Shift') return;
       e.preventDefault();
       e.stopPropagation();
       window.removeEventListener('keydown', onKey, true);
@@ -30,29 +31,21 @@ export function KeymapPanel() {
   };
 
   return (
-    <section>
-      <h3 className="collapsible" onClick={() => setOpen(!open)}>
-        Kısayollar {open ? '▾' : '▸'}
-      </h3>
-      {open && (
-        <>
-          <ul className="keymap">
-            {COMMANDS.map((c) => (
-              <li key={c.id}>
-                <span>{c.label}</span>
-                <kbd>{capturing === c.id ? '…' : map[c.id]}</kbd>
-                <button type="button" onClick={() => capture(c.id)} disabled={capturing !== null}>
-                  {capturing === c.id ? 'Tuşa bas' : 'Değiştir'}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="hint">Sabit: Ctrl/Cmd+Z geri al, +Shift yinele, 0–9 slot, Alt+tekerlek fırça boyu.</p>
-          <button type="button" onClick={resetKeymap}>
-            Varsayılana dön
-          </button>
-        </>
-      )}
-    </section>
+    <>
+      <ul className="keymap">
+        {COMMANDS.map((c) => (
+          <li key={c.id}>
+            <span>{c.label}</span>
+            <kbd>{capturing === c.id ? '…' : map[c.id]}</kbd>
+            <button type="button" onClick={() => capture(c.id)} disabled={capturing !== null}>
+              {capturing === c.id ? 'Tuşa bas' : 'Değiştir'}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button type="button" onClick={resetKeymap}>
+        Varsayılana dön
+      </button>
+    </>
   );
 }

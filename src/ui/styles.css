@@ -9,11 +9,11 @@ button.active { background: #2f6fd6; border-color: #2f6fd6; }
 button.primary { background: #2e9e5b; border-color: #2e9e5b; }
 input[type='number'], input.name, select { background: #2b2d31; border: 1px solid #44464d; border-radius: 3px; padding: 2px 4px; }
 
-.app { display: grid; grid-template-columns: 260px 1fr 280px; height: 100%; }
-aside { overflow-y: auto; background: #25272b; display: flex; flex-direction: column; }
+.app { display: grid; grid-template-columns: 260px 1fr 290px; grid-template-rows: auto 1fr; height: 100%; }
+aside { overflow-y: auto; background: #25272b; display: flex; flex-direction: column; min-height: 0; }
 aside.left { border-right: 1px solid #333; }
 aside.right { border-left: 1px solid #333; }
-section { padding: 10px; border-bottom: 1px solid #333; }
+section { padding: 8px 10px; border-bottom: 1px solid #333; }
 section.grow { flex: 1; }
 h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: #999; letter-spacing: 0.05em; }
 .row { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
@@ -89,3 +89,64 @@ ul.keymap button { padding: 1px 6px; font-size: 11px; }
 .ring-handle { fill: #ff9900; cursor: grab; }
 .ring-handle.first { fill: #ff2020; }
 .ring-editor text { fill: #aaa; font-size: 9px; text-anchor: middle; }
+
+/* X29: üst çubuk */
+.topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; padding: 5px 10px; background: #18191c; border-bottom: 1px solid #333; }
+.topbar .brand { font-weight: 700; letter-spacing: 0.03em; margin-right: 10px; color: #8fb8ff; }
+.topbar .sep { width: 1px; height: 20px; background: #3a3c42; margin: 0 6px; }
+.topbar .spacer { flex: 1; }
+.topbar > button { background: transparent; border-color: transparent; }
+.topbar > button:hover:not(:disabled) { background: #2b2d31; border-color: #3a3c42; }
+.topbar > button.active { background: #2f6fd6; border-color: #2f6fd6; }
+.topbar .help-btn { border-color: #3a3c42; }
+.menu { position: relative; }
+.menu summary { list-style: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; border: 1px solid transparent; user-select: none; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu summary:hover, .menu[open] summary { background: #2b2d31; border-color: #3a3c42; }
+.menu summary.disabled { opacity: 0.4; pointer-events: none; }
+.menu-list { position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; min-width: 270px; background: #2b2d31; border: 1px solid #44464d; border-radius: 6px; padding: 4px; box-shadow: 0 8px 24px #0008; display: flex; flex-direction: column; }
+.menu-list button { background: transparent; border: none; text-align: left; padding: 6px 8px; display: flex; flex-direction: column; }
+.menu-list button:hover { background: #3a3c42; }
+.menu-list small { color: #888; font-size: 11px; }
+
+/* katlanır paneller */
+.panel-head { display: flex; align-items: center; gap: 6px; }
+.panel-head h3 { flex: 1; margin: 0; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 4px; }
+.panel-head .caret { width: 10px; color: #777; }
+.panel-extra button { padding: 1px 6px; font-size: 11px; }
+.panel-body { margin-top: 6px; }
+.group { border-top: 1px solid #33353a; margin-top: 8px; padding-top: 6px; }
+.group-title { font-size: 11px; color: #8fb8ff; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+.row.segmented { gap: 0; }
+.row.segmented button { border-radius: 0; margin-left: -1px; flex: 1; }
+.row.segmented button:first-child { border-radius: 4px 0 0 4px; margin-left: 0; }
+.row.segmented button:last-child { border-radius: 0 4px 4px 0; }
+.cut-actions { position: sticky; bottom: 0; margin-top: auto; display: flex; gap: 6px; padding: 10px; background: #1f2024; border-top: 1px solid #333; }
+.cut-actions button { flex: 1; padding: 8px; font-weight: 600; }
+
+/* X27: parça listesi */
+ul.parts li .eye { width: 24px; padding: 0; background: transparent; border-color: transparent; font-size: 12px; }
+ul.parts li .eye:hover { background: #3a3c42; }
+ul.parts li.hidden-part .name { color: #666; }
+ul.parts li .icon-btn { padding: 0 5px; background: transparent; border-color: transparent; color: #999; }
+ul.parts li .icon-btn:hover { background: #3a3c42; color: #fff; }
+ul.parts li input.name { background: transparent; border-color: transparent; }
+ul.parts li input.name:focus { background: #2b2d31; border-color: #44464d; }
+
+/* X26: yardım penceresi */
+.modal-backdrop { position: fixed; inset: 0; background: #0009; display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal { width: min(720px, 94vw); max-height: 84vh; display: flex; flex-direction: column; background: #25272b; border: 1px solid #44464d; border-radius: 8px; box-shadow: 0 16px 48px #000a; }
+.modal-head { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #333; }
+.modal-head .tabs { display: flex; gap: 4px; flex: 1; }
+.modal-head .tabs button { background: transparent; border-color: transparent; }
+.modal-head .tabs button.active { background: #2f6fd6; border-color: #2f6fd6; }
+.modal-head .close { background: transparent; border: none; font-size: 18px; padding: 0 8px; }
+.modal-body { overflow-y: auto; padding: 12px 16px; }
+.modal-body kbd, .help-table kbd { background: #2b2d31; border: 1px solid #44464d; border-radius: 3px; padding: 0 5px; font-size: 11px; }
+ol.steps { margin: 0; padding-left: 20px; }
+ol.steps li { margin: 0 0 10px; line-height: 1.5; }
+.help-table { width: 100%; border-collapse: collapse; }
+.help-table td { padding: 6px 8px; border-bottom: 1px solid #33353a; vertical-align: top; }
+.help-table .icon-cell { width: 28px; font-size: 18px; text-align: center; }
+.help-table .combo { width: 42%; color: #bbb; white-space: nowrap; }
+.help-table .hint { margin: 2px 0 0; }

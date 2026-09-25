@@ -11,7 +11,12 @@ export type Command =
   | 'preview'
   | 'fit'
   | 'brush.smaller'
-  | 'brush.larger';
+  | 'brush.larger'
+  | 'part.hide'
+  | 'part.solo'
+  | 'part.showAll'
+  | 'view.explode'
+  | 'help';
 
 export const COMMANDS: { id: Command; label: string }[] = [
   { id: 'tool.smart', label: 'Smart Fill' },
@@ -24,6 +29,11 @@ export const COMMANDS: { id: Command; label: string }[] = [
   { id: 'fit', label: 'Görünümü sığdır' },
   { id: 'brush.smaller', label: 'Fırça küçült' },
   { id: 'brush.larger', label: 'Fırça büyüt' },
+  { id: 'part.hide', label: 'Seçili parçayı gizle' },
+  { id: 'part.solo', label: 'Yalnız seçili parça (tekrar: hepsi)' },
+  { id: 'part.showAll', label: 'Tüm parçaları göster' },
+  { id: 'view.explode', label: 'Ayrık görünüm aç/kapa' },
+  { id: 'help', label: 'Yardım' },
 ];
 
 export const DEFAULT_KEYMAP: Record<Command, string> = {
@@ -37,12 +47,20 @@ export const DEFAULT_KEYMAP: Record<Command, string> = {
   fit: 'Home',
   'brush.smaller': '[',
   'brush.larger': ']',
+  'part.hide': 'H',
+  'part.solo': 'Shift+H',
+  'part.showAll': 'U',
+  'view.explode': 'X',
+  help: '?',
 };
 
-/** Klavye olayının kısayol adı: tek karakterler büyük harf, boşluk "Space". */
-export function keyName(e: { key: string }): string {
+/** Klavye olayının kısayol adı: tek karakterler büyük harf, boşluk "Space", Shift'li harf "Shift+H". */
+export function keyName(e: { key: string; shiftKey?: boolean }): string {
   if (e.key === ' ') return 'Space';
-  return e.key.length === 1 ? e.key.toUpperCase() : e.key;
+  if (e.key.length !== 1) return e.key;
+  const k = e.key.toLocaleUpperCase('en');
+  // harflerde Shift ayrı kısayoldur; ?, [ gibi işaretlerde Shift zaten karakterin parçası
+  return e.shiftKey && k !== e.key.toLocaleLowerCase('en') ? `Shift+${k}` : k;
 }
 
 /** Atanamayan tuşlar: sabit kısayollar ve değiştirici tuşlar. */

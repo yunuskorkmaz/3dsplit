@@ -254,6 +254,16 @@ export function CutPanel() {
             </button>
           </div>
           <NumberField
+            label="Ayak payı"
+            value={cut.inset}
+            min={0}
+            max={10}
+            step={0.1}
+            unit="mm"
+            title="0: tapa tam yüzeyle girer. Artırınca gövdeye giren ayak kenardan içeri çekilir; yuvanın çevresinde gövdede taşıyıcı basamak kalır"
+            onChange={(v) => update({ inset: v })}
+          />
+          <NumberField
             label="Squeeze"
             value={Math.round(cut.squeeze * 100)}
             min={0}

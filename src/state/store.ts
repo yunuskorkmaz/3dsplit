@@ -31,6 +31,8 @@ export interface CutSettings {
   squeeze: number;
   /** Önizlemede kontrol edilen en az duvar kalınlığı, mm. */
   minWall: number;
+  /** C7: tapa ayağının kenardan içeri çekilmesi, mm (0: tam yüzey). */
+  inset: number;
   /** C12: açıkken tüm bölgeler aynı derinlikte; kapalıyken `islandDepths`. */
   linkAll: boolean;
   /** Ada anahtarı (en küçük üçgen numarası) -> derinlik. */
@@ -139,6 +141,7 @@ export const useStore = create<AppState>(() => ({
     clearance: 0.2,
     squeeze: 0,
     minWall: 0.8,
+    inset: 0,
     linkAll: true,
     islandDepths: {},
     direction: null,

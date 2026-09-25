@@ -30,7 +30,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X25 | Hata: yumuşatırken model yine kayboldu. Çekirdek 4500 rastgele darbede sağlam çıktı; kamera sınırsız yakınlaşıp modelin içine / uzak düzlemin ötesine gidebiliyordu. Kamera mesafe sınırı + dinamik kesme düzlemleri, Sığdır (Home, boşluğa çift tık), yumuşatmada geçersiz konum güvenlik ağı | Kullanıcı bildirdi | [x] |
 | A2 | Voxel yedek onarım (kapanmayan mesh için) | A2'nin eksiği | [x] |
 | E2 | Kısayolları özelleştirme | Faz 3 | [x] |
-| C7 | Socket: tam yüzey / sadece iç kısım seçeneği | Faz 3 | [ ] |
+| C7 | Socket: tam yüzey / sadece iç kısım seçeneği | Faz 3 | [x] |
 | C6 | Socket: Ring Selection | Faz 3 | [ ] |
 | B9 | Auto-paint: açılışta özellik önerisi | Faz 3 | [ ] |
 
@@ -103,7 +103,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C4 | Socket: gizmo yönü | 2 | [x] | Ok + döndürme gizmosu, Kameradan, Oto. Elle yön çıkıntı yönteminde kapak izdüşümü olarak da kullanılır |
 | C5 | Socket: Squeeze | 2 | [x] | Taban yüzde olarak daralır; yedek (prizma) yolunda uygulanmaz |
 | C6 | Socket: Ring Selection | 3 | [ ] | |
-| C7 | Socket: full surface | 3 | [ ] | |
+| C7 | Socket: full surface | 3 | [x] | "Ayak payı": 0 tam yüzey; artınca gövdeye giren ayak kenardan içeri çekilir, yuva çevresinde basamak kalır |
 | C8 | Keys: pim yerleştirme | 1 | [x] | Tıkla ekle/seç, sürükle taşı, Shift+tık sil; seçili pime yarıçap/boy ve döndürme gizmosuyla eksen (X16) |
 | C9 | Keys: clearance | 1 | [x] | |
 | C10 | Keys: çoklu pim | 2 | [x] | Her tıklama bir pim |
@@ -172,3 +172,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | B7: X-ray boyama | `6da26d6` |
 | 2026-09-25 | X9, X25: boyalı 3MF, kamera sınırları | `7e6ceb0` |
 | 2026-09-25 | A2: voxel yedek onarım | `bdf60b0` |
+| 2026-09-25 | E2: özelleştirilebilir kısayollar | `fae5279` |

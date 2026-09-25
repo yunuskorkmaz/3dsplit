@@ -692,6 +692,7 @@ function cutOptions(): CutOptions {
     depthByIsland: cut.mode === 'socket' && !cut.linkAll ? cut.islandDepths : undefined,
     clearance: cut.clearance,
     squeeze: cut.mode === 'socket' ? cut.squeeze : 0,
+    inset: cut.mode === 'socket' ? cut.inset : 0,
     minWall: cut.minWall,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
     pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart },

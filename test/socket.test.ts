@@ -76,6 +76,16 @@ describe('çıkıntı socket', () => {
     expect(vols[1]).toBeCloseTo(48 + 80, 0);
   });
 
+  it('C7 inset: çıkıntı aynı, gövdeye giren ayak daralır, gövdede basamak kalır', () => {
+    const full = cutRegion(boss, opts);
+    const inner = cutRegion(boss, { ...opts, inset: 1 });
+    // 6x6 ayak -> yaklaşık 4x4: tapa hacmi 144 + 108 yerine ~144 + 48
+    expect(signedVolume(inner.parts[0])).toBeLessThan(signedVolume(full.parts[0]) - 40);
+    expect(signedVolume(inner.parts[0])).toBeGreaterThan(144 + 30);
+    // yuva daraldı: gövde daha dolu
+    expect(signedVolume(inner.body)).toBeGreaterThan(signedVolume(full.body) + 40);
+  });
+
   it('önizleme tapa prizmasını döndürür', () => {
     const p = previewCut(boss, opts);
     expect(p.volumes.length).toBe(1);

@@ -40,6 +40,12 @@ export interface CutOptions {
   clearance: number;
   /** Socket: tapa tabanının içe daralma oranı (0 düz, 0.5 taban yarı genişlikte). */
   squeeze?: number;
+  /**
+   * C7: tapa ayağının kenardan içeri çekilmesi, mm (0: tam yüzey). Çıkıntıda
+   * görünen kısım aynı kalır, gövdeye giren ayak daralır; yuvanın çevresinde
+   * gövdede taşıyıcı basamak kalır. Düz yamada görünen tapa da daralır.
+   */
+  inset?: number;
   /** Önizlemede yuva çevresindeki en az duvar kalınlığı, mm (0: kontrol yok). */
   minWall?: number;
   /** Socket uzama yönü (dışa doğru). Verilmezse bölge normallerinin ortalaması. */
@@ -427,6 +433,7 @@ function extrudePatch(
   depth: number,
   eps: number,
   squeeze = 0,
+  inset = 0,
 ): MeshData {
   const vmap = new Map<number, number>();
   for (let i = 0; i < tris.length; i++) if (!vmap.has(tris[i])) vmap.set(tris[i], vmap.size);
@@ -436,14 +443,23 @@ function extrudePatch(
   for (const v of vmap.keys()) center = add(center, vertexAt(positions, v));
   center = scale(center, 1 / Math.max(1, n));
   const k = 1 - Math.min(0.9, Math.max(0, squeeze));
+  // inset: her iki halka da eksene doğru mm cinsinden çekilir (ortalama yanal yarıçapa göre oran)
+  let meanR = 0;
+  for (const v of vmap.keys()) {
+    const rel = sub(vertexAt(positions, v), center);
+    meanR += Math.hypot(...sub(rel, scale(dir, dot(rel, dir))));
+  }
+  meanR /= Math.max(1, n);
+  const ki = meanR > 0 ? Math.max(0.1, 1 - Math.max(0, inset) / meanR) : 1;
   // üst köşeler 0..n-1, alt köşeler n..2n-1
   const out = new Float32Array(n * 6);
   for (const [v, i] of vmap) {
     const p = vertexAt(positions, v);
-    out.set(add(p, scale(dir, eps)), 3 * i);
     const rel = sub(p, center);
     const lateral = sub(rel, scale(dir, dot(rel, dir)));
-    const bottom = sub(sub(p, scale(dir, depth)), scale(lateral, 1 - k));
+    const top = sub(add(p, scale(dir, eps)), scale(lateral, 1 - ki));
+    out.set(top, 3 * i);
+    const bottom = sub(sub(p, scale(dir, depth)), scale(lateral, 1 - k * ki));
     out.set(bottom, 3 * (i + n));
   }
   const idx: number[] = [];
@@ -466,10 +482,10 @@ function extrudePatch(
 }
 
 /** Socket hacmi: ada yüzeyi `dir` boyunca süpürülür. */
-function extrudeVolume(mesh: MeshData, island: Island, dir: Vec3, depth: number, eps: number, squeeze = 0): MeshData {
+function extrudeVolume(mesh: MeshData, island: Island, dir: Vec3, depth: number, eps: number, squeeze = 0, inset = 0): MeshData {
   const tris: number[] = [];
   for (const t of island.tris) tris.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
-  return extrudePatch(mesh.positions, tris, island.loops, dir, depth, eps, squeeze);
+  return extrudePatch(mesh.positions, tris, island.loops, dir, depth, eps, squeeze, inset);
 }
 
 /**
@@ -484,12 +500,13 @@ function capPlugVolumes(
   eps: number,
   projection?: Projection,
   squeeze = 0,
+  inset = 0,
 ): { mesh: MeshData; dir: Vec3 }[] {
   return island.loops.map((loop) => {
     const dir = projection?.(island) ?? loopPlane(positions, loop).normal;
     // triangulateLoop gövdeye bakan kapak verir; süpürme için dışa (dir) bakanı gerekir
     const cap = flipAll(triangulateLoop(positions, loop, dir));
-    return { mesh: extrudePatch(positions, cap, [loop], dir, depth, eps, squeeze), dir };
+    return { mesh: extrudePatch(positions, cap, [loop], dir, depth, eps, squeeze, inset), dir };
   });
 }
 
@@ -702,7 +719,7 @@ function isHeightField(mesh: MeshData, island: Island, dir: Vec3): boolean {
 function socketVolume(mesh: MeshData, island: Island, opts: CutOptions, eps: number, scope: Scope, warnings: string[]): Manifold {
   const dir = socketDirection(island, opts);
   if (isHeightField(mesh, island, dir)) {
-    return scope.keep(toManifold(extrudeVolume(mesh, island, dir, depthOf(island, opts), eps, opts.squeeze), CUT_FACE_ID));
+    return scope.keep(toManifold(extrudeVolume(mesh, island, dir, depthOf(island, opts), eps, opts.squeeze, opts.inset), CUT_FACE_ID));
   }
   warnings.push('Bölge seçilen yönden tam görünmüyor; yedek yöntem (süpürme + prizma) kullanıldı.');
   return prismUnion(mesh, island, dir, depthOf(island, opts), eps, scope);
@@ -747,7 +764,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
       // çıkıntı yöntemi: kesim kapakları ve gövdeye giren tapa prizmaları
       const eps = Math.max(1, 4 * opts.clearance);
       for (const island of islands) {
-        for (const { mesh: vol, dir } of capPlugVolumes(mesh.positions, island, depthOf(island, opts), eps, capProjections(opts)[0], opts.squeeze)) {
+        for (const { mesh: vol, dir } of capPlugVolumes(mesh.positions, island, depthOf(island, opts), eps, capProjections(opts)[0], opts.squeeze, opts.inset)) {
           volumes.push(vol);
           cavities.push({
             container: modelM,
@@ -764,7 +781,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
       for (const island of islands) {
         const dir = socketDirection(island, opts);
         const vol = isHeightField(mesh, island, dir)
-          ? extrudeVolume(mesh, island, dir, depthOf(island, opts), eps, opts.squeeze)
+          ? extrudeVolume(mesh, island, dir, depthOf(island, opts), eps, opts.squeeze, opts.inset)
           : manifoldMesh(socketVolume(mesh, island, opts, eps, scope, warnings));
         volumes.push(vol);
         cavities.push({
@@ -1000,7 +1017,7 @@ function capSocketCutWith(mesh: LabeledMesh, islands: Island[], opts: CutOptions
   const holes: Manifold[] = [];
   islands.forEach((island, i) => {
     let part = scope.keep(toManifold(split.parts[i], split.parts[i].origin));
-    for (const { mesh: volMesh, dir } of capPlugVolumes(mesh.positions, island, depthOf(island, opts), eps, projection, opts.squeeze)) {
+    for (const { mesh: volMesh, dir } of capPlugVolumes(mesh.positions, island, depthOf(island, opts), eps, projection, opts.squeeze, opts.inset)) {
       const vol = scope.keep(toManifold(volMesh, CUT_FACE_ID));
       part = scope.keep(part.add(scope.keep(vol.intersect(model))));
       holes.push(growVolume(vol, dir, opts.clearance, scope));

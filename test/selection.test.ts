@@ -138,6 +138,25 @@ describe('sınır yumuşatma', () => {
 });
 
 describe('yumuşatma fırçası', () => {
+  it('X37: küçük fırçada köşe yarıçapın dörtte birinden fazla kaymaz', async () => {
+    const { smoothBoundaryAt } = await import('../src/core/smooth');
+    // kaba ızgara (2 mm) + küçük fırça: eskiden köşe kenarın %45'i kadar, fırçanın dışına kaçabiliyordu
+    const m = labelWhere(subdividedCube(20, 10), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));
+    const mesh = { positions: new Float32Array(m.positions), indices: m.indices, labels: Uint16Array.from(m.labels) };
+    for (const r of [0.2, 0.5, 1]) {
+      for (let a = 0; a < 16; a++) {
+        const th = (a / 16) * 2 * Math.PI;
+        const rad = 5 + 0.8 * Math.sin(8 * th);
+        const before = new Float32Array(mesh.positions);
+        smoothBoundaryAt(mesh, 1, [rad * Math.cos(th), rad * Math.sin(th), 10], r, 1, (t) => mesh.labels[t] === 0, () => 0);
+        for (let k = 0; k < before.length; k++) {
+          expect(Number.isFinite(mesh.positions[k])).toBe(true);
+          expect(Math.abs(mesh.positions[k] - before[k])).toBeLessThanOrEqual(0.25 * r + 1e-5);
+        }
+      }
+    }
+  });
+
   it('sadece fırça altındaki dalgaları düzleştirir, alanı korur', async () => {
     const { smoothBoundaryAt } = await import('../src/core/smooth');
     const m = labelWhere(subdividedCube(20, 40), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));

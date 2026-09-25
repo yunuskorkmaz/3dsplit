@@ -27,6 +27,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X34 | Yumuşatma fırçasında darbe bitince sınır üçgenlerin içinden geçsin (X30'un yerel hali) | Fırçada da düzgün kesim kenarı | [ ] |
 | X35 | Tolerans deneme parçası: seçili pim şekliyle 3 farklı boşlukta delik + pimler | Toleransı baskıdan önce denemek | [ ] |
 | X36 | Çizgi aracı: yüzeye nokta tıklayarak kapalı sınır çiz; yol yüzeyde en kısa yol, sonra yumuşatılıp üçgenlerin içinden işlenir | Doğal vadisi olmayan bölgeler; flip-geodesics fikri | [ ] |
+| X37 | Hata: küçük yarıçapla yumuşatırken model kayboluyor. Stres testinde (testa, 3000 darbe, r 0.15–1.35) köşe fırça yarıçapının 2–3 katı kaçıyordu; kayma 0.25·r ile sınırlandı, üst üste köşe (0/0) atlanıyor. Darbe sonunda geçersiz/kaçmış köşe varsa darbe geri alınır ve bildirilir; darbe içi geri almada ekran konumları da geri yazılıyor | Kullanıcı bildirdi | [x] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 
@@ -194,5 +195,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | B9: çıkıntıları otomatik öner | `bf0faa2` |
 | 2026-09-25 | C6: tapa kesit şekli | `b7ae3cf` |
 | 2026-09-25 | X31: pim toleransı yarıçap ve boy olarak ayrı | `05544fc` |
+| 2026-09-25 | X32: pim ucunda pah | `b7ccce9` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

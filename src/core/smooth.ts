@@ -431,6 +431,8 @@ export function smoothBoundaryAt(
       const dy = q[1] - p[1];
       const dz = q[2] - p[2];
       const d2 = dx * dx + dy * dy + dz * dz;
+      // üst üste köşe: eğime katkısı yok (0/0 NaN üretirdi)
+      if (d2 < 1e-12) continue;
       const df = phiN[j] - phiN[i];
       gx += (df * dx) / d2;
       gy += (df * dy) / d2;
@@ -456,7 +458,9 @@ export function smoothBoundaryAt(
     // köşeyi, alanın sıfır olduğu noktaya doğru taşı
     let d: V3 = [(-phiN[i] * grad[0]) / g2, (-phiN[i] * grad[1]) / g2, (-phiN[i] * grad[2]) / g2];
     const dl = Math.hypot(...d);
-    const maxMove = 0.45 * minEdge;
+    if (!Number.isFinite(dl)) continue;
+    // küçük fırçada uzun kenarlı köşe fırçanın çok dışına kaçmasın (üst üste darbelerde üçgen uzayıp diken olurdu)
+    const maxMove = Math.min(0.45 * minEdge, 0.25 * radius);
     if (dl > maxMove) d = [(d[0] * maxMove) / dl, (d[1] * maxMove) / dl, (d[2] * maxMove) / dl];
     pos[3 * v] = p[0] + d[0];
     pos[3 * v + 1] = p[1] + d[1];

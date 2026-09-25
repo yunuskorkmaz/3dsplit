@@ -243,6 +243,8 @@ export class Viewport {
     if (tris === null) {
       g.boundsTree?.refit();
       g.computeBoundingSphere();
+      // geçersiz sınır küresi modeli görünüm dışı sayar ve model sessizce kaybolur: kaydet
+      if (!Number.isFinite(g.boundingSphere?.radius ?? Number.NaN)) console.error('Parça geometrisi geçersiz sınır küresi üretti', partId);
       this.requestRender();
       return;
     }

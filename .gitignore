@@ -5,3 +5,5 @@ dist
 samples/*.stl
 samples/*.3mf
 samples/testa-1m.stl
+test-results
+playwright-report

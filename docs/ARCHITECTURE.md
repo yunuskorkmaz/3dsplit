@@ -84,5 +84,6 @@ Köşe kaynaştırma → dejenere ve tekrarlı üçgen silme → yönelimi BFS i
 ## Test
 
 - `npm test`: `test/` altında Vitest, çekirdek fonksiyonlar Node'da manifold-3d ile.
+- `npm run e2e`: `e2e/smoke.spec.ts`, Playwright + yazılım WebGL (SwiftShader); figür modelini yükler, Smart Fill ile seçer, Socket keser, 3MF indirir, sayfa hatası olmamalı.
 - `test/testa-model.test.ts`: gerçek model testi; `samples/testa.stl` (repoda yok) varsa çalışır, yoksa atlanır.
 - Görsel kontrol elle: `node samples/make-figure.mjs` ile test figürü üretilir.

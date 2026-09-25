@@ -200,5 +200,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | X33: otomatik pim boyutu kesitten | `3a3fbe1` |
 | 2026-09-25 | X34: yumuşatma fırçasında darbe izinde üçgen bölme, fark tabanlı geri alma | `365e082` |
 | 2026-09-25 | X35: tolerans deneme parçası | `5c2fce4` |
+| 2026-09-25 | X36: çizgi aracı: yüzeyde kapalı halka çizip boyama | `583bb53` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

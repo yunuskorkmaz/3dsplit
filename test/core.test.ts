@@ -183,6 +183,15 @@ describe('kesim', () => {
     expect(volume(r.parts[0]) + volume(r.body)).toBeCloseTo(8000, 1);
   });
 
+  it('önizleme: pim yuvası çevresinde ince duvarı işaretler', () => {
+    const ok = previewCut(capRegion, { ...baseOpts, mode: 'keys', minWall: 0.8 });
+    expect(ok.thin).toEqual([]);
+    // kenara yakın pim: yuva + clearance + duvar yan yüzü aşıyor
+    const edge = previewCut(capRegion, { ...baseOpts, mode: 'keys', minWall: 0.8, pins: [{ point: [8.5, 0, 10] }] });
+    expect(edge.thin.length).toBe(1);
+    expect(edge.warnings.some((w) => w.includes('ince'))).toBe(true);
+  });
+
   it('boş slot hata verir', () => {
     expect(() => cutRegion(capRegion, { ...baseOpts, slot: 5 })).toThrow();
   });

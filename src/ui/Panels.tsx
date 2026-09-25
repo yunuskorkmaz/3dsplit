@@ -190,6 +190,18 @@ export function CutPanel() {
         </>
       )}
       {cut.mode !== 'fast' && (
+        <NumberField
+          label="Duvar"
+          value={cut.minWall}
+          min={0}
+          max={5}
+          step={0.1}
+          unit="mm"
+          title="Önizlemede yuva çevresinde bundan ince kalan duvar kırmızı gösterilir (0: kontrol yok)"
+          onChange={(v) => update({ minWall: v })}
+        />
+      )}
+      {cut.mode !== 'fast' && (
         <NumberField label="Clearance" value={cut.clearance} min={0} max={1} step={0.05} unit="mm" onChange={(v) => update({ clearance: v })} />
       )}
       {cut.mode === 'keys' && (

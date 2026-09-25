@@ -30,7 +30,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X14 | Smart Fill ölçeğini tıklanan özelliğin boyutuna göre otomatik seçme (kulak 3 mm, göz 1.3 mm istedi) | Tek varsayılan her özellikte tutmuyor; kullanıcı ayarla uğraşmasın | [x] |
 | A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da ayrı filamentle açılsın | [x] |
 | X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [x] |
-| X6 | Pim/tapa duvar kalınlığı kontrolü, ince yeri önizlemede kırmızı gösterme | Baskıda kırılma riski | [ ] |
+| X6 | Pim/tapa duvar kalınlığı kontrolü, ince yeri önizlemede kırmızı gösterme | Baskıda kırılma riski | [x] |
 | X7 | 1–2M üçgen performansı (yükleme, komşuluk, BVH) | testa.stl 275k'da yükleme ~1 s; 2M'de 7–8 s beklenir | [ ] |
 | X8 | Playwright smoke testi: yükle → Smart Fill → Socket → dışa aktar | Arayüz regresyonları elle yakalanıyor | [ ] |
 
@@ -140,3 +140,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X14: otomatik Smart Fill ölçeği | `8ea7024` |
 | 2026-09-25 | A3: Bambu/Orca için filament atamalı 3MF | `bb62b3e` |
 | 2026-09-25 | X23: yumuşatmada model kaybolması | `e33d261` |
+| 2026-09-25 | X16: pim başına boyut ve eksen | `8137890` |

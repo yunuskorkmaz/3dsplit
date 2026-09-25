@@ -537,6 +537,7 @@ function cutOptions(): CutOptions {
     depth: cut.mode === 'socket' ? cut.depth : 0,
     clearance: cut.clearance,
     squeeze: cut.mode === 'socket' ? cut.squeeze : 0,
+    minWall: cut.minWall,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
     pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart },
     pins: cut.mode === 'keys' ? pins : undefined,

@@ -29,6 +29,8 @@ export interface CutSettings {
   clearance: number;
   /** Socket squeeze, 0..0.9 */
   squeeze: number;
+  /** Önizlemede kontrol edilen en az duvar kalınlığı, mm. */
+  minWall: number;
   /** Socket uzama yönü (dışa doğru); null: otomatik. */
   direction: Vec3 | null;
   pinShape: PinShape;
@@ -122,6 +124,7 @@ export const useStore = create<AppState>(() => ({
     depth: 3,
     clearance: 0.2,
     squeeze: 0,
+    minWall: 0.8,
     direction: null,
     pinShape: 'cylinder',
     pinRadius: 2,

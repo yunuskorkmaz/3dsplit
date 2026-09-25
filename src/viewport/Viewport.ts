@@ -278,7 +278,7 @@ export class Viewport {
   }
 
   /** Önizleme (Space): tapa hacimleri/kapaklar yarı saydam, pimler mavi. */
-  setPreview(volumes: MeshData[], pins: MeshData[]): void {
+  setPreview(volumes: MeshData[], pins: MeshData[], thin: MeshData[] = []): void {
     this.clearOverlay();
     this.setXray(true);
     const volMat = new THREE.MeshStandardMaterial({
@@ -291,6 +291,13 @@ export class Viewport {
     const pinMat = new THREE.MeshStandardMaterial({ color: '#2f80ff' });
     for (const v of volumes) this.overlay.add(new THREE.Mesh(toGeometry(v), volMat));
     for (const p of pins) this.overlay.add(new THREE.Mesh(toGeometry(p), pinMat));
+    // ince duvar: modelin dışına taşan kısım, her şeyin üstünde kırmızı
+    const thinMat = new THREE.MeshBasicMaterial({ color: '#ff2020', depthTest: false, transparent: true, opacity: 0.85 });
+    for (const t of thin) {
+      const m = new THREE.Mesh(toGeometry(t), thinMat);
+      m.renderOrder = 6;
+      this.overlay.add(m);
+    }
     this.requestRender();
   }
 

@@ -46,6 +46,13 @@ describe('çıkıntı socket', () => {
     expect(signedVolume(r.parts[0])).toBeCloseTo(144 + (a1 + 9 + Math.sqrt(a1 * 9)), 0);
   });
 
+  it('önizleme: yuva gövdeyi delecek kadar derinse ince duvar gösterir', () => {
+    expect(previewCut(boss, { ...opts, minWall: 0.8 }).thin).toEqual([]);
+    // çıkıntı dibi z=10, gövde tabanı z=-10: 19.5 mm derinlik tabana 0.8 mm'den yakın
+    const deep = previewCut(boss, { ...opts, depth: 19.5, minWall: 0.8 });
+    expect(deep.thin.length).toBe(1);
+  });
+
   it('önizleme tapa prizmasını döndürür', () => {
     const p = previewCut(boss, opts);
     expect(p.volumes.length).toBe(1);

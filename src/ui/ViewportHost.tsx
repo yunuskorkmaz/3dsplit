@@ -197,7 +197,7 @@ export function ViewportHost() {
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;
-    if (preview) vp.setPreview(preview.volumes, preview.pins);
+    if (preview) vp.setPreview(preview.volumes, preview.pins, preview.thin);
     else vp.clearOverlay();
   }, [preview]);
 

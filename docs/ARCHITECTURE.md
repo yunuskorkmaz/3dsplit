@@ -47,6 +47,8 @@ Büyütme (clearance): `V`'nin yana 8 yönde ve `−d` yönünde clearance kadar
 
 **Bölge hazırlığı (her mod).** Adanın içinde kalan, adadan küçük boyanmamış alanlar (delikler) kesime katılır. 1 mm²'den küçük, köşeden bağlı kırıntı adalar atlanır.
 
+**Duvar kontrolü (X6, önizlemede).** Her yuva (pim yuvası veya tapa yuvası) clearance + en az duvar kadar büyütülür, yuvanın yüzeye açılan ağzı kesim yüzeyinin `minWall + halkanın düzlemden sapması` altından kırpılır, kalan kısım yuvayı içeren katıdan çıkarılır. Artan hacim duvarın ince kaldığı yerdir; önizlemede kırmızı çizilir ve uyarı verilir.
+
 ## Smart Fill (`src/core/paint.ts`)
 
 Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan atasının normaliyle karşılaştırılır; komşu üçgen karşılaştırması yoğun mesh'te kıvrım birçok üçgene yayıldığı için eşiği hiç aşmıyor. "Sadece çukur kenarda dur" modunda eşiği aşan kıvrım, yerel kenar içbükeyse durdurur; tümsek tepelerinden geçilir (göz, kaş, burun gibi çıkıntılar tek tıkla seçilir). Ölçek otomatikte tıklanan özelliğe göre seçilir (X14): ortalama kenarın 3, 4, 6, 8, 12, 16 katı sırayla denenir; modelin %40'ından azını kaplayan ve sonraki iki ölçekten biriyle ±%25 benzer alan veren ilk ölçek alınır (testa.stl: göz/kaş/burun 1.3 mm, kulak 3.4 mm). Sonuçtaki küçük, aynı etiketli delikler kapatılır.

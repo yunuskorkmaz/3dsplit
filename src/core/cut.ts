@@ -38,6 +38,8 @@ export interface CutOptions {
   clearance: number;
   /** Socket: tapa tabanının içe daralma oranı (0 düz, 0.5 taban yarı genişlikte). */
   squeeze?: number;
+  /** Önizlemede yuva çevresindeki en az duvar kalınlığı, mm (0: kontrol yok). */
+  minWall?: number;
   /** Socket uzama yönü (dışa doğru). Verilmezse bölge normallerinin ortalaması. */
   direction?: Vec3;
   pin: PinOptions;
@@ -55,6 +57,8 @@ export interface CutPreview {
   /** Tapa hacimleri veya kesim kapakları. */
   volumes: MeshData[];
   pins: MeshData[];
+  /** Duvarın `minWall`'dan ince kaldığı yerler (yuva büyütülünce modelin dışına taşan kısım). */
+  thin: MeshData[];
   warnings: string[];
 }
 
@@ -645,20 +649,50 @@ export function previewCut(mesh: LabeledMesh, opts: CutOptions): CutPreview {
     const islands = findIslands(mesh, opts.slot, warnings);
     const volumes: MeshData[] = [];
     const pins: MeshData[] = [];
+    // duvar kontrolü için: [yuvayı içeren katı, yuva hacmi (büyütülmüş), içeri bakan yön, yüzeydeki referans nokta, ad]
+    const cavities: { container: () => Manifold; grown: () => Manifold; inward: Vec3; ref: Vec3; slack: number; name: string }[] = [];
+    // kesim halkası düzlemden ne kadar sapıyor: yuvanın ağzı bu kadar derinliğe kadar yüzeye açılabilir
+    const slackOf = (island: Island, normal: Vec3) => {
+      let m = 0;
+      for (const v of island.mainLoop) m = Math.max(m, Math.abs(dot(sub(vertexAt(mesh.positions, v), island.capCenter), normal)));
+      return m;
+    };
+    const minWall = opts.minWall ?? 0;
+    let model: Manifold | null = null;
+    const modelM = () => (model ??= scope.keep(toManifold(mesh, mesh.labels)));
+
     if (opts.mode === 'socket' && !useSweepSocket(mesh, islands, opts)) {
       // çıkıntı yöntemi: kesim kapakları ve gövdeye giren tapa prizmaları
       const eps = Math.max(1, 4 * opts.clearance);
       for (const island of islands) {
-        for (const { mesh: vol } of capPlugVolumes(mesh.positions, island, opts.depth, eps, capProjections(opts)[0], opts.squeeze)) {
+        for (const { mesh: vol, dir } of capPlugVolumes(mesh.positions, island, opts.depth, eps, capProjections(opts)[0], opts.squeeze)) {
           volumes.push(vol);
+          cavities.push({
+            container: modelM,
+            grown: () => growVolume(scope.keep(toManifold(vol, CUT_FACE_ID)), dir, opts.clearance + minWall, scope),
+            inward: scale(dir, -1),
+            ref: island.capCenter,
+            slack: slackOf(island, dir),
+            name: 'Tapa yuvası',
+          });
         }
       }
     } else if (opts.mode === 'socket') {
       const eps = Math.max(0.5, 4 * opts.clearance);
       for (const island of islands) {
         const dir = socketDirection(island, opts);
-        if (isHeightField(mesh, island, dir)) volumes.push(extrudeVolume(mesh, island, dir, opts.depth, eps, opts.squeeze));
-        else volumes.push(manifoldMesh(socketVolume(mesh, island, opts, eps, scope, warnings)));
+        const vol = isHeightField(mesh, island, dir)
+          ? extrudeVolume(mesh, island, dir, opts.depth, eps, opts.squeeze)
+          : manifoldMesh(socketVolume(mesh, island, opts, eps, scope, warnings));
+        volumes.push(vol);
+        cavities.push({
+          container: modelM,
+          grown: () => growVolume(scope.keep(toManifold(vol, CUT_FACE_ID)), dir, opts.clearance + minWall, scope),
+          inward: scale(dir, -1),
+          ref: island.capCenter,
+          slack: slackOf(island, dir),
+          name: 'Tapa yuvası',
+        });
       }
     } else {
       for (const island of islands) {
@@ -667,12 +701,53 @@ export function previewCut(mesh: LabeledMesh, opts: CutOptions): CutPreview {
         volumes.push(extractTriangles({ positions: mesh.positions, indices: Uint32Array.from(idx) }, range(idx.length / 3)).mesh);
       }
       if (opts.mode === 'keys') {
-        for (const { center, axis, spec } of pinCenters(mesh.positions, islands, opts.pins, opts.pin)) {
+        const placed = pinCenters(mesh.positions, islands, opts.pins, opts.pin);
+        let split: { body: Manifold; parts: Manifold[] } | null = null;
+        const splitM = () => {
+          if (!split) {
+            const sp = capSplit(mesh, islands, opts.slot);
+            split = {
+              body: scope.keep(toManifold(sp.body, sp.body.labels)),
+              parts: sp.parts.map((p) => scope.keep(toManifold(p, p.labels))),
+            };
+          }
+          return split;
+        };
+        for (const [k, { island, center, axis, spec }] of placed.entries()) {
           pins.push(manifoldMesh(makePin(spec, center, axis, 0, scope)));
+          // yuva, pimin karşı tarafındaki katıda açılır
+          const inward = opts.pin.onPart ? axis : scale(axis, -1);
+          cavities.push({
+            container: () => (opts.pin.onPart ? splitM().body : splitM().parts[islands.indexOf(island)]),
+            grown: () => makePin(spec, center, axis, opts.clearance + minWall, scope),
+            inward,
+            ref: center,
+            slack: slackOf(island, island.capNormal),
+            name: placed.length > 1 ? `Pim ${k + 1}` : 'Pim',
+          });
         }
       }
     }
-    return { volumes, pins, warnings };
+
+    const thin: MeshData[] = [];
+    if (minWall > 0) {
+      for (const c of cavities) {
+        try {
+          // yuvanın ağzı (yüzeye açılan kısmı) bilerek dışarıda: kesim yüzeyinin minWall
+          // (+ kesim halkasının düzlemden sapması) altından kes
+          const grown = c.grown().trimByPlane(c.inward, dot(c.inward, c.ref) + minWall + c.slack);
+          scope.keep(grown);
+          const out = scope.keep(grown.subtract(c.container()));
+          if (out.volume() > 1e-3) {
+            thin.push(manifoldMesh(out));
+            warnings.push(`${c.name} çevresinde duvar ${minWall} mm'den ince (kırmızı). Derinliği/pimi küçültün veya yerini değiştirin.`);
+          }
+        } catch (e) {
+          if (!(e instanceof KernelError)) throw e;
+        }
+      }
+    }
+    return { volumes, pins, thin, warnings };
   } finally {
     scope.dispose();
   }

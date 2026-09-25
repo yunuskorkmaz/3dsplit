@@ -337,6 +337,18 @@ export function CutPanel() {
             title="Tapa/pim ile yuva arasında her yüzeyde bırakılan boşluk. Yuva bu kadar büyütülür, parça boyutu değişmez"
             onChange={(v) => update({ clearance: Math.round(v * 100) / 100 })}
           />
+          {cut.mode === 'keys' && (
+            <NumberField
+              label="Boy boşluğu"
+              value={cut.pinDepthClearance}
+              min={0}
+              max={2}
+              step={0.05}
+              unit="mm"
+              title="Delik pimden her uçta bu kadar derin: pim dibe oturmaz, iki parçanın kesim yüzleri birbirine tam değer"
+              onChange={(v) => update({ pinDepthClearance: Math.round(v * 100) / 100 })}
+            />
+          )}
           <div className="row segmented">
             {TOLERANCE_PRESETS.map((t) => (
               <button key={t.label} type="button" className={Math.abs(cut.clearance - t.value) < 1e-6 ? 'active' : ''} onClick={() => update({ clearance: t.value })} title={t.hint}>

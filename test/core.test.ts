@@ -137,6 +137,17 @@ describe('kesim', () => {
     expect(r.warnings).toEqual([]);
   });
 
+  it('X31: boy boşluğu delik derinliğini yarıçaptan bağımsız büyütür', () => {
+    const r0 = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, depthClearance: 0.2 } });
+    const r1 = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, depthClearance: 1.2 } });
+    // delik gövde tarafında 1 mm daha derin: π·2.2²·1
+    const diff = volume(r0.body) - volume(r1.body);
+    expect(diff).toBeGreaterThan(Math.PI * 2.2 * 2.2 * 0.8);
+    expect(diff).toBeLessThan(Math.PI * 2.2 * 2.2 * 1.2);
+    // pim değişmez
+    expect(volume(r1.parts[0])).toBeCloseTo(volume(r0.parts[0]), 1);
+  });
+
   it('Keys: pim başına boyut ve eğik eksen', () => {
     const fast = cutRegion(capRegion, { ...baseOpts, mode: 'fast' });
     const r = cutRegion(capRegion, {

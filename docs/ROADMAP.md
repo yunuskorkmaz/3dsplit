@@ -15,7 +15,22 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 → Socket (göz, kaş) veya Keys (kol, kafa) → Kes → yeni parçada sonraki bölge → Dışa aktar
 ```
 
-## Sprint 4 — kullanılabilirlik ve kesim kalitesi (sırayla)
+## Sprint 5 — bağlantı kalitesi ve araştırmadan gelenler (sırayla)
+
+Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintSplit, geometry-central flip-geodesics). Kod kopyalanmaz (AGPL/GPL); yaklaşım yeniden yazılır.
+
+| # | İş | Neden / kaynak | Durum |
+| --- | --- | --- | --- |
+| X31 | Pim toleransı yarıçap ve boy olarak ayrı: delik pimden daha derin, pim dibe oturmaz | Orca `radius_tolerance` / `height_tolerance` | [x] |
+| X32 | Pim ucunda pah (konik uç): yuvaya kolay girer, uçta sarkma olmaz | Orca `CutConnectorStyle::Frustum` | [ ] |
+| X33 | Otomatik pim boyutu: kesit alanına göre yarıçap ve boy | PrintSplit (kesite göre ölçeklenen pim) | [ ] |
+| X34 | Yumuşatma fırçasında darbe bitince sınır üçgenlerin içinden geçsin (X30'un yerel hali) | Fırçada da düzgün kesim kenarı | [ ] |
+| X35 | Tolerans deneme parçası: seçili pim şekliyle 3 farklı boşlukta delik + pimler | Toleransı baskıdan önce denemek | [ ] |
+| X36 | Çizgi aracı: yüzeye nokta tıklayarak kapalı sınır çiz; yol yüzeyde en kısa yol, sonra yumuşatılıp üçgenlerin içinden işlenir | Doğal vadisi olmayan bölgeler; flip-geodesics fikri | [ ] |
+
+Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
+
+## Sprint 4 — kullanılabilirlik ve kesim kalitesi (bitti)
 
 | # | İş | Neden | Durum |
 | --- | --- | --- | --- |

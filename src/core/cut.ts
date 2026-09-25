@@ -17,6 +17,11 @@ export interface PinOptions {
   length: number;
   /** true: pim kesilen parçada, yuva gövdede. */
   onPart: boolean;
+  /**
+   * X31: eksenel boşluk, mm: delik pimden her uçta bu kadar uzun olur, pim
+   * dibe oturmaz (kesim yüzeyleri birbirine değer). Verilmezse `clearance`.
+   */
+  depthClearance?: number;
 }
 
 /** Tek bir pimin yeri ve (isteğe bağlı) kendine özgü boyutu/ekseni. */
@@ -650,14 +655,18 @@ function withFaceId(man: Manifold, id: number, scope: Scope): Manifold {
   return scope.keep(new (kernel().Manifold)(mesh));
 }
 
-/** `axis` boyunca uzanan, `center`'da ortalanmış pim. */
-function makePin(pin: PinOptions, center: Vec3, axis: Vec3, grow: number, scope: Scope): Manifold {
+function pinDepthClearance(opts: CutOptions): number {
+  return opts.pin.depthClearance ?? opts.clearance;
+}
+
+/** `axis` boyunca uzanan, `center`'da ortalanmış pim. `growLength`: boyca (her uçta) büyüme. */
+function makePin(pin: PinOptions, center: Vec3, axis: Vec3, grow: number, scope: Scope, growLength = grow): Manifold {
   const { Manifold } = kernel();
   const r = pin.radius + grow;
-  const h = pin.length + 2 * grow;
+  const h = pin.length + 2 * growLength;
   let shape: Manifold;
   // snapPin kendi ürettiklerini scope'a ekliyor; iki kez eklenirse iki kez silinir
-  if (pin.shape === 'snap') shape = snapPin(pin, grow, scope);
+  if (pin.shape === 'snap') shape = snapPin(pin, grow, scope, growLength);
   else if (pin.shape === 'cube') shape = scope.keep(Manifold.cube([2 * r, 2 * r, h], true));
   else shape = scope.keep(Manifold.cylinder(h, r, r, pin.shape === 'octagon' ? 8 : 32, true));
   const [u, v] = orthoBasis(axis);
@@ -672,7 +681,7 @@ function makePin(pin: PinOptions, center: Vec3, axis: Vec3, grow: number, scope:
  * basamak; ortadan yarık iki yarının sıkışıp geçmesini sağlar. `grow > 0`
  * yuvayı üretir: düz delik + tırnağın oturduğu oluk.
  */
-function snapPin(pin: PinOptions, grow: number, scope: Scope): Manifold {
+function snapPin(pin: PinOptions, grow: number, scope: Scope, growLength = grow): Manifold {
   const { Manifold } = kernel();
   const r = pin.radius;
   const L = pin.length;
@@ -688,7 +697,7 @@ function snapPin(pin: PinOptions, grow: number, scope: Scope): Manifold {
   };
   if (grow > 0) {
     // yuva: düz delik + tırnak oluğu (tırnaktan grow kadar geniş ve uzun)
-    const hole = scope.keep(Manifold.cylinder(L + 2 * grow, r + grow, r + grow, 32, true));
+    const hole = scope.keep(Manifold.cylinder(L + 2 * growLength, r + grow, r + grow, 32, true));
     const groove = place(Manifold.cylinder(barb + 2 * grow, r + bulge + grow, r + bulge + grow, 32), barbStart - grow);
     return scope.keep(hole.add(groove));
   }
@@ -898,7 +907,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
           const inward = opts.pin.onPart ? axis : scale(axis, -1);
           cavities.push({
             container: () => (opts.pin.onPart ? splitM().body : splitM().parts[islands.indexOf(island)]),
-            grown: () => makePin(spec, center, axis, opts.clearance + minWall, scope),
+            grown: () => makePin(spec, center, axis, opts.clearance + minWall, scope, pinDepthClearance(opts) + minWall),
             inward,
             ref: center,
             slack: slackOf(island, island.capNormal),
@@ -993,7 +1002,7 @@ function cutIslands(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scop
       for (const [k, { island, center, axis, spec }] of placed.entries()) {
         const i = islands.indexOf(island);
         const pin = makePin(spec, center, axis, 0, scope);
-        const hole = makePin(spec, center, axis, opts.clearance, scope);
+        const hole = makePin(spec, center, axis, opts.clearance, scope, pinDepthClearance(opts));
         checkPinContainment(pin, parts[i], body, spec, warnings, placed.length > 1 ? `Pim ${k + 1}` : 'Pim');
         if (opts.pin.onPart) {
           parts[i] = scope.keep(parts[i].add(pin));

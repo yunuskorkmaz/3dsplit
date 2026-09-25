@@ -47,6 +47,8 @@ export interface CutSettings {
   pinRadius: number;
   pinLength: number;
   pinOnPart: boolean;
+  /** X31: pim deliğinin her uçta pimden uzunluğu, mm. */
+  pinDepthClearance: number;
 }
 
 export interface Message {
@@ -162,6 +164,7 @@ export const useStore = create<AppState>(() => ({
     pinRadius: 2,
     pinLength: 8,
     pinOnPart: true,
+    pinDepthClearance: 0.3,
   },
   pins: [],
   selectedPin: -1,

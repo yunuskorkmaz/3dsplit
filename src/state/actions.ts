@@ -1356,7 +1356,10 @@ export function lineClose(): void {
     } else if (!mirroredAnchors.every((v, i) => v === line.anchors[i])) {
       let path = [mirroredAnchors[0]];
       for (let i = 1; i < mirroredAnchors.length; i++) {
-        path = [...path, ...surfacePath(mesh, nbr, mirroredAnchors[i - 1], mirroredAnchors[i]).slice(1)];
+        path = [
+          ...path,
+          ...surfacePath(mesh, nbr, mirroredAnchors[i - 1], mirroredAnchors[i]).slice(1),
+        ];
       }
       loops.push(closeLoop(mirroredAnchors, path));
     }
@@ -1369,7 +1372,8 @@ export function lineClose(): void {
       notify('warn', 'Çizgi yüzeyi iki parçaya ayırmıyor; halkayı kontrol edin.');
       continue;
     }
-    for (let t = 0; t < inside.length; t++) if (inside[t] && mesh.labels[t] === BASE_SLOT) tris.push(t);
+    for (let t = 0; t < inside.length; t++)
+      if (inside[t] && mesh.labels[t] === BASE_SLOT) tris.push(t);
   }
   const unique = [...new Set(tris)];
   if (!unique.length) return;
@@ -1399,7 +1403,10 @@ export function lineClose(): void {
   );
   if (diff && (diff.changedTris.length || diff.addedIndices.length)) applyMeshSplit(mesh, diff);
   else set((s) => ({ paintVersion: s.paintVersion + 1 }));
-  notify('info', `Çizgi kapatıldı: ${unique.length} üçgen boyandı${loops.length > 1 ? ' (aynayla iki halka)' : ''}.`);
+  notify(
+    'info',
+    `Çizgi kapatıldı: ${unique.length} üçgen boyandı${loops.length > 1 ? ' (aynayla iki halka)' : ''}.`,
+  );
 }
 
 // ---------- parça yönetimi ----------

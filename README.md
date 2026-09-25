@@ -22,27 +22,8 @@ node samples/make-figure.mjs   # samples/figure.stl test modeli
 
 Kamera: boşlukta sol sürükle / Alt+sol döndür, sağ tık kaydır, tekerlek yakınlaştır. Ctrl/Cmd+Z geri al.
 
-## Yapı
+## Dokümanlar
 
-| Dizin | İçerik |
-| --- | --- |
-| `src/core` | Saf TypeScript geometri çekirdeği: onarım, komşuluk, boyama algoritmaları, kesim (manifold-3d). DOM/Three.js bağımlılığı yok, Node'da test edilir. |
-| `src/worker` | Ağır işler (onarım, boolean, kesim) için Web Worker (Comlink). |
-| `src/viewport` | Three.js sahnesi, BVH ile seçim. React'ten bağımsız. |
-| `src/state` | Zustand store, aksiyonlar, undo/redo. |
-| `src/io` | STL/OBJ/3MF içe aktarma, STL/3MF/ZIP dışa aktarma. |
-| `src/ui` | React paneller. |
-| `test` | Vitest testleri. |
-
-## Kesim algoritmaları
-
-- **Fast / Keys:** bölge sınır halkaları kendi düzlemlerine izdüşürülüp üçgenlenir, parça ve gövde bu kapakla kapatılır (boolean yok). Keys'te pim `parça ∪ pim`, yuva `gövde − büyütülmüş(pim)`.
-- **Socket:** bölge yüzeyi seçilen yön boyunca `+eps`'ten `−derinlik`'e süpürülerek hacim `V` üretilir. `tapa = model ∩ V`, `gövde = model − büyüt(V, clearance)`. Bölge bu yönde yükseklik alanı değilse üçgen başına prizma birleşimine düşer (yavaş).
-- Etiketler manifold `faceID` üzerinden kesim sonrasına taşınır; sonraki kesimler yeni parçalar üzerinde yapılabilir.
-
-## Bilinen eksikler (MVP)
-
-- Pim için gizmo (S/E/R) yok; boyut kaydırıcılarla, konum tıklamayla.
-- Socket yönü otomatik (bölge normallerinin ortalaması); gizmo ile ayar yok.
-- Boyalı 3MF'in renkleri içe alınmıyor; Bambu/Orca filament ataması 3MF'e yazılmıyor.
-- Smooth sınır, proje kaydetme, mirror/x-ray boyama yok.
+- [docs/ROADMAP.md](docs/ROADMAP.md): iş listesi, durumlar, şimdiki sprint
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): katmanlar, veri modeli, kesim algoritmaları
+- [docs/project-brief.md](docs/project-brief.md): proje dokümanı (özellik listesi, fazlar)

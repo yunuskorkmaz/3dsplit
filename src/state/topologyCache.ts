@@ -1,7 +1,7 @@
-import { faceCentroids, faceNormalsAndAreas } from '../core/geometry';
+import { faceCentroids, faceNormalsAndAreas, writeFaceData } from '../core/geometry';
 import { meanEdgeLength, triangleConcavity } from '../core/paint';
 import { TriangleGrid } from '../core/spatial';
-import { buildAdjacency } from '../core/topology';
+import { buildAdjacency, patchAdjacency } from '../core/topology';
 import type { LabeledMesh } from '../core/types';
 
 export interface Topology {
@@ -48,13 +48,45 @@ export function concavityOf(mesh: LabeledMesh, scale: number): Float32Array {
  * Konumları değişen ama bağlantısı aynı kalan mesh için: komşuluk eski
  * mesh'ten alınır, yüz bilgileri yeniden hesaplanır (yumuşatma fırçası).
  */
-export function refreshGeometry(mesh: LabeledMesh, from?: LabeledMesh): void {
+export function refreshGeometry(mesh: LabeledMesh, from?: LabeledMesh, tris?: ArrayLike<number>): void {
   const prev = cache.get(from ?? mesh);
+  if (prev && tris && !from) {
+    // X38: sadece konumu değişen üçgenlerin yüz bilgisi
+    writeFaceData(mesh, tris, prev.normals, prev.areas, prev.centroids);
+    concavityCache.delete(mesh);
+    gridCache.delete(mesh);
+    return;
+  }
   const adj = prev ? prev.adj : buildAdjacency(mesh);
   const { normals, areas } = faceNormalsAndAreas(mesh);
   cache.set(mesh, { adj, normals, areas, centroids: faceCentroids(mesh), meanEdge: meanEdgeLength(mesh) });
   concavityCache.delete(mesh);
   gridCache.delete(mesh);
+}
+
+/**
+ * X38: üçgen bölme yerinde uygulandı; komşuluk ve yüz bilgileri sadece
+ * değişen ve eklenen üçgenler için güncellenir (1.9M üçgende baştan kurmak
+ * her darbede ~0.5 s sürüyordu). Önbellek yoksa bir şey yapılmaz.
+ */
+export function patchTopology(mesh: LabeledMesh, changed: ArrayLike<number>, firstAdded: number): void {
+  const prev = cache.get(mesh);
+  concavityCache.delete(mesh);
+  gridCache.delete(mesh);
+  if (!prev) return;
+  const triCount = mesh.labels.length;
+  const grow = (a: Float32Array, n: number) => {
+    const out = new Float32Array(n);
+    out.set(a.subarray(0, Math.min(a.length, n)));
+    return out;
+  };
+  const normals = grow(prev.normals, 3 * triCount);
+  const areas = grow(prev.areas, triCount);
+  const centroids = grow(prev.centroids, 3 * triCount);
+  const tris: number[] = Array.from(changed);
+  for (let t = firstAdded; t < triCount; t++) tris.push(t);
+  writeFaceData(mesh, tris, normals, areas, centroids);
+  cache.set(mesh, { adj: patchAdjacency(prev.adj, mesh, changed, firstAdded), normals, areas, centroids, meanEdge: prev.meanEdge });
 }
 
 /** Mesh'in bağlantısı yerinde değişti (üçgen bölme): tüm önbellekler atılır. */

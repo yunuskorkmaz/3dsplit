@@ -138,6 +138,19 @@ describe('sınır yumuşatma', () => {
 });
 
 describe('yumuşatma fırçası', () => {
+  it('X38: bölmeden sonra komşuluk yerinde güncellenir, baştan kurulanla aynı', async () => {
+    const { smoothStrokeSplit, applySplit } = await import('../src/core/smooth');
+    const { patchAdjacency } = await import('../src/core/topology');
+    const m = labelWhere(subdividedCube(20, 10), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));
+    const path: [number, number, number][] = [];
+    for (let a = -0.6; a <= 0.6; a += 0.1) path.push([5 * Math.cos(a), 5 * Math.sin(a), 10]);
+    const diff = smoothStrokeSplit(m, 1, path, 2, 1, (t) => m.labels[t] === 0, () => 0);
+    if (!diff) throw new Error('bölme yok');
+    const out = applySplit(m, diff);
+    const patched = patchAdjacency(buildAdjacency(m), out, diff.changedTris, diff.baseTris);
+    expect(Array.from(patched)).toEqual(Array.from(buildAdjacency(out)));
+  });
+
   it('X34: darbe izinde sınır üçgenlerin içinden geçer, fark geri alınabilir', async () => {
     const { smoothStrokeSplit, applySplit, revertSplit } = await import('../src/core/smooth');
     const m = labelWhere(subdividedCube(20, 10), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));

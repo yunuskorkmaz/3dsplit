@@ -142,3 +142,59 @@ export function extractTriangles(
   }
   return { mesh: { positions, indices }, vertexMap };
 }
+
+/**
+ * X38: üçgen bölmeden sonra komşuluğu baştan kurmadan günceller. `changed`:
+ * yerinde değişen eski üçgenler, `firstAdded`dan sonrası sona eklenenler.
+ * Etkilenen küme = değişenler + eklenenler + değişenlerin eski komşuları;
+ * bunların kenarları kendi aralarında yeniden eşlenir, küme dışına bakan
+ * kenarlar (bölme orada kenar değiştirmediği için) eski değerini korur.
+ */
+export function patchAdjacency(adj: Int32Array, mesh: MeshData, changed: ArrayLike<number>, firstAdded: number): Int32Array {
+  const idx = mesh.indices;
+  const triCount = idx.length / 3;
+  const out = new Int32Array(3 * triCount).fill(NO_NEIGHBOR);
+  out.set(adj.subarray(0, Math.min(adj.length, 3 * triCount)));
+  const affected = new Set<number>();
+  for (let i = 0; i < changed.length; i++) {
+    const t = changed[i];
+    affected.add(t);
+    for (let e = 0; e < 3; e++) {
+      const n = adj[3 * t + e];
+      if (n >= 0 && n < triCount) affected.add(n);
+    }
+  }
+  for (let t = firstAdded; t < triCount; t++) affected.add(t);
+  const vCount = mesh.positions.length / 3;
+  const edges = new Map<number, number[]>();
+  const keyOf = (he: number) => {
+    const t = (he / 3) | 0;
+    const a = idx[he];
+    const b = idx[3 * t + ((he - 3 * t + 1) % 3)];
+    return a < b ? a * vCount + b : b * vCount + a;
+  };
+  for (const t of affected) {
+    for (let e = 0; e < 3; e++) {
+      const k = keyOf(3 * t + e);
+      const list = edges.get(k);
+      if (list) list.push(3 * t + e);
+      else edges.set(k, [3 * t + e]);
+    }
+  }
+  for (const t of affected) {
+    for (let e = 0; e < 3; e++) {
+      const he = 3 * t + e;
+      const list = edges.get(keyOf(he)) as number[];
+      const others = list.filter((x) => x !== he);
+      if (others.length === 1) out[he] = (others[0] / 3) | 0;
+      else if (others.length > 1) out[he] = NON_MANIFOLD;
+      else {
+        // ortak kenar küme dışında: eski komşu geçerliyse ve o da bu kenarı taşıyorsa kalır
+        const n = out[he];
+        const valid = n >= 0 && n < triCount && !affected.has(n);
+        out[he] = valid ? n : NO_NEIGHBOR;
+      }
+    }
+  }
+  return out;
+}

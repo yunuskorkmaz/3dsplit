@@ -28,6 +28,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X35 | Tolerans deneme parçası: seçili pim şekliyle 3 farklı boşlukta delik + pimler | Toleransı baskıdan önce denemek | [x] |
 | X36 | Çizgi aracı: yüzeye nokta tıklayarak kapalı sınır çiz; yol yüzeyde en kısa yol, sonra yumuşatılıp üçgenlerin içinden işlenir | Doğal vadisi olmayan bölgeler; flip-geodesics fikri | [x] |
 | X37 | Hata: küçük yarıçapla yumuşatırken model kayboluyor. Stres testinde (testa, 3000 darbe, r 0.15–1.35) köşe fırça yarıçapının 2–3 katı kaçıyordu; kayma 0.25·r ile sınırlandı, üst üste köşe (0/0) atlanıyor. Darbe sonunda geçersiz/kaçmış köşe varsa darbe geri alınır ve bildirilir; darbe içi geri almada ekran konumları da geri yazılıyor | Kullanıcı bildirdi | [x] |
+| X38 | Büyük modelde (1.9M üçgen) yumuşatma darbesi sonunda ~2.9 s donma: bölmeden sonra ekran geometrisi, seçim ağacı ve komşuluk baştan kuruluyordu. Eklenen üçgenler ayrı yama mesh'te, ana geometri yerinde; seçim ağacında sadece değişen bölge; komşuluk ve yüz bilgisi yerinde güncelleniyor; renkler etiket başına önbellekli | Performans ölçümü | [x] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 

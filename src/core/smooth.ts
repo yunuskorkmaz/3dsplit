@@ -314,8 +314,17 @@ export function splitAlongField(
     return out;
   };
   for (let t = 0; t < triCount; t++) {
+    // etkin köşeye değmeyen üçgen: sadece yaklaşık etiket değişikliği (dizi ayırmadan, büyük mesh'te hızlı)
+    if (!(active[idx[3 * t]] || active[idx[3 * t + 1]] || active[idx[3 * t + 2]])) {
+      if (labels[t] !== mesh.labels[t]) {
+        changed.push(t);
+        newIdx.push(idx[3 * t], idx[3 * t + 1], idx[3 * t + 2]);
+        newLab.push(labels[t]);
+      }
+      continue;
+    }
     const v = [idx[3 * t], idx[3 * t + 1], idx[3 * t + 2]];
-    const touched = active[v[0]] || active[v[1]] || active[v[2]];
+    const touched = true;
     const sg = v.map((x) => Math.sign(phi[x]));
     const hasPos = sg.includes(1);
     const hasNeg = sg.includes(-1);

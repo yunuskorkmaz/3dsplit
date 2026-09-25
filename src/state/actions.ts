@@ -34,7 +34,7 @@ import { boundingBox } from '../core/geometry';
 import { connectedComponents } from '../core/topology';
 import { mirrorPoint } from '../core/spatial';
 import { regionInsideLoop, surfacePath, vertexNeighbors } from '../core/lasso';
-import { concavityOf, gridOf, invalidateTopology, refreshGeometry, type Topology, topologyOf } from './topologyCache';
+import { concavityOf, gridOf, invalidateTopology, patchTopology, refreshGeometry, type Topology, topologyOf } from './topologyCache';
 
 // ---------- dosya ----------
 
@@ -658,7 +658,7 @@ export function endSmoothStroke(): void {
   }
   const tris: number[] = [];
   for (let t = 0; t < lab0.length; t++) if (lab0[t] !== mesh.labels[t]) tris.push(t);
-  refreshGeometry(mesh);
+  refreshGeometry(mesh, undefined, verts.length ? trianglesOfVertices(mesh, verts) : []);
   onGeometryChanged?.(partId, null);
   if (verts.length) bumpGeometry(mesh);
   if (!verts.length && !tris.length) return;
@@ -705,15 +705,17 @@ function splitStroke(mesh: LabeledMesh, path: Vec3[]): void {
  * kaydına sadece farkı yazar.
  */
 function applyMeshSplit(mesh: LabeledMesh, diff: SplitDiff, record = true): void {
-  replaceMeshArrays(mesh, applySplit(mesh, diff));
+  replaceMeshArrays(mesh, applySplit(mesh, diff), diff);
   if (record) pushHistory({ kind: 'split', mesh, diff });
 }
 
-function replaceMeshArrays(mesh: LabeledMesh, next: LabeledMesh): void {
+/** `forward` verilirse fark ileri uygulandı: önbellekler yerinde güncellenir; yoksa atılır. */
+function replaceMeshArrays(mesh: LabeledMesh, next: LabeledMesh, forward?: SplitDiff): void {
   mesh.positions = next.positions;
   mesh.indices = next.indices;
   mesh.labels = next.labels;
-  invalidateTopology(mesh);
+  if (forward) patchTopology(mesh, forward.changedTris, forward.baseTris);
+  else invalidateTopology(mesh);
   bumpGeometry(mesh);
   // viewport geometrisi yeniden kurulsun: parça nesnesi yenilenir, mesh aynı kalır
   set((s) => ({ parts: s.parts.map((p) => (p.mesh === mesh ? { ...p } : p)), preview: null, paintVersion: s.paintVersion + 1 }));
@@ -1241,7 +1243,8 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
     if (part) onLabelsChanged?.(part.id, entry.tris);
     set((s) => ({ paintVersion: s.paintVersion + 1 }));
   } else if (entry.kind === 'split') {
-    replaceMeshArrays(entry.mesh, reverse ? revertSplit(entry.mesh, entry.diff) : applySplit(entry.mesh, entry.diff));
+    if (reverse) replaceMeshArrays(entry.mesh, revertSplit(entry.mesh, entry.diff));
+    else replaceMeshArrays(entry.mesh, applySplit(entry.mesh, entry.diff), entry.diff);
   } else if (entry.kind === 'geometry') {
     const pos = reverse ? entry.posBefore : entry.posAfter;
     const lab = reverse ? entry.labelsBefore : entry.labelsAfter;

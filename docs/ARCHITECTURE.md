@@ -97,3 +97,6 @@ Köşe kaynaştırma → dejenere ve tekrarlı üçgen silme → yönelimi BFS i
 - `npm run e2e`: `e2e/smoke.spec.ts`, Playwright + yazılım WebGL (SwiftShader); figür modelini yükler, Smart Fill ile seçer, Socket keser, 3MF indirir, sayfa hatası olmamalı.
 - `test/testa-model.test.ts`: gerçek model testi; `samples/testa.stl` (repoda yok) varsa çalışır, yoksa atlanır.
 - Görsel kontrol elle: `node samples/make-figure.mjs` ile test figürü üretilir.
+
+**Plaka yerleştirme (X46, `src/io/layout.ts`).** Bambu 3MF'te her parça Z etrafında XY izdüşümünün en küçük sınır dikdörtgenine döndürülür (dışbükey zarfın kenar yönleri denenir; %3'ten az kazançta döndürülmez, uzun kenar X boyunca). Parçalar Y boyuna göre büyükten küçüğe raflara dizilir, plakanın ortasına hizalanır. Dönüş ve öteleme 3MF `item` dönüşümüne yazılır; mesh verisi değişmez. Plakaya sığmazsa uyarı verilir. Bambu Studio komut satırıyla açılıp dönüşümlerin korunduğu doğrulandı.
+

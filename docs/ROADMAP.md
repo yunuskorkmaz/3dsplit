@@ -218,5 +218,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | X43: uçtan uca test: çizgi aracı, deneme parçası, ayrık görünüm | `723e41f` |
 | 2026-09-25 | X44: çizgi aracında ayna | `b43441e` |
 | 2026-09-25 | X45: uzun kesitte birden fazla otomatik pim | `5a1b674` |
+| 2026-09-25 | X46: plaka yerleştirme: en küçük izdüşüm dönüşü ve raf paketleme | `cc0d128` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

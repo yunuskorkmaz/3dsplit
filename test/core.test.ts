@@ -152,6 +152,18 @@ describe('kesim', () => {
     expect(r.warnings.filter((w) => w.includes('dışına'))).toEqual([]);
   });
 
+  it('Keys: snap pim tırnaklı, yarıklı; yuvada oluk var', () => {
+    const cyl = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, length: 8 } });
+    const snap = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, length: 8, shape: 'snap' } });
+    // yuva oluk yüzünden silindirden büyük: gövde daha az hacimli
+    expect(volume(snap.body)).toBeLessThan(volume(cyl.body) - 1);
+    // pim yarık yüzünden daha hafif ama tırnak ekliyor: parça hacmi farklı ve makul
+    const diff = volume(snap.parts[0]) - volume(cyl.parts[0]);
+    expect(Math.abs(diff)).toBeGreaterThan(0.5);
+    expect(Math.abs(diff)).toBeLessThan(40);
+    expect(snap.warnings.filter((w) => w.includes('dışına'))).toEqual([]);
+  });
+
   it('Keys: pim ince duvara taşarsa uyarır', () => {
     const r = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, length: 14 } });
     expect(r.warnings.length).toBe(1);

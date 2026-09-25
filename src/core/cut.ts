@@ -7,7 +7,7 @@ import { BASE_SLOT, type LabeledMesh, type MeshData, type Vec3 } from './types';
 import { add, cross, dot, normalize, orthoBasis, scale, sub, vertexAt } from './vec';
 
 export type CutMode = 'fast' | 'socket' | 'keys';
-export type PinShape = 'cylinder' | 'cube' | 'octagon';
+export type PinShape = 'cylinder' | 'cube' | 'octagon' | 'snap';
 
 export interface PinOptions {
   shape: PinShape;
@@ -573,13 +573,50 @@ function makePin(pin: PinOptions, center: Vec3, axis: Vec3, grow: number, scope:
   const r = pin.radius + grow;
   const h = pin.length + 2 * grow;
   let shape: Manifold;
-  if (pin.shape === 'cube') shape = Manifold.cube([2 * r, 2 * r, h], true);
-  else shape = Manifold.cylinder(h, r, r, pin.shape === 'octagon' ? 8 : 32, true);
-  scope.keep(shape);
+  // snapPin kendi ürettiklerini scope'a ekliyor; iki kez eklenirse iki kez silinir
+  if (pin.shape === 'snap') shape = snapPin(pin, grow, scope);
+  else if (pin.shape === 'cube') shape = scope.keep(Manifold.cube([2 * r, 2 * r, h], true));
+  else shape = scope.keep(Manifold.cylinder(h, r, r, pin.shape === 'octagon' ? 8 : 32, true));
   const [u, v] = orthoBasis(axis);
   // sütun öncelikli 4x4: x->u, y->v, z->axis, öteleme->center
   const m = [...u, 0, ...v, 0, ...axis, 0, ...center, 1] as unknown as Parameters<Manifold['transform']>[0];
   return withFaceId(scope.keep(shape.transform(m)), CUT_FACE_ID, scope);
+}
+
+/**
+ * C11: yapıştırıcısız snap pim (yerel z ekseni boyunca, ortası 0'da).
+ * Yuvaya giren ucunda kanca (tırnak): uca doğru daralan koni, arkasında
+ * basamak; ortadan yarık iki yarının sıkışıp geçmesini sağlar. `grow > 0`
+ * yuvayı üretir: düz delik + tırnağın oturduğu oluk.
+ */
+function snapPin(pin: PinOptions, grow: number, scope: Scope): Manifold {
+  const { Manifold } = kernel();
+  const r = pin.radius;
+  const L = pin.length;
+  const bulge = Math.max(0.3, 0.15 * r);
+  const barb = Math.min(2, L / 4);
+  // tırnak yuvanın olduğu uçta: pim parçadaysa +z (gövdeye), değilse -z
+  const tip = pin.onPart ? 1 : -1;
+  const barbStart = L / 2 - barb - 0.2; // tırnağın basamaklı (geniş) ucu
+  const place = (m: Manifold, z0: number) => {
+    scope.keep(m);
+    // yerel parça 0..yükseklik aralığında: tip -1 ise z'de aynalanır
+    return scope.keep(tip > 0 ? m.translate([0, 0, z0]) : m.mirror([0, 0, 1]).translate([0, 0, -z0]));
+  };
+  if (grow > 0) {
+    // yuva: düz delik + tırnak oluğu (tırnaktan grow kadar geniş ve uzun)
+    const hole = scope.keep(Manifold.cylinder(L + 2 * grow, r + grow, r + grow, 32, true));
+    const groove = place(Manifold.cylinder(barb + 2 * grow, r + bulge + grow, r + bulge + grow, 32), barbStart - grow);
+    return scope.keep(hole.add(groove));
+  }
+  const body = scope.keep(Manifold.cylinder(L, r, r, 32, true));
+  // tırnak: geniş basamaktan uca doğru daralan koni
+  const cone = place(Manifold.cylinder(barb, r + bulge, r, 32), barbStart);
+  // yarık: tırnaklı yarıyı ikiye böler
+  const slitW = Math.max(0.6, 0.35 * r);
+  const slitLen = (L / 2) * 0.8;
+  const slit = place(Manifold.cube([2 * (r + bulge) + 1, slitW, slitLen + 1], false).translate([-(r + bulge) - 0.5, -slitW / 2, 0]), L / 2 - slitLen);
+  return scope.keep(scope.keep(body.add(cone)).subtract(slit));
 }
 
 function pinCenters(

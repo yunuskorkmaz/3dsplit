@@ -23,7 +23,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X5 | Kesim modu önerisi: bölge kalınlığına göre Keys/Socket öner | Dokümandaki karar ağacı | [x] |
 | D5 | Kesim hatasında sorunlu bölgeyi göster | Hata mesajı nereye bakılacağını söylemiyor | [x] |
 | C12 | Link all: kapalıyken her ada kendi ayarıyla (derinlik) | Aynı slotta farklı boyda bölgeler | [x] |
-| C11 | Snap pim (yapıştırıcısız, esnek dilli) | Faz 2 kalanı | [ ] |
+| C11 | Snap pim (yapıştırıcısız, esnek dilli) | Faz 2 kalanı | [x] |
 | E1 | Kamera: ters yakınlaştırma, Blender tarzı (orta tuş döndür) seçeneği | Faz 1 kalanı | [ ] |
 | B7 | X-ray boyama: arkadaki yüzleri de boya | Faz 3 | [ ] |
 | X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği | [ ] |
@@ -106,7 +106,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C8 | Keys: pim yerleştirme | 1 | [x] | Tıkla ekle/seç, sürükle taşı, Shift+tık sil; seçili pime yarıçap/boy ve döndürme gizmosuyla eksen (X16) |
 | C9 | Keys: clearance | 1 | [x] | |
 | C10 | Keys: çoklu pim | 2 | [x] | Her tıklama bir pim |
-| C11 | Keys: şekiller | 2 | [~] | Silindir, sekizgen, küp var; snap pim yok |
+| C11 | Keys: şekiller | 2 | [x] | Silindir, sekizgen, küp, snap (tırnak + yarık, yuvada oluk). Snap ölçüleri baskıyla ayarlanmalı |
 | C12 | Link all | 2 | [x] | Socket'te kapalıyken bölge başına derinlik (ada anahtarı: en küçük üçgen numarası) |
 
 ### D. Parça yönetimi
@@ -166,3 +166,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | B8: ayna boyama | `02b45c3` |
 | 2026-09-25 | X5: kesim modu önerisi | `25769a5` |
 | 2026-09-25 | D5: kesim hatasında sorunlu bölge | `56e121d` |
+| 2026-09-25 | C12: Link all | `b2e94df` |

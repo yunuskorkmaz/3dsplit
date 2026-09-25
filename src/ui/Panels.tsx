@@ -248,6 +248,7 @@ export function CutPanel() {
               <option value="cylinder">Silindir</option>
               <option value="octagon">Sekizgen</option>
               <option value="cube">Küp</option>
+              <option value="snap">Snap (yapıştırıcısız)</option>
             </select>
           </label>
           <NumberField label="Pim yarıçapı" value={cut.pinRadius} min={0.5} max={20} step={0.1} unit="mm" onChange={(v) => update({ pinRadius: v })} />

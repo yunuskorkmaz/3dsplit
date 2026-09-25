@@ -521,7 +521,7 @@ export function CutPanel() {
           </label>
           <label
             className="field"
-            title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Pim aracında tek tek boyut verilen pimler hariç"
+            title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Uzun kesitte (pim aracıyla pim konmadıysa) uzun eksen boyunca 2–3 pim dizilir. Pim aracında tek tek boyut verilen pimler hariç"
           >
             <input
               type="checkbox"

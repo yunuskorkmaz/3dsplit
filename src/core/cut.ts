@@ -824,7 +824,12 @@ function pinCenters(
 ): { island: Island; center: Vec3; axis: Vec3; spec: PinOptions }[] {
   const raw: { island: Island; pin: PinPlacement }[] =
     !pins || pins.length === 0
-      ? islands.map((island) => ({ island, pin: { point: island.capCenter } }))
+      ? islands.flatMap((island) =>
+          (base.auto ? autoPinPoints(positions, island) : [island.capCenter]).map((point) => ({
+            island,
+            pin: { point },
+          })),
+        )
       : pins.map((pin) => {
           let best = islands[0];
           let bestDist = Infinity;
@@ -860,6 +865,67 @@ function pinCenters(
     const spec = { ...base, radius: pin.radius ?? radius, length: pin.length ?? length };
     return { island, center, axis, spec };
   });
+}
+
+/**
+ * X45: otomatik pim yerleri. Kesim halkası kapak düzleminde asal eksenlerine
+ * ayrılır; uzun eksen kısa eksenin 2 katından uzunsa iki, 3.5 katından
+ * uzunsa üç pim uzun eksen boyunca eşit aralıkla dizilir (tek pim uzun
+ * kesitte parçanın dönmesine izin verir). Aksi halde kesit merkezine bir pim.
+ */
+export function autoPinPoints(positions: Float32Array, island: Island): Vec3[] {
+  const [u, v] = orthoBasis(island.capNormal);
+  const c = island.capCenter;
+  const pts = island.mainLoop.map((i) => {
+    const d = sub(vertexAt(positions, i), c);
+    return [dot(d, u), dot(d, v)] as [number, number];
+  });
+  if (pts.length < 3) return [c];
+  let mx = 0;
+  let my = 0;
+  for (const [x, y] of pts) {
+    mx += x;
+    my += y;
+  }
+  mx /= pts.length;
+  my /= pts.length;
+  let sxx = 0;
+  let sxy = 0;
+  let syy = 0;
+  for (const [x, y] of pts) {
+    sxx += (x - mx) ** 2;
+    sxy += (x - mx) * (y - my);
+    syy += (y - my) ** 2;
+  }
+  // 2x2 kovaryansın büyük özvektörü
+  const angle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+  const major: [number, number] = [Math.cos(angle), Math.sin(angle)];
+  const minor: [number, number] = [-major[1], major[0]];
+  const span = (d: [number, number]) => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const [x, y] of pts) {
+      const t = x * d[0] + y * d[1];
+      lo = Math.min(lo, t);
+      hi = Math.max(hi, t);
+    }
+    return [lo, hi];
+  };
+  const [a0, a1] = span(major);
+  const [b0, b1] = span(minor);
+  const long = a1 - a0;
+  const short = Math.max(b1 - b0, 1e-6);
+  const count = long / short >= 3.5 ? 3 : long / short >= 2 ? 2 : 1;
+  if (count === 1) return [c];
+  const mid = (a0 + a1) / 2;
+  const mb = (b0 + b1) / 2;
+  const dir = add(scale(u, major[0]), scale(v, major[1]));
+  const side = add(scale(u, minor[0]), scale(v, minor[1]));
+  const base = add(add(c, scale(dir, mid)), scale(side, mb));
+  const step = long / (count + 1);
+  return Array.from({ length: count }, (_, k) =>
+    add(base, scale(dir, (k - (count - 1) / 2) * step)),
+  );
 }
 
 /**

@@ -200,6 +200,43 @@ describe('kesim', () => {
     expect(size(small.pins[0]) / 2).toBeLessThan(1.8);
   });
 
+  it('X45: uzun kesitte otomatik pimler uzun eksen boyunca dizilir', async () => {
+    const { kernel, fromManifold } = await import('../src/core/kernel');
+    const man = kernel().Manifold.cube([10, 40, 10], true).refineToLength(1);
+    const bar = fromManifold(man, 0);
+    man.delete();
+    const region = labelWhere(bar, 1, (_x, _y, z) => z > 1);
+    const auto = previewCut(region, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, auto: true },
+    });
+    expect(auto.pins.length).toBe(3);
+    // pimler y ekseni boyunca, x'te ortada
+    const centers = auto.pins.map((m) => {
+      let x = 0;
+      let y = 0;
+      const n = m.positions.length / 3;
+      for (let i = 0; i < n; i++) {
+        x += m.positions[3 * i];
+        y += m.positions[3 * i + 1];
+      }
+      return [x / n, y / n];
+    });
+    for (const [x] of centers) expect(Math.abs(x)).toBeLessThan(0.5);
+    const ys = centers.map((c) => c[1]).sort((p, q) => p - q);
+    expect(ys[2] - ys[0]).toBeGreaterThan(15);
+    // kare kesitte tek pim
+    const cube1 = previewCut(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, auto: true },
+    });
+    expect(cube1.pins.length).toBe(1);
+    // otomatik kapalıyken tek pim
+    expect(previewCut(region, { ...baseOpts, mode: 'keys' }).pins.length).toBe(1);
+  });
+
   it('Keys: pim başına boyut ve eğik eksen', () => {
     const fast = cutRegion(capRegion, { ...baseOpts, mode: 'fast' });
     const r = cutRegion(capRegion, {

@@ -35,7 +35,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X42 | Yumuşatma fırçası her darbede tüm üçgenleri tarıyordu (1.9M üçgende darbe başına ~25 ms). Adaylar vurulan üçgenden yüzey üzerinde yayılarak bulunuyor (~12 ms); sonuç tam taramayla birebir aynı (test) | Performans | [x] |
 | X43 | Uçtan uca test: çizgi aracı, tolerans deneme parçası, yardım ve görünürlük akışı | Yeni araçların arayüz testi yoktu | [x] |
 | X44 | Çizgi aracında ayna: ayna açıksa karşı tarafta da aynı halka boyanır | Göz, yanak gibi çift bölgeler | [x] |
-| X45 | Keys: uzun/yassı kesitte birden fazla otomatik pim (kesitin uzun ekseni boyunca) | Tek pim uzun kesitte dönmeye izin veriyor | [ ] |
+| X45 | Keys: uzun/yassı kesitte birden fazla otomatik pim (kesitin uzun ekseni boyunca) | Tek pim uzun kesitte dönmeye izin veriyor | [x] |
 | X46 | Dışa aktarmada parçaları plakaya alan verimli yerleştirme (satır paketleme yerine raf/kutu paketleme, parçalar arası boşluk ayarı) | Çok parçalı figürlerde plaka taşması | [ ] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).

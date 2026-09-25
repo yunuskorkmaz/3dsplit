@@ -30,6 +30,8 @@ export function smoothRegionBoundary(
   accept: (t: number) => boolean,
   outsideLabel: (t: number) => number,
   exact = false,
+  /** `exact` iken bölmenin farkı (yerinde uygulayıp farkla geri almak için). */
+  onSplit?: (diff: SplitDiff) => void,
 ): LabeledMesh {
   const labels = Uint16Array.from(mesh.labels);
   const positions = new Float32Array(mesh.positions);
@@ -113,7 +115,8 @@ export function smoothRegionBoundary(
 
   if (exact) {
     // üçgen içinden geçen sınırda alan, üçgen merkezli tahminden biraz farklı: offset iki adımda düzeltilir
-    let out = cutAlongCurves(mesh, labels, slot, index, band, offset, accept, outsideLabel);
+    let diff = cutAlongCurves(mesh, labels, slot, index, band, offset, accept, outsideLabel);
+    let out = applySplit(mesh, diff);
     for (let it = 0; it < 2; it++) {
       const { areas: ar } = faceNormalsAndAreas(out);
       let area = 0;
@@ -121,8 +124,10 @@ export function smoothRegionBoundary(
       const step = (areaBefore - area) / Math.max(perimeter, 1e-6);
       if (Math.abs(step) < 1e-3) break;
       offset = Math.max(-radius, Math.min(radius, offset + step));
-      out = cutAlongCurves(mesh, labels, slot, index, band, offset, accept, outsideLabel);
+      diff = cutAlongCurves(mesh, labels, slot, index, band, offset, accept, outsideLabel);
+      out = applySplit(mesh, diff);
     }
+    onSplit?.(diff);
     return out;
   }
 
@@ -145,7 +150,7 @@ function cutAlongCurves(
   offset: number,
   accept: (t: number) => boolean,
   outsideLabel: (t: number) => number,
-): LabeledMesh {
+): SplitDiff {
   const { positions: pos, indices: idx } = mesh;
   const vCount = pos.length / 3;
   const triCount = labels.length;
@@ -171,13 +176,93 @@ function cutAlongCurves(
     phi[v] = dot(sub(p, hit.point), cross(n, hit.tangent)) + offset;
     inBand[v] = 1;
   }
-  // bant dışındaki köşe: çevresindeki üçgenlerin çoğunluğunun tarafı
-  const vote = new Int32Array(vCount);
+  return splitAlongField(mesh, labels, phi, inBand, slot, accept, outsideLabel);
+}
+
+/**
+ * Sıfır seviye çizgisi boyunca bölmenin sonucu, yerinde uygulanabilir fark
+ * olarak: eski köşeler ve üçgen numaraları korunur (bölünen üçgenin ilk
+ * parçası kendi yerinde kalır, diğer parçalar sona eklenir). Geri alma bu
+ * farkla yapılır; mesh'in tam kopyası saklanmaz.
+ */
+export interface SplitDiff {
+  baseVerts: number;
+  baseTris: number;
+  /** Sona eklenen köşeler. */
+  addedPositions: Float32Array;
+  /** Yeri değişen (bölünen ya da etiketi değişen) eski üçgenler, eski ve yeni halleri. */
+  changedTris: Uint32Array;
+  oldIndices: Uint32Array;
+  oldLabels: Uint16Array;
+  newIndices: Uint32Array;
+  newLabels: Uint16Array;
+  /** Sona eklenen üçgenler. */
+  addedIndices: Uint32Array;
+  addedLabels: Uint16Array;
+}
+
+/** Farkı uygular, yeni dizilerle mesh döndürür (girdi değişmez). */
+export function applySplit(mesh: LabeledMesh, d: SplitDiff): LabeledMesh {
+  const positions = new Float32Array(mesh.positions.length + d.addedPositions.length);
+  positions.set(mesh.positions);
+  positions.set(d.addedPositions, mesh.positions.length);
+  const indices = new Uint32Array(mesh.indices.length + d.addedIndices.length);
+  indices.set(mesh.indices);
+  indices.set(d.addedIndices, mesh.indices.length);
+  const labels = new Uint16Array(mesh.labels.length + d.addedLabels.length);
+  labels.set(mesh.labels);
+  labels.set(d.addedLabels, mesh.labels.length);
+  d.changedTris.forEach((t, i) => {
+    indices.set(d.newIndices.subarray(3 * i, 3 * i + 3), 3 * t);
+    labels[t] = d.newLabels[i];
+  });
+  return { positions, indices, labels };
+}
+
+/** Farkı geri alır: eklenenler atılır, değişen üçgenler eski haline döner. */
+export function revertSplit(mesh: LabeledMesh, d: SplitDiff): LabeledMesh {
+  const positions = mesh.positions.slice(0, 3 * d.baseVerts);
+  const indices = mesh.indices.slice(0, 3 * d.baseTris);
+  const labels = mesh.labels.slice(0, d.baseTris);
+  d.changedTris.forEach((t, i) => {
+    indices.set(d.oldIndices.subarray(3 * i, 3 * i + 3), 3 * t);
+    labels[t] = d.oldLabels[i];
+  });
+  return { positions, indices, labels };
+}
+
+/**
+ * X30/X34: köşe alanı `phi`nin (bölge içi +) sıfır çizgisi boyunca böler.
+ * `active` köşelerde alan geçerlidir; diğerleri `labels`e göre + (içeride),
+ * − (dışarıda) ya da 0 (sınırda) alır. Etkin köşeye değen üçgen işaretine göre
+ * etiketlenir (başlangıç etiketi `mesh.labels`e göre), diğerleri `labels`i
+ * korur.
+ */
+export function splitAlongField(
+  mesh: LabeledMesh,
+  labels: Uint16Array,
+  phiIn: Float64Array,
+  active: Uint8Array,
+  slot: number,
+  accept: (t: number) => boolean,
+  outsideLabel: (t: number) => number,
+): SplitDiff {
+  const { positions: pos, indices: idx } = mesh;
+  const vCount = pos.length / 3;
+  const triCount = labels.length;
+  const phi = Float64Array.from(phiIn);
+  // etkin olmayan köşe: üçgenlerinin hepsi bölgedeyse +, hiçbiri değilse −, sınırdaysa 0.
+  // Böylece etkin alanın dışında sıfır çizgisi mevcut sınırdan geçer, orada bölme olmaz.
+  const inCount = new Int32Array(vCount);
+  const outCount = new Int32Array(vCount);
   for (let t = 0; t < triCount; t++) {
-    const d = labels[t] === slot ? 1 : -1;
-    for (let k = 0; k < 3; k++) vote[idx[3 * t + k]] += d;
+    const c = labels[t] === slot ? inCount : outCount;
+    for (let k = 0; k < 3; k++) c[idx[3 * t + k]]++;
   }
-  for (let v = 0; v < vCount; v++) if (!inBand[v]) phi[v] = vote[v] > 0 ? band : -band;
+  // büyüklük: etkin köşelerdeki en büyük |phi| (kenar kesişimi makul yerde kalsın)
+  let big = 1e-6;
+  for (let v = 0; v < vCount; v++) if (active[v]) big = Math.max(big, Math.abs(phi[v]));
+  for (let v = 0; v < vCount; v++) if (!active[v]) phi[v] = inCount[v] && outCount[v] ? 0 : inCount[v] ? big : -big;
 
   // sıfır çizgisi bir köşeye çok yakın geçiyorsa köşeden geçsin: ince şerit üçgen oluşmaz
   const EPS = 0.12;
@@ -185,56 +270,63 @@ function cutAlongCurves(
     for (let e = 0; e < 3; e++) {
       const a = idx[3 * t + e];
       const b = idx[3 * t + ((e + 1) % 3)];
-      if (!(inBand[a] || inBand[b]) || phi[a] * phi[b] >= 0) continue;
+      if (!(active[a] || active[b]) || phi[a] * phi[b] >= 0) continue;
       const s = phi[a] / (phi[a] - phi[b]);
       if (s < EPS) phi[a] = 0;
       else if (s > 1 - EPS) phi[b] = 0;
     }
   }
 
-  const outPos: number[] = Array.from(pos);
-  const outIdx: number[] = [];
-  const outLab: number[] = [];
+  const addedPos: number[] = [];
   const crossing = new Map<number, number>();
+  const P = (v: number, k: number) => (v < vCount ? pos[3 * v + k] : addedPos[3 * (v - vCount) + k]);
   const crossAt = (a: number, b: number): number => {
     const key = a < b ? a * vCount + b : b * vCount + a;
     let v = crossing.get(key);
     if (v === undefined) {
       const s = phi[a] / (phi[a] - phi[b]);
-      v = outPos.length / 3;
-      for (let k = 0; k < 3; k++) outPos.push(pos[3 * a + k] + (pos[3 * b + k] - pos[3 * a + k]) * s);
+      v = vCount + addedPos.length / 3;
+      for (let k = 0; k < 3; k++) addedPos.push(pos[3 * a + k] + (pos[3 * b + k] - pos[3 * a + k]) * s);
       crossing.set(key, v);
     }
     return v;
   };
-  // bant içinde etiket eğriden okunur (başlangıç etiketine göre); başka slotun üçgeni bölgeye girmez
+  // etkin bölgede etiket eğriden okunur (başlangıç etiketine göre); başka slotun üçgeni bölgeye girmez
   const sideLabel = (t: number, inside: boolean) => {
     const was = mesh.labels[t];
     if (inside) return was === slot || accept(t) ? slot : was;
     return was === slot ? outsideLabel(t) : was;
   };
-  const emit = (poly: number[], label: number) => {
+  const changed: number[] = [];
+  const newIdx: number[] = [];
+  const newLab: number[] = [];
+  const addIdx: number[] = [];
+  const addLab: number[] = [];
+  const triangulate = (poly: number[]): number[][] => {
     if (poly.length === 4) {
       // dörtgen: kısa köşegenden böl
       const d = (i: number, j: number) =>
-        Math.hypot(outPos[3 * poly[i]] - outPos[3 * poly[j]], outPos[3 * poly[i] + 1] - outPos[3 * poly[j] + 1], outPos[3 * poly[i] + 2] - outPos[3 * poly[j] + 2]);
+        Math.hypot(P(poly[i], 0) - P(poly[j], 0), P(poly[i], 1) - P(poly[j], 1), P(poly[i], 2) - P(poly[j], 2));
       if (d(1, 3) < d(0, 2)) poly = [poly[1], poly[2], poly[3], poly[0]];
     }
-    for (let i = 1; i + 1 < poly.length; i++) {
-      outIdx.push(poly[0], poly[i], poly[i + 1]);
-      outLab.push(label);
-    }
+    const out: number[][] = [];
+    for (let i = 1; i + 1 < poly.length; i++) out.push([poly[0], poly[i], poly[i + 1]]);
+    return out;
   };
   for (let t = 0; t < triCount; t++) {
     const v = [idx[3 * t], idx[3 * t + 1], idx[3 * t + 2]];
-    const banded = inBand[v[0]] || inBand[v[1]] || inBand[v[2]];
+    const touched = active[v[0]] || active[v[1]] || active[v[2]];
     const sg = v.map((x) => Math.sign(phi[x]));
     const hasPos = sg.includes(1);
     const hasNeg = sg.includes(-1);
-    if (!banded || !(hasPos && hasNeg)) {
-      outIdx.push(v[0], v[1], v[2]);
-      // bantta: işarete göre; üç köşesi de sıfırsa yaklaşık etiket
-      outLab.push(banded && (hasPos || hasNeg) ? sideLabel(t, hasPos) : labels[t]);
+    if (!touched || !(hasPos && hasNeg)) {
+      // bölünmez; etkin bölgede işarete göre, üç köşesi de sıfırsa eski etiket
+      const label = touched && (hasPos || hasNeg) ? sideLabel(t, hasPos) : labels[t];
+      if (label !== mesh.labels[t]) {
+        changed.push(t);
+        newIdx.push(v[0], v[1], v[2]);
+        newLab.push(label);
+      }
       continue;
     }
     // üçgeni kenar kesişimleriyle dolaş, iki tarafa ayır (sıfır köşe iki tarafta da)
@@ -250,42 +342,50 @@ function cutAlongCurves(
         minus.push(x);
       }
     }
-    emit(plus, sideLabel(t, true));
-    emit(minus, sideLabel(t, false));
+    const pieces = [
+      ...triangulate(plus).map((tri) => ({ tri, label: sideLabel(t, true) })),
+      ...triangulate(minus).map((tri) => ({ tri, label: sideLabel(t, false) })),
+    ];
+    // ilk parça üçgenin kendi yerinde kalır
+    changed.push(t);
+    newIdx.push(...pieces[0].tri);
+    newLab.push(pieces[0].label);
+    for (const p of pieces.slice(1)) {
+      addIdx.push(...p.tri);
+      addLab.push(p.label);
+    }
   }
-  return { positions: Float32Array.from(outPos), indices: Uint32Array.from(outIdx), labels: Uint16Array.from(outLab) };
+  const changedTris = Uint32Array.from(changed);
+  const oldIndices = new Uint32Array(changed.length * 3);
+  changed.forEach((t, i) => oldIndices.set(idx.subarray(3 * t, 3 * t + 3), 3 * i));
+  return {
+    baseVerts: vCount,
+    baseTris: triCount,
+    addedPositions: Float32Array.from(addedPos),
+    changedTris,
+    oldIndices,
+    oldLabels: Uint16Array.from(changed, (t) => mesh.labels[t]),
+    newIndices: Uint32Array.from(newIdx),
+    newLabels: Uint16Array.from(newLab),
+    addedIndices: Uint32Array.from(addIdx),
+    addedLabels: Uint16Array.from(addLab),
+  };
 }
 
 /**
- * Yumuşatma fırçası: `center` etrafında `radius` içindeki bölge sınırını
- * yerinde düzleştirir. Mesh'in `labels` ve `positions` dizilerini değiştirir,
- * etkilenen üçgenleri döndürür.
- *
- * Seviye kümesi yaklaşımı: fırça altındaki köşelere sınıra işaretli uzaklık
- * (içeride +) verilir, bu alan yüzey üzerinde 2G − G∘G süzgeciyle
- * yumuşatılır (G: Gauss; bu süzgeç bölgeyi büzmez, sadece küçük
- * girinti/çıkıntıları siler). Yeni sınır alanın sıfır çizgisidir: üçgenler
- * işaretine göre etiketlenir, sınır köşeleri sıfır çizgisine kaydırılır.
- * Etki fırça merkezinden kenara doğru azalır.
+ * Fırça alanı: `dist2(v)` (fırça merkezine/izine uzaklığın karesi) ile
+ * `radius` içindeki bölge sınırına işaretli uzaklık, 2G − G∘G ile
+ * yumuşatılmış hali (`phiN`) ve yerel komşuluk. Sınır yoksa null.
  */
-export function smoothBoundaryAt(
-  mesh: LabeledMesh,
-  slot: number,
-  center: V3,
-  radius: number,
-  strength: number,
-  accept: (t: number) => boolean,
-  outsideLabel: (t: number) => number,
-): number[] {
+function smoothField(mesh: LabeledMesh, slot: number, dist2: (v: number) => number, radius: number, strength: number) {
   const { labels, positions: pos, indices: idx } = mesh;
   const triCount = labels.length;
   const vCount = pos.length / 3;
   const reach2 = (radius * 1.5) ** 2;
-  const dist2 = (v: number) => (pos[3 * v] - center[0]) ** 2 + (pos[3 * v + 1] - center[1]) ** 2 + (pos[3 * v + 2] - center[2]) ** 2;
   // fırça altındaki üçgenler ve köşeler (yerel numaralı)
   const near: number[] = [];
   for (let t = 0; t < triCount; t++) if (dist2(idx[3 * t]) <= reach2) near.push(t);
-  if (!near.length) return [];
+  if (!near.length) return null;
   const local = new Map<number, number>();
   const verts: number[] = [];
   for (const t of near) {
@@ -310,7 +410,7 @@ export function smoothBoundaryAt(
     side[i] = inS && out ? 0 : inS ? 1 : -1;
     if (side[i] === 0 && dist2(v) <= radius * radius) anyBoundary = true;
   }
-  if (!anyBoundary) return [];
+  if (!anyBoundary) return null;
   // yerel komşuluk (fırça üçgenlerinin kenarları)
   const nbr: number[][] = Array.from({ length: n }, () => []);
   for (const t of near) {
@@ -382,6 +482,35 @@ export function smoothBoundaryAt(
   };
   const phiN = new Float64Array(n);
   for (let i = 0; i < n; i++) phiN[i] = phi[i] + k * w(i) * (2 * g[i] - gg[i] - phi[i]);
+  return { verts, local, nbr, near, phi, phiN, w, start, list, P, n };
+}
+
+/**
+ * Yumuşatma fırçası: `center` etrafında `radius` içindeki bölge sınırını
+ * yerinde düzleştirir. Mesh'in `labels` ve `positions` dizilerini değiştirir,
+ * etkilenen üçgenleri döndürür.
+ *
+ * Seviye kümesi yaklaşımı: fırça altındaki köşelere sınıra işaretli uzaklık
+ * (içeride +) verilir, bu alan yüzey üzerinde 2G − G∘G süzgeciyle
+ * yumuşatılır (G: Gauss; bu süzgeç bölgeyi büzmez, sadece küçük
+ * girinti/çıkıntıları siler). Yeni sınır alanın sıfır çizgisidir: üçgenler
+ * işaretine göre etiketlenir, sınır köşeleri sıfır çizgisine kaydırılır.
+ * Etki fırça merkezinden kenara doğru azalır.
+ */
+export function smoothBoundaryAt(
+  mesh: LabeledMesh,
+  slot: number,
+  center: V3,
+  radius: number,
+  strength: number,
+  accept: (t: number) => boolean,
+  outsideLabel: (t: number) => number,
+): number[] {
+  const { labels, positions: pos, indices: idx } = mesh;
+  const dist2 = (v: number) => (pos[3 * v] - center[0]) ** 2 + (pos[3 * v + 1] - center[1]) ** 2 + (pos[3 * v + 2] - center[2]) ** 2;
+  const field = smoothField(mesh, slot, dist2, radius, strength);
+  if (!field) return [];
+  const { verts, local, nbr, near, phiN, w, start, list, P, n } = field;
 
   // yeniden etiketleme: fırça içindeki üçgenler sıfır çizgisinin hangi tarafında
   const changed = new Set<number>();
@@ -739,4 +868,60 @@ function snapBoundaryToCurves(
     }
   }
   return [...moved];
+}
+
+/**
+ * X34: yumuşatma fırçası darbesi bitince, darbenin geçtiği yerde sınır
+ * üçgenlerin içinden geçirilir. Fırçadaki alan (sınıra işaretli uzaklık,
+ * 2G − G∘G ile yumuşatılmış) darbe izinin tamamı için bir kez daha
+ * hesaplanır ve sıfır çizgisi boyunca bölünür. Fırçanın kenarında alan
+ * yumuşatılmamış uzaklığa iner; orada sıfır çizgisi mevcut sınırdan geçer,
+ * geçiş dikişsizdir. Bölge yoksa null.
+ */
+export function smoothStrokeSplit(
+  mesh: LabeledMesh,
+  slot: number,
+  path: V3[],
+  radius: number,
+  strength: number,
+  accept: (t: number) => boolean,
+  outsideLabel: (t: number) => number,
+): SplitDiff | null {
+  if (!path.length) return null;
+  // iz noktalarını r/3 aralıkla seyrelt
+  const centers: V3[] = [path[0]];
+  for (const p of path) {
+    const q = centers[centers.length - 1];
+    if (Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]) >= radius / 3) centers.push(p);
+  }
+  const reach = radius * 1.5;
+  const lo: V3 = [Infinity, Infinity, Infinity];
+  const hi: V3 = [-Infinity, -Infinity, -Infinity];
+  for (const c of centers) {
+    for (let k = 0; k < 3; k++) {
+      lo[k] = Math.min(lo[k], c[k] - reach);
+      hi[k] = Math.max(hi[k], c[k] + reach);
+    }
+  }
+  const pos = mesh.positions;
+  const far = reach * reach * 4;
+  const dist2 = (v: number) => {
+    const x = pos[3 * v];
+    const y = pos[3 * v + 1];
+    const z = pos[3 * v + 2];
+    if (x < lo[0] || y < lo[1] || z < lo[2] || x > hi[0] || y > hi[1] || z > hi[2]) return far;
+    let best = far;
+    for (const c of centers) best = Math.min(best, (x - c[0]) ** 2 + (y - c[1]) ** 2 + (z - c[2]) ** 2);
+    return best;
+  };
+  const field = smoothField(mesh, slot, dist2, radius, strength);
+  if (!field) return null;
+  const vCount = pos.length / 3;
+  const phi = new Float64Array(vCount);
+  const active = new Uint8Array(vCount);
+  for (let i = 0; i < field.n; i++) {
+    phi[field.verts[i]] = field.phiN[i];
+    active[field.verts[i]] = 1;
+  }
+  return splitAlongField(mesh, mesh.labels, phi, active, slot, accept, outsideLabel);
 }

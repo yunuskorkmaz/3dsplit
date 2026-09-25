@@ -38,6 +38,8 @@ export interface PointerHandlers {
 interface PartObject {
   mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
   source: LabeledMesh;
+  /** Kurulduğu andaki indeks dizisi: üçgen bölme mesh'i yerinde değiştirince yeniden kurulur. */
+  indices: Uint32Array;
 }
 
 /** Three.js sahnesi. React'ten bağımsız; durum store'dan `sync` ile gelir. */
@@ -185,12 +187,12 @@ export class Viewport {
     }
     for (const v of views) {
       let obj = this.parts.get(v.id);
-      if (!obj || obj.source !== v.mesh) {
+      if (!obj || obj.source !== v.mesh || obj.indices !== v.mesh.indices) {
         if (obj) {
           this.scene.remove(obj.mesh);
           obj.mesh.geometry.dispose();
         }
-        obj = { mesh: buildMesh(v.mesh), source: v.mesh };
+        obj = { mesh: buildMesh(v.mesh), source: v.mesh, indices: v.mesh.indices };
         obj.mesh.userData.partId = v.id;
         this.parts.set(v.id, obj);
         this.scene.add(obj.mesh);

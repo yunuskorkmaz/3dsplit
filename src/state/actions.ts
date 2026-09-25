@@ -29,11 +29,11 @@ import {
   selectedPart,
   set,
 } from './store';
-import { smoothBoundaryAt, smoothRegionBoundary } from '../core/smooth';
+import { applySplit, revertSplit, type SplitDiff, smoothBoundaryAt, smoothRegionBoundary, smoothStrokeSplit } from '../core/smooth';
 import { boundingBox } from '../core/geometry';
 import { connectedComponents } from '../core/topology';
 import { mirrorPoint } from '../core/spatial';
-import { concavityOf, gridOf, refreshGeometry, type Topology, topologyOf } from './topologyCache';
+import { concavityOf, gridOf, invalidateTopology, refreshGeometry, type Topology, topologyOf } from './topologyCache';
 
 // ---------- dosya ----------
 
@@ -463,6 +463,7 @@ export function smoothActiveRegion(): void {
   const topo = topologyOf(part.mesh);
   const { smoothRadius, smoothExact } = get();
   const radius = smoothRadius > 0 ? smoothRadius : smartOptions(topo).scale;
+  let diff: SplitDiff | null = null;
   const r = smoothRegionBoundary(
     part.mesh,
     topo.adj,
@@ -471,7 +472,15 @@ export function smoothActiveRegion(): void {
     (t) => labels[t] === BASE_SLOT,
     (t) => neighborLabel(topo.adj, labels, t, slot),
     smoothExact,
+    (d) => {
+      diff = d;
+    },
   );
+  if (diff) {
+    lastSmart = null;
+    applyMeshSplit(part.mesh, diff);
+    return;
+  }
   const mesh = r;
   const before = get().parts;
   const after = before.map((p) => (p.id === part.id ? { ...p, mesh } : p));
@@ -502,7 +511,7 @@ function neighborLabel(adj: Int32Array, labels: Uint16Array, t: number, exclude:
 // ---------- yumuşatma fırçası ----------
 
 /** Açık yumuşatma darbesi: mesh yerinde değişir, darbe başındaki hali geri alma farkı için saklanır. */
-let smoothStroke: { partId: string; mesh: LabeledMesh; pos0: Float32Array; lab0: Uint16Array } | null = null;
+let smoothStroke: { partId: string; mesh: LabeledMesh; pos0: Float32Array; lab0: Uint16Array; path: Vec3[] } | null = null;
 
 /**
  * Yumuşatma darbesi başlar. Mesh kopyalanmaz: darbe boyunca yerinde değişir,
@@ -525,6 +534,7 @@ export function beginSmoothStroke(partId: string): boolean {
     mesh: part.mesh,
     pos0: new Float32Array(part.mesh.positions),
     lab0: Uint16Array.from(part.mesh.labels),
+    path: [],
   };
   return true;
 }
@@ -544,9 +554,11 @@ export function smoothAt(point: Vec3): void {
     (t) => labels[t] === BASE_SLOT,
     (t) => neighborLabel(adj, labels, t, slot),
   );
+  smoothStroke.path.push(point);
   const part = partById(partId);
   const m = part ? mirrored(part, point) : null;
   if (m) {
+    smoothStroke.path.push(m.point);
     const more = smoothBoundaryAt(
       mesh,
       slot,
@@ -609,7 +621,7 @@ function finiteAt(mesh: LabeledMesh, tris: ArrayLike<number>): boolean {
 
 export function endSmoothStroke(): void {
   if (!smoothStroke) return;
-  const { partId, mesh, pos0, lab0 } = smoothStroke;
+  const { partId, mesh, pos0, lab0, path } = smoothStroke;
   smoothStroke = null;
   const verts: number[] = [];
   for (let v = 0; v < pos0.length / 3; v++) {
@@ -665,6 +677,45 @@ export function endSmoothStroke(): void {
     labelsAfter: Uint16Array.from(tris, (t) => mesh.labels[t]),
   });
   set((s) => ({ paintVersion: s.paintVersion + 1 }));
+  splitStroke(mesh, path);
+}
+
+/** X34: darbe izinde sınır üçgenlerin içinden geçirilir ("Üçgenleri böl" açıksa). */
+function splitStroke(mesh: LabeledMesh, path: Vec3[]): void {
+  const { smoothExact, activeSlot: slot, brushRadius, smoothStrength } = get();
+  if (!smoothExact || !path.length) return;
+  const adj = topologyOf(mesh).adj;
+  const labels = mesh.labels;
+  const diff = smoothStrokeSplit(
+    mesh,
+    slot,
+    path,
+    brushRadius,
+    smoothStrength,
+    (t) => labels[t] === BASE_SLOT,
+    (t) => neighborLabel(adj, labels, t, slot),
+  );
+  if (diff && (diff.changedTris.length || diff.addedIndices.length)) applyMeshSplit(mesh, diff);
+}
+
+/**
+ * Bölme farkını mesh'e yerinde uygular (dizi başvuruları değişir, nesne aynı
+ * kalır: eski boyama/geometri geri alma kayıtları geçerli kalır) ve geri alma
+ * kaydına sadece farkı yazar.
+ */
+function applyMeshSplit(mesh: LabeledMesh, diff: SplitDiff, record = true): void {
+  replaceMeshArrays(mesh, applySplit(mesh, diff));
+  if (record) pushHistory({ kind: 'split', mesh, diff });
+}
+
+function replaceMeshArrays(mesh: LabeledMesh, next: LabeledMesh): void {
+  mesh.positions = next.positions;
+  mesh.indices = next.indices;
+  mesh.labels = next.labels;
+  invalidateTopology(mesh);
+  bumpGeometry(mesh);
+  // viewport geometrisi yeniden kurulsun: parça nesnesi yenilenir, mesh aynı kalır
+  set((s) => ({ parts: s.parts.map((p) => (p.mesh === mesh ? { ...p } : p)), preview: null, paintVersion: s.paintVersion + 1 }));
 }
 
 // ---------- bölgeler (C12) ----------
@@ -1016,6 +1067,8 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
     const part = get().parts.find((p) => p.mesh === entry.mesh);
     if (part) onLabelsChanged?.(part.id, entry.tris);
     set((s) => ({ paintVersion: s.paintVersion + 1 }));
+  } else if (entry.kind === 'split') {
+    replaceMeshArrays(entry.mesh, reverse ? revertSplit(entry.mesh, entry.diff) : applySplit(entry.mesh, entry.diff));
   } else if (entry.kind === 'geometry') {
     const pos = reverse ? entry.posBefore : entry.posAfter;
     const lab = reverse ? entry.labelsBefore : entry.labelsAfter;

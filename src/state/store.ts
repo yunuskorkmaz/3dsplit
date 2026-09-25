@@ -1,3 +1,4 @@
+import type { SplitDiff } from '../core/smooth';
 import { create } from 'zustand';
 import type { CutMode, CutPreview, CutSuggestion, PinPlacement, PinShape } from '../core/cut';
 import type { LabeledMesh, Vec3 } from '../core/types';
@@ -66,6 +67,8 @@ export type HistoryEntry =
   // boyama kaydı parça kimliğine değil mesh nesnesine bağlı: inceltme/kesim mesh'i değiştirse de kayıt kendi mesh'ine yazar
   | { kind: 'paint'; mesh: LabeledMesh; tris: Uint32Array; before: Uint16Array; after: Uint16Array }
   | { kind: 'parts'; before: Part[]; after: Part[] }
+  // X34/X30: üçgen bölme mesh üzerinde yerinde; sadece fark saklanır (tam kopya belleği doldururdu)
+  | { kind: 'split'; mesh: LabeledMesh; diff: SplitDiff }
   // yumuşatma fırçası: mesh yerinde değişir, sadece değişen köşe ve üçgenler saklanır
   | {
       kind: 'geometry';

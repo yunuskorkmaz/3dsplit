@@ -138,6 +138,28 @@ describe('sınır yumuşatma', () => {
 });
 
 describe('yumuşatma fırçası', () => {
+  it('X34: darbe izinde sınır üçgenlerin içinden geçer, fark geri alınabilir', async () => {
+    const { smoothStrokeSplit, applySplit, revertSplit } = await import('../src/core/smooth');
+    const m = labelWhere(subdividedCube(20, 10), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));
+    // +x tarafında bir yay boyunca darbe
+    const path: [number, number, number][] = [];
+    for (let a = -0.6; a <= 0.6; a += 0.1) path.push([5 * Math.cos(a), 5 * Math.sin(a), 10]);
+    const diff = smoothStrokeSplit(m, 1, path, 2, 1, (t) => m.labels[t] === 0, () => 0);
+    expect(diff).not.toBeNull();
+    if (!diff) return;
+    expect(diff.addedIndices.length).toBeGreaterThan(0);
+    const out = applySplit(m, diff);
+    expect(signedVolume(out)).toBeCloseTo(8000, 2);
+    expect(buildAdjacency(out).every((n) => n >= 0)).toBe(true);
+    // izin uzağındaki (-x) üçgenler değişmez
+    const c = faceCentroids(m);
+    for (const t of diff.changedTris) expect(c[3 * t]).toBeGreaterThan(0);
+    const back = revertSplit(out, diff);
+    expect(back.indices).toEqual(m.indices);
+    expect(back.labels).toEqual(m.labels);
+    expect(back.positions).toEqual(m.positions);
+  });
+
   it('X37: küçük fırçada köşe yarıçapın dörtte birinden fazla kaymaz', async () => {
     const { smoothBoundaryAt } = await import('../src/core/smooth');
     // kaba ızgara (2 mm) + küçük fırça: eskiden köşe kenarın %45'i kadar, fırçanın dışına kaçabiliyordu

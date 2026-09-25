@@ -57,6 +57,13 @@ export function refreshGeometry(mesh: LabeledMesh, from?: LabeledMesh): void {
   gridCache.delete(mesh);
 }
 
+/** Mesh'in bağlantısı yerinde değişti (üçgen bölme): tüm önbellekler atılır. */
+export function invalidateTopology(mesh: LabeledMesh): void {
+  cache.delete(mesh);
+  concavityCache.delete(mesh);
+  gridCache.delete(mesh);
+}
+
 const gridCache = new WeakMap<LabeledMesh, TriangleGrid>();
 
 /** En yakın üçgen araması için ızgara (ayna boyama). */

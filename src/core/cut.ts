@@ -122,17 +122,39 @@ function findIslands(mesh: LabeledMesh, slot: number, warnings: string[] = []): 
   return islands;
 }
 
-/** Halkanın Newell normali, ağırlık merkezi ve izdüşüm alanı. */
+/**
+ * Halkanın Newell normali, alan merkezi ve izdüşüm alanı. Merkez köşe
+ * ortalaması değil çokgenin alan merkezi: sınırın sık örneklendiği tarafa kaymaz.
+ */
 function loopPlane(positions: Float32Array, loop: number[]): { normal: Vec3; center: Vec3; area: number } {
   let n: Vec3 = [0, 0, 0];
-  let c: Vec3 = [0, 0, 0];
+  let mean: Vec3 = [0, 0, 0];
   for (let i = 0; i < loop.length; i++) {
     const p = vertexAt(positions, loop[i]);
     const q = vertexAt(positions, loop[(i + 1) % loop.length]);
     n = add(n, cross(p, q));
-    c = add(c, p);
+    mean = add(mean, p);
   }
-  return { normal: normalize(n), center: scale(c, 1 / loop.length), area: Math.hypot(...n) / 2 };
+  mean = scale(mean, 1 / loop.length);
+  const normal = normalize(n);
+  const [u, v] = orthoBasis(normal);
+  let a2 = 0;
+  let cx = 0;
+  let cy = 0;
+  for (let i = 0; i < loop.length; i++) {
+    const p = sub(vertexAt(positions, loop[i]), mean);
+    const q = sub(vertexAt(positions, loop[(i + 1) % loop.length]), mean);
+    const px = dot(p, u);
+    const py = dot(p, v);
+    const qx = dot(q, u);
+    const qy = dot(q, v);
+    const c = px * qy - qx * py;
+    a2 += c;
+    cx += (px + qx) * c;
+    cy += (py + qy) * c;
+  }
+  const center = Math.abs(a2) > 1e-12 ? add(mean, add(scale(u, cx / (3 * a2)), scale(v, cy / (3 * a2)))) : mean;
+  return { normal, center, area: Math.hypot(...n) / 2 };
 }
 
 /**
@@ -145,10 +167,12 @@ function loopPlane(positions: Float32Array, loop: number[]): { normal: Vec3; cen
  */
 function triangulateLoop(positions: Float32Array, loop: number[], normal?: Vec3): number[] {
   const [u, v] = orthoBasis(normal ?? loopPlane(positions, loop).normal);
-  const pts = loop.map((i) => {
-    const p = vertexAt(positions, i);
-    return [dot(p, u), dot(p, v)] as [number, number];
-  });
+  const pts = untangle(
+    loop.map((i) => {
+      const p = vertexAt(positions, i);
+      return [dot(p, u), dot(p, v)] as [number, number];
+    }),
+  );
   let extent = 0;
   for (const p of pts) extent = Math.max(extent, Math.abs(p[0] - pts[0][0]), Math.abs(p[1] - pts[0][1]));
   const tol = Math.max(extent * 1e-5, 1e-9);
@@ -215,6 +239,71 @@ function triangulateLoop(positions: Float32Array, loop: number[], normal?: Vec3)
     }
   }
   return out;
+}
+
+/**
+ * İzdüşümü kendini kesen halkayı üçgenlenebilir hale getirir. Sadece
+ * üçgen bağlantısı bu 2B noktalardan kurulur; 3B köşeler değişmez.
+ * Önce Laplace yumuşatması (tırtıklı sınırın mikro zikzaklarını açar),
+ * olmazsa yay uzunluğuyla çembere eşleme (dışbükey, her zaman geçerli).
+ */
+function untangle(pts: [number, number][]): [number, number][] {
+  if (!polygonSelfIntersects(pts)) return pts;
+  let cur = pts;
+  for (let iter = 0; iter < 60; iter++) {
+    const n = cur.length;
+    cur = cur.map((p, i) => {
+      const a = cur[(i + n - 1) % n];
+      const b = cur[(i + 1) % n];
+      return [0.5 * p[0] + 0.25 * (a[0] + b[0]), 0.5 * p[1] + 0.25 * (a[1] + b[1])] as [number, number];
+    });
+    if (iter % 5 === 4 && !polygonSelfIntersects(cur)) return cur;
+  }
+  // çember: halka yönü (işaretli alan) korunur
+  let area = 0;
+  let total = 0;
+  const seg: number[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    area += a[0] * b[1] - b[0] * a[1];
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1]) + 1e-9;
+    seg.push(d);
+    total += d;
+  }
+  const dirSign = area >= 0 ? 1 : -1;
+  let acc = 0;
+  return pts.map((_, i) => {
+    const t = (2 * Math.PI * acc) / total;
+    acc += seg[i];
+    return [Math.cos(t), dirSign * Math.sin(t)] as [number, number];
+  });
+}
+
+/** Kapalı çokgenin kenarları birbirini kesiyor mu. */
+function polygonSelfIntersects(pts: [number, number][]): boolean {
+  const n = pts.length;
+  const orient = (a: [number, number], b: [number, number], c: [number, number]) =>
+    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  // x'e göre sıralı kenar taraması
+  const edges = Array.from({ length: n }, (_, i) => i).sort(
+    (i, j) => Math.min(pts[i][0], pts[(i + 1) % n][0]) - Math.min(pts[j][0], pts[(j + 1) % n][0]),
+  );
+  for (let ai = 0; ai < n; ai++) {
+    const i = edges[ai];
+    const a = pts[i];
+    const b = pts[(i + 1) % n];
+    const maxX = Math.max(a[0], b[0]);
+    for (let bi = ai + 1; bi < n; bi++) {
+      const j = edges[bi];
+      const c = pts[j];
+      const d = pts[(j + 1) % n];
+      if (Math.min(c[0], d[0]) > maxX) break;
+      if (Math.abs(i - j) <= 1 || Math.abs(i - j) === n - 1) continue;
+      if (orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0) return true;
+    }
+  }
+  return false;
 }
 
 /** Fast/Keys: bölgeyi sınır halkası boyunca düz kapakla ayırır. */

@@ -22,6 +22,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X1 | Fırça darbesinde boşluk kalmasın: hızlı sürüklemede iki nokta arası ara noktalarla doldurulsun | [x] |
 | X2 | Mesh inceltme: seçili parçayı hedef kenar uzunluğuna kadar bölme; etiketler korunur. Düşük poligonlu modelde sınır tırtıklı çıkmasın | [x] |
 | X11 | Smart Fill yoğun mesh'te tüm modele yayılıyordu: ölçekli açı karşılaştırması, "sadece çukur kenarda dur" modu, seçimdeki küçük deliklerin kapanması, yayılma uyarısı | [x] |
+| X15 | Tırtıklı/kavisli sınırda kapak üretilemiyordu (kulak Keys, kaş Socket): izdüşümü kendini kesen halka yumuşatılıp gerekirse çembere eşlenerek üçgenlenir; pim kapağın alan merkezinde | [x] |
 | X12 | Socket çıkıntılarda (burun, göz) hızlı ve sağlam: kapakla ayır + kapak prizması tapa; bölge içi delikler kesime katılır; yedek yöntem sadece sorunlu üçgenlerde prizma | [x] |
 | C5 | Socket Squeeze: tapa tabanı içe daraltılır, yandan taşma önlenir | [ ] |
 | C4 | Socket yönü: önizlemede ok, gizmo ile döndürme; "kameradan al" ve "otomatik" | [ ] |
@@ -97,7 +98,6 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X7 | 1–2M üçgen performansı: komşuluk ve kaynaştırma için Map yerine sıralama tabanlı yapı | Büyük modellerde yavaşlık |
 | X8 | Playwright smoke testi | Arayüz regresyonları |
 | X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği |
-| X13 | Alttan oyuk bölgelerde (ör. kaş) de hızlı yöntem: kapak yerine bölgeye oturan eğri taban | Şu an yedek yöntemle 2–3 s |
 | X14 | Smart Fill ölçeği/açısı için model başına otomatik ayar önerisi | Farklı yoğunluktaki modellerde tek varsayılan yetmeyebilir |
 
 ## Tamamlananlar günlüğü
@@ -109,3 +109,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | Dokümanlar: yol haritası, mimari, çalışma kuralları | `3e32c28` |
 | 2026-09-25 | X1: fırça darbesi ara noktaları | `1c1247b` |
 | 2026-09-25 | X2: mesh inceltme | `4d01418` |
+| 2026-09-25 | X11, X12: yoğun mesh'te Smart Fill, çıkıntı socket'i | `bfb879b` |

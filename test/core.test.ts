@@ -148,6 +148,18 @@ describe('kesim', () => {
     expect(volume(r1.parts[0])).toBeCloseTo(volume(r0.parts[0]), 1);
   });
 
+  it('X32: pahlı pim daha az hacimli, delik aynı', () => {
+    const flat = cutRegion(capRegion, { ...baseOpts, mode: 'keys' });
+    const ch = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, chamfer: 0.5 } });
+    // gövdeye giren uçta kesik koni: π·h/3·(R²+Rr+r²) − π·R²·h, R=2 r=1.5 h=0.5
+    const cone = (Math.PI * 0.5 * (4 + 3 + 2.25)) / 3;
+    const lost = Math.PI * 4 * 0.5 - cone;
+    const diff = volume(flat.parts[0]) - volume(ch.parts[0]);
+    expect(diff).toBeGreaterThan(lost * 0.7);
+    expect(diff).toBeLessThan(lost * 1.3);
+    expect(volume(ch.body)).toBeCloseTo(volume(flat.body), 1);
+  });
+
   it('Keys: pim başına boyut ve eğik eksen', () => {
     const fast = cutRegion(capRegion, { ...baseOpts, mode: 'fast' });
     const r = cutRegion(capRegion, {

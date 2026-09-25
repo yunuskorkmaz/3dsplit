@@ -22,6 +22,11 @@ export interface PinOptions {
    * dibe oturmaz (kesim yüzeyleri birbirine değer). Verilmezse `clearance`.
    */
   depthClearance?: number;
+  /**
+   * X32: pim uçlarında pah, mm (konik uç). Yuvaya kolay girer, baskıda uç
+   * sarkmaz. Delik pahlanmaz. Snap pimde kullanılmaz.
+   */
+  chamfer?: number;
 }
 
 /** Tek bir pimin yeri ve (isteğe bağlı) kendine özgü boyutu/ekseni. */
@@ -667,8 +672,14 @@ function makePin(pin: PinOptions, center: Vec3, axis: Vec3, grow: number, scope:
   let shape: Manifold;
   // snapPin kendi ürettiklerini scope'a ekliyor; iki kez eklenirse iki kez silinir
   if (pin.shape === 'snap') shape = snapPin(pin, grow, scope, growLength);
-  else if (pin.shape === 'cube') shape = scope.keep(Manifold.cube([2 * r, 2 * r, h], true));
-  else shape = scope.keep(Manifold.cylinder(h, r, r, pin.shape === 'octagon' ? 8 : 32, true));
+  else {
+    const segments = pin.shape === 'octagon' ? 8 : 32;
+    const block = (rr: number, hh: number) =>
+      scope.keep(pin.shape === 'cube' ? Manifold.cube([2 * rr, 2 * rr, hh], true) : Manifold.cylinder(hh, rr, rr, segments, true));
+    // pah sadece pimin kendisinde; en fazla yarıçapın ve boyun üçte biri
+    const c = grow === 0 ? Math.min(pin.chamfer ?? 0, r / 3, h / 3) : 0;
+    shape = c > 0.01 ? scope.keep(Manifold.hull([block(r, h - 2 * c), block(r - c, h)])) : block(r, h);
+  }
   const [u, v] = orthoBasis(axis);
   // sütun öncelikli 4x4: x->u, y->v, z->axis, öteleme->center
   const m = [...u, 0, ...v, 0, ...axis, 0, ...center, 1] as unknown as Parameters<Manifold['transform']>[0];

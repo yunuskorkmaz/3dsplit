@@ -735,7 +735,7 @@ function cutOptions(): CutOptions {
     planar: cut.mode !== 'socket' && cut.planar,
     minWall: cut.minWall,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
-    pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart, depthClearance: cut.pinDepthClearance },
+    pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart, depthClearance: cut.pinDepthClearance, chamfer: cut.pinChamfer },
     pins: cut.mode === 'keys' ? pins : undefined,
   };
 }

@@ -22,7 +22,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | # | İş | Neden / kaynak | Durum |
 | --- | --- | --- | --- |
 | X31 | Pim toleransı yarıçap ve boy olarak ayrı: delik pimden daha derin, pim dibe oturmaz | Orca `radius_tolerance` / `height_tolerance` | [x] |
-| X32 | Pim ucunda pah (konik uç): yuvaya kolay girer, uçta sarkma olmaz | Orca `CutConnectorStyle::Frustum` | [ ] |
+| X32 | Pim ucunda pah (konik uç): yuvaya kolay girer, uçta sarkma olmaz | Orca `CutConnectorStyle::Frustum` | [x] |
 | X33 | Otomatik pim boyutu: kesit alanına göre yarıçap ve boy | PrintSplit (kesite göre ölçeklenen pim) | [ ] |
 | X34 | Yumuşatma fırçasında darbe bitince sınır üçgenlerin içinden geçsin (X30'un yerel hali) | Fırçada da düzgün kesim kenarı | [ ] |
 | X35 | Tolerans deneme parçası: seçili pim şekliyle 3 farklı boşlukta delik + pimler | Toleransı baskıdan önce denemek | [ ] |
@@ -193,5 +193,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | C7: Socket ayak payı | `8e00bd2` |
 | 2026-09-25 | B9: çıkıntıları otomatik öner | `bf0faa2` |
 | 2026-09-25 | C6: tapa kesit şekli | `b7ae3cf` |
+| 2026-09-25 | X31: pim toleransı yarıçap ve boy olarak ayrı | `05544fc` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

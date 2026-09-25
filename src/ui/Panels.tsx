@@ -375,6 +375,18 @@ export function CutPanel() {
           </label>
           <NumberField label="Pim yarıçapı" value={cut.pinRadius} min={0.5} max={20} step={0.1} unit="mm" onChange={(v) => update({ pinRadius: v })} />
           <NumberField label="Pim boyu" value={cut.pinLength} min={1} max={60} step={0.5} unit="mm" onChange={(v) => update({ pinLength: v })} />
+          {cut.pinShape !== 'snap' && (
+            <NumberField
+              label="Uç pahı"
+              value={cut.pinChamfer}
+              min={0}
+              max={3}
+              step={0.1}
+              unit="mm"
+              title="Pim uçları konik: yuvaya kolay girer, baskıda uç sarkmaz. 0: düz uç"
+              onChange={(v) => update({ pinChamfer: v })}
+            />
+          )}
           <label className="field">
             <input type="checkbox" checked={cut.pinOnPart} onChange={(e) => update({ pinOnPart: e.target.checked })} />
             <span>Pim kesilen parçada</span>

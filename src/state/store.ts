@@ -1,5 +1,12 @@
 import { create } from 'zustand';
-import type { CutMode, CutPreview, CutSuggestion, PinPlacement, PinShape } from '../core/cut';
+import type {
+  CutMode,
+  CutPreview,
+  CutSuggestion,
+  PinLayout,
+  PinPlacement,
+  PinShape,
+} from '../core/cut';
 import type { SplitDiff } from '../core/smooth';
 import type { LabeledMesh, Vec3 } from '../core/types';
 
@@ -129,6 +136,10 @@ export interface AppState {
   cut: CutSettings;
   /** Keys pimleri; boyut/eksen verilmemişse kesim ayarındaki değerler kullanılır. */
   pins: PinPlacement[];
+  /** Keys pimlerinin hesaplanmış yeri/ekseni/boyutu (otomatik olanlar dahil); pim görüntüsü için. */
+  pinLayout: PinLayout[];
+  /** Seçili pimin tutamağı: taşı ya da döndür. */
+  pinGizmo: 'translate' | 'rotate';
   /** Pim aracında seçili pim (-1: yok). */
   selectedPin: number;
   /** B7: X-ray: model yarı saydam, fırça/silgi küredeki tüm üçgenleri boyar (arka yüzler dahil). */
@@ -207,6 +218,8 @@ export const useStore = create<AppState>(() => ({
   },
   pins: [],
   selectedPin: -1,
+  pinLayout: [],
+  pinGizmo: 'translate',
   mirror: { enabled: false, axis: 0, offset: null },
   camera: loadCameraPrefs(),
   xray: false,

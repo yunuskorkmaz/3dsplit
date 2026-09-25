@@ -24,7 +24,7 @@ const TOOL_DETAILS: Record<string, string> = {
     'Seçimin kenarında gezdir: tırtıklı sınırı düzgün bir eğriye çeker. Güç arttıkça daha çok düzeltir. Üst şeritteki "Tüm sınırı yumuşat" bütün sınırı bir kerede düzeltir.',
   bucket: 'Tıklanan aynı renkli bağlı bölgeyi aktif slota boyar.',
   line: 'Doğal kıvrımı olmayan bölgeler için: yüzeye noktalar tıkla, yol yüzey üzerinden en kısa yoldan geçer. İlk noktaya tıklayınca ya da Enter ile halka kapanır, içi aktif slota boyanır ve kenar çizgi boyunca düzeltilip üçgenlerin içinden geçirilir. Backspace son noktayı siler, Esc iptal eder.',
-  pin: 'Keys modunda pim yerini belirler. Tık: ekle/seç, sürükle: taşı, gizmo: ekseni döndür, Shift+tık: sil.',
+  pin: 'Keys modunda pimleri düzenler. Pimler kesim yüzeyinde gerçek boyutlarıyla yarı saydam görünür. Pime tıkla: seçilir; W ile taşıma okları (kesim düzleminde), R ile döndürme halkaları çıkar, sürüklerken pim anlık hareket eder. Pimi yüzeyde sürükleyerek de taşıyabilirsin. Seçiliyken boş yere tıklamak ya da Esc seçimi bırakır; seçili pim yokken boş yere tıklamak yeni pim ekler. Shift+tık siler. Otomatik pime tıklayınca pimler o yerlerde elle düzenlenebilir hale gelir.',
 };
 
 export function HelpDialog() {

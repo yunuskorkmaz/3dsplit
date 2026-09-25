@@ -18,7 +18,9 @@ export type Command =
   | 'part.showAll'
   | 'view.explode'
   | 'help'
-  | 'slot.clear';
+  | 'slot.clear'
+  | 'pin.move'
+  | 'pin.rotate';
 
 export const COMMANDS: { id: Command; label: string }[] = [
   { id: 'tool.smart', label: 'Smart Fill' },
@@ -38,6 +40,8 @@ export const COMMANDS: { id: Command; label: string }[] = [
   { id: 'view.explode', label: 'Ayrık görünüm aç/kapa' },
   { id: 'help', label: 'Yardım' },
   { id: 'slot.clear', label: 'Aktif slotun seçimini temizle' },
+  { id: 'pin.move', label: 'Pim: taşıma tutamağı' },
+  { id: 'pin.rotate', label: 'Pim: döndürme tutamağı' },
 ];
 
 export const DEFAULT_KEYMAP: Record<Command, string> = {
@@ -58,6 +62,8 @@ export const DEFAULT_KEYMAP: Record<Command, string> = {
   'view.explode': 'X',
   help: '?',
   'slot.clear': 'Delete',
+  'pin.move': 'W',
+  'pin.rotate': 'R',
 };
 
 /** Klavye olayının kısayol adı: tek karakterler büyük harf, boşluk "Space", Shift'li harf "Shift+H". */

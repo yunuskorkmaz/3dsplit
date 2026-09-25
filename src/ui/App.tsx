@@ -45,6 +45,8 @@ function runCommand(cmd: Command): void {
   else if (cmd === 'view.explode') toggleExplode();
   else if (cmd === 'help') set((s) => ({ helpOpen: !s.helpOpen }));
   else if (cmd === 'slot.clear') clearActiveSlot();
+  else if (cmd === 'pin.move') set({ pinGizmo: 'translate' });
+  else if (cmd === 'pin.rotate') set({ pinGizmo: 'rotate' });
   else if (cmd === 'brush.larger')
     set({ brushRadius: Math.round(Math.min(50, get().brushRadius * 1.2) * 100) / 100 });
 }
@@ -86,6 +88,11 @@ function useShortcuts() {
           return lineUndo();
         }
         if (e.key === 'Escape') return lineCancel();
+      }
+      // pim aracında Esc: pim seçimini bırak
+      if (get().tool === 'pin' && e.key === 'Escape' && get().selectedPin >= 0) {
+        set({ selectedPin: -1 });
+        return;
       }
       // yardım açıkken sadece yardım kısayolu (kapatmak için) çalışır
       if (get().helpOpen && commandFor(keyName(e)) !== 'help') return;

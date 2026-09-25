@@ -900,6 +900,85 @@ export function activeIslands(): IslandInfo[] {
 
 // ---------- pimler ----------
 
+let layoutSeq = 0;
+let layoutTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Pimlerin gerçek yerleşimini (otomatik boyut/yer dahil) worker'dan alır. */
+async function refreshPinLayout(): Promise<void> {
+  const seq = ++layoutSeq;
+  const { cut, tool, previewActive, activeSlot } = get();
+  const part = selectedPart();
+  if (
+    cut.mode !== 'keys' ||
+    (tool !== 'pin' && !previewActive) ||
+    !part ||
+    activeSlot === BASE_SLOT
+  ) {
+    if (get().pinLayout.length) set({ pinLayout: [] });
+    return;
+  }
+  const layout = await geometry.pinLayout(part.mesh, cutOptions());
+  if (seq === layoutSeq) set({ pinLayout: layout });
+}
+
+useStore.subscribe((s, prev) => {
+  if (
+    s.cut === prev.cut &&
+    s.pins === prev.pins &&
+    s.tool === prev.tool &&
+    s.previewActive === prev.previewActive &&
+    s.activeSlot === prev.activeSlot &&
+    s.selectedPartId === prev.selectedPartId &&
+    s.paintVersion === prev.paintVersion &&
+    s.parts === prev.parts
+  )
+    return;
+  if (layoutTimer) clearTimeout(layoutTimer);
+  layoutTimer = setTimeout(() => {
+    layoutTimer = null;
+    refreshPinLayout();
+  }, 80);
+});
+
+/**
+ * Pim aracında tıklama. Bir pimin üstüne (ekranda) tıklanırsa seçilir; pimler
+ * otomatikse önce bulundukları yerde elle pime çevrilir. Shift+tık pimi siler.
+ * Pim seçiliyken boşluğa tıklamak seçimi bırakır; seçili pim yokken yeni pim ekler.
+ * Pime tıklandıysa sürüklemeyle yüzeyde taşımak için pim numarasını döndürür.
+ */
+export function pinClick(index: number, point: Vec3, shift: boolean): number {
+  const { pins, pinLayout: layout, selectedPin } = get();
+  if (index >= 0) {
+    if (!pins.length) {
+      // otomatik pimler: yerlerinde elle pime dönüşür (boyut otomatik kalır)
+      set({ pins: layout.map((l) => ({ point: l.surface })), selectedPin: index });
+      if (shift) removePin(index);
+      return shift ? -1 : index;
+    }
+    if (shift) {
+      removePin(index);
+      return -1;
+    }
+    set({ selectedPin: index });
+    return index;
+  }
+  if (shift) return -1;
+  if (selectedPin >= 0) {
+    set({ selectedPin: -1 });
+    return -1;
+  }
+  set({ pins: [...pins, { point }], selectedPin: pins.length });
+  return -1;
+}
+
+/** Tutamakla taşıma/döndürme bitti: seçili pime yeni yer ve eksen yazılır. */
+export function commitPinHandle(point: Vec3, axis: Vec3): void {
+  const i = get().selectedPin;
+  if (i < 0) return;
+  const mode = get().pinGizmo;
+  updatePin(i, mode === 'translate' ? { point } : { axis });
+}
+
 export function updatePin(index: number, patch: Partial<PinPlacement>): void {
   set((s) => ({
     pins: s.pins.map((p, i) => (i === index ? { ...p, ...patch } : p)),

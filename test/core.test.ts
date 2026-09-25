@@ -253,6 +253,26 @@ describe('kesim', () => {
     expect(volume(deep.parts[0])).toBeGreaterThan(volume(half.parts[0]) + 1);
   });
 
+  it('pinLayout: otomatik ve elle pimlerin yeri, ekseni ve boyutu', async () => {
+    const { pinLayout } = await import('../src/core/cut');
+    const auto = pinLayout(capRegion, { ...baseOpts, mode: 'keys' });
+    expect(auto.length).toBe(1);
+    // kapak z≈5, eksen gövdeye (aşağı)
+    expect(auto[0].axis[2]).toBeLessThan(-0.9);
+    expect(auto[0].radius).toBe(2);
+    const manual = pinLayout(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pins: [{ point: [3, 3, 10], bodyRatio: 0.75 }],
+      pin: { ...baseOpts.pin, auto: true },
+    });
+    expect(manual.length).toBe(1);
+    expect(manual[0].surface[0]).toBeCloseTo(3, 1);
+    // gövde payı %75: merkez yüzeyden boyun çeyreği kadar gövdeye kaymış
+    const shift = manual[0].surface[2] - manual[0].center[2];
+    expect(shift).toBeCloseTo(manual[0].length / 4, 3);
+  });
+
   it('Keys: pim başına boyut ve eğik eksen', () => {
     const fast = cutRegion(capRegion, { ...baseOpts, mode: 'fast' });
     const r = cutRegion(capRegion, {

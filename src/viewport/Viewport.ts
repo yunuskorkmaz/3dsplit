@@ -76,6 +76,11 @@ export class Viewport {
   private onDirectionChange: ((dir: Vec3) => void) | null = null;
   private mirrorPlane: THREE.Mesh | null = null;
   private errorLines = new THREE.Group();
+  /** Keys pimlerinin gerçek boyutlu yarı saydam görüntüleri; seçili pim tutamağın çocuğu. */
+  private pinGhosts = new THREE.Group();
+  /** Seçili pimin tutamağı: konum = kesim yüzeyindeki nokta, yerel +Z = pim ekseni. */
+  private pinHandle = new THREE.Object3D();
+  private onPinCommit: ((point: Vec3, axis: Vec3) => void) | null = null;
   /** X36: çizgi aracının yolu ve noktaları. */
   private lineGroup = new THREE.Group();
   /**
@@ -176,15 +181,25 @@ export class Viewport {
     this.dirHandle.add(this.dirArrow);
     this.dirHandle.visible = false;
     this.anchor.add(this.dirHandle);
+    this.anchor.add(this.pinGhosts);
+    this.anchor.add(this.pinHandle);
     this.gizmo = new TransformControls(this.camera, el);
     this.gizmo.setMode('rotate');
     this.gizmo.setSpace('local');
     this.scene.add(this.gizmo.getHelper());
     this.gizmo.addEventListener('dragging-changed', (e) => {
       this.controls.enabled = !e.value;
+      // pim: sürükleme bitince tek seferde kaydet (sürüklerken pim görüntüsü tutamakla anlık hareket eder)
+      if (!e.value && this.gizmo.object === this.pinHandle) {
+        const axis = new THREE.Vector3(0, 0, 1)
+          .applyQuaternion(this.pinHandle.quaternion)
+          .normalize();
+        this.onPinCommit?.(this.pinHandle.position.toArray() as Vec3, axis.toArray() as Vec3);
+      }
     });
     this.gizmo.addEventListener('change', () => this.requestRender());
     this.gizmo.addEventListener('objectChange', () => {
+      if (this.gizmo.object !== this.dirHandle) return;
       const d = new THREE.Vector3(0, 0, 1).applyQuaternion(this.dirHandle.quaternion).normalize();
       this.onDirectionChange?.(d.toArray() as Vec3);
     });
@@ -526,30 +541,98 @@ export class Viewport {
     this.requestRender();
   }
 
-  /** Keys pim işaretleri: yüzeyde tıklanan noktalar, pim yarıçapında; seçili pim turuncu. */
-  setPinMarkers(pins: { point: Vec3; radius: number; selected: boolean }[]): void {
-    this.overlay.children
-      .filter((c) => c.userData.marker)
-      .forEach((c) => {
-        this.overlay.remove(c);
-        if (c instanceof THREE.Mesh) c.geometry.dispose();
-      });
-    for (const p of pins) {
+  /**
+   * Keys pimleri: her pim gerçek boyutunda yarı saydam gösterilir. Seçili
+   * pimde Fusion 360 benzeri tutamak: `translate` kesim düzleminde iki okla
+   * taşır, `rotate` ekseni halkalarla döndürür. Pim görüntüsü tutamağın
+   * çocuğu olduğu için sürüklerken anlık döner/kayar; bırakınca `onCommit`.
+   */
+  setPins(
+    pins: {
+      surface: Vec3;
+      center: Vec3;
+      axis: Vec3;
+      radius: number;
+      length: number;
+      shape: string;
+    }[],
+    selected: number,
+    mode: 'translate' | 'rotate',
+    onCommit: (point: Vec3, axis: Vec3) => void,
+  ): void {
+    this.onPinCommit = onCommit;
+    for (const c of [...this.pinGhosts.children, ...this.pinHandle.children]) {
+      c.parent?.remove(c);
+      if (c instanceof THREE.Mesh) c.geometry.dispose();
+    }
+    const z = new THREE.Vector3(0, 0, 1);
+    pins.forEach((p, i) => {
+      const segments = p.shape === 'octagon' ? 8 : p.shape === 'cube' ? 4 : 24;
+      const g = new THREE.CylinderGeometry(p.radius, p.radius, p.length, segments);
+      g.rotateX(Math.PI / 2); // Three silindiri Y boyunca: Z'ye çevir
+      if (p.shape === 'cube') g.rotateZ(Math.PI / 4);
       const m = new THREE.Mesh(
-        new THREE.SphereGeometry(p.radius, 16, 12),
+        g,
         new THREE.MeshBasicMaterial({
-          color: p.selected ? '#ff9900' : '#2f80ff',
+          color: i === selected ? '#ff9900' : '#4da3ff',
           transparent: true,
-          opacity: 0.7,
+          opacity: i === selected ? 0.55 : 0.35,
           depthTest: false,
         }),
       );
-      m.renderOrder = 5;
-      m.position.set(...p.point);
-      m.userData.marker = true;
-      this.overlay.add(m);
+      m.renderOrder = 6;
+      m.raycast = () => {}; // model seçimini engellemesin
+      const axis = new THREE.Vector3(...p.axis).normalize();
+      const shift = new THREE.Vector3(...p.center).sub(new THREE.Vector3(...p.surface)).dot(axis);
+      if (i === selected) {
+        // sürükleme sürerken store'dan gelen eski değer tutamağı geri almasın
+        if (!this.gizmo.dragging) {
+          this.pinHandle.position.set(...p.surface);
+          this.pinHandle.quaternion.setFromUnitVectors(z, axis);
+        }
+        m.position.set(0, 0, shift);
+        this.pinHandle.add(m);
+      } else {
+        m.position.set(...p.center);
+        m.quaternion.setFromUnitVectors(z, axis);
+        this.pinGhosts.add(m);
+      }
+    });
+    if (selected >= 0 && selected < pins.length) {
+      if (this.gizmo.object !== this.pinHandle) this.gizmo.attach(this.pinHandle);
+      this.gizmo.setMode(mode);
+      this.gizmo.setSpace('local');
+      // taşıma kesim düzleminde (yerel X/Y), eksen boyunca değil
+      this.gizmo.showX = true;
+      this.gizmo.showY = true;
+      this.gizmo.showZ = mode === 'rotate';
+      this.gizmo.size = 0.7;
+    } else if (this.gizmo.object === this.pinHandle) {
+      this.gizmo.detach();
     }
     this.requestRender();
+  }
+
+  /** Ekranda `px` piksel içindeki en yakın nokta (parçanın yerel koordinatında verilir); yoksa -1. */
+  pickScreenPoint(e: { clientX: number; clientY: number }, points: Vec3[], px = 16): number {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    let best = -1;
+    let bestD = px;
+    const v = new THREE.Vector3();
+    points.forEach((p, i) => {
+      v.set(...p)
+        .add(this.anchor.position)
+        .project(this.camera);
+      if (v.z > 1) return;
+      const x = rect.left + ((v.x + 1) / 2) * rect.width;
+      const y = rect.top + ((1 - v.y) / 2) * rect.height;
+      const d = Math.hypot(x - e.clientX, y - e.clientY);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    });
+    return best;
   }
 
   /** X36: çizgi aracının yüzeydeki yolu (sarı) ve tıklanan noktalar. */
@@ -601,7 +684,7 @@ export class Viewport {
     this.onDirectionChange = onChange;
     if (!center) {
       this.dirHandle.visible = false;
-      this.gizmo.detach();
+      if (this.gizmo.object === this.dirHandle) this.gizmo.detach();
       this.requestRender();
       return;
     }
@@ -618,8 +701,10 @@ export class Viewport {
     this.dirArrow.setLength(size, size * 0.25, size * 0.12);
     if (editable) {
       if (this.gizmo.object !== this.dirHandle) this.gizmo.attach(this.dirHandle);
+      this.gizmo.setMode('rotate');
+      this.gizmo.showX = this.gizmo.showY = this.gizmo.showZ = true;
       this.gizmo.size = 0.8;
-    } else {
+    } else if (this.gizmo.object === this.dirHandle) {
       this.gizmo.detach();
     }
     this.requestRender();

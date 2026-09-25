@@ -5,13 +5,14 @@ import {
   beginStroke,
   brushAt,
   bucketAt,
+  commitPinHandle,
   endSmoothStroke,
   endStroke,
   lineClick,
   linePreview,
   mirrorOffset,
+  pinClick,
   regionFrame,
-  removePin,
   setGeometryChangedHook,
   setLabelsChangedHook,
   setSmartAngle,
@@ -26,23 +27,6 @@ import { type Hit, Viewport } from '../viewport/Viewport';
 function slotColor(label: number): THREE.Color {
   const slot = get().slots.find((s) => s.id === label);
   return new THREE.Color(slot?.color ?? '#ff00ff');
-}
-
-function nearestPin(
-  pins: [number, number, number][],
-  p: [number, number, number],
-  maxDist: number,
-): number {
-  let best = -1;
-  let bestD = maxDist;
-  pins.forEach((q, i) => {
-    const d = Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
-    if (d <= bestD) {
-      best = i;
-      bestD = d;
-    }
-  });
-  return best;
 }
 
 let activeViewport: Viewport | null = null;
@@ -100,22 +84,18 @@ export function ViewportHost() {
         else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'line') lineClick(hit.partId, hit.tri, hit.point);
         else if (tool === 'pin') {
-          // pime yakın tıklama: seç ve sürükleyerek taşı; Shift ile sil. Boşluğa tıklama: yeni pim
-          const { pins: list, cut } = get();
-          const near = nearestPin(
-            list.map((p) => p.point),
-            hit.point,
-            Math.max(1.5, cut.pinRadius * 1.5),
-          );
-          if (near >= 0 && e.shiftKey) {
-            removePin(near);
-          } else if (near >= 0) {
-            set({ selectedPin: near });
-            draggingPin = near;
+          // ekranda pimin üstüne tıklama: seç (sürükleyince yüzeyde taşınır); Shift ile sil.
+          // pim seçiliyken boşluğa tıklama seçimi bırakır, seçili pim yokken yeni pim ekler
+          const { pins: list, pinLayout: layout } = get();
+          const points = list.length
+            ? list.map((p, i) => layout[i]?.surface ?? p.point)
+            : layout.map((l) => l.surface);
+          const index = vp.pickScreenPoint(e, points, 18);
+          const picked = pinClick(index, hit.point, e.shiftKey);
+          if (picked >= 0) {
+            draggingPin = picked;
             drag = 'pin';
             return true;
-          } else if (!e.shiftKey) {
-            set({ pins: [...list, { point: hit.point }], selectedPin: list.length });
           }
         } else if (tool === 'brush' || tool === 'erase') {
           // silgi aracında Shift boyar, fırçada Shift siler
@@ -250,16 +230,6 @@ export function ViewportHost() {
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;
-    const pin = cutMode === 'keys' && tool === 'pin' ? pins[selectedPin] : undefined;
-    if (pin) {
-      const frame = regionFrame();
-      // varsayılan eksen: bölgeden gövdeye doğru
-      const axis =
-        pin.axis ??
-        (frame ? (frame.normal.map((x) => -x) as [number, number, number]) : [0, 0, -1]);
-      vp.showDirection(pin.point, axis, true, (d) => updatePin(selectedPin, { axis: d }));
-      return;
-    }
     const show = cutMode === 'socket' && (directionGizmo || preview !== null);
     const frame = show ? regionFrame() : null;
     vp.showDirection(
@@ -327,18 +297,18 @@ export function ViewportHost() {
     );
   }, [mirror, tool, parts, selectedPartId]);
 
-  const pinRadius = useStore((s) => s.cut.pinRadius);
-  const pinAuto = useStore((s) => s.cut.pinAuto);
+  // pimler: gerçek boyutlu görüntü + seçili pimde taşı/döndür tutamağı
+  const pinLayout = useStore((s) => s.pinLayout);
+  const pinGizmo = useStore((s) => s.pinGizmo);
   useEffect(() => {
-    vpRef.current?.setPinMarkers(
-      // otomatik boyutta gerçek yarıçap kesitten çıkar (önizlemede görünür): işaretçi küçük nokta
-      pins.map((p, i) => ({
-        point: p.point,
-        radius: p.radius ?? (pinAuto ? 0.8 : pinRadius),
-        selected: tool === 'pin' && i === selectedPin,
-      })),
+    const show = cutMode === 'keys' && (tool === 'pin' || preview !== null);
+    vpRef.current?.setPins(
+      show ? pinLayout : [],
+      tool === 'pin' && pins.length ? selectedPin : -1,
+      pinGizmo,
+      commitPinHandle,
     );
-  }, [pins, pinRadius, pinAuto, selectedPin, tool]);
+  }, [pinLayout, pinGizmo, selectedPin, tool, cutMode, preview, pins.length]);
 
   return <div ref={ref} className="viewport" />;
 }

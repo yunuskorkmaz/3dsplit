@@ -1073,6 +1073,36 @@ function manifoldMesh(man: Manifold): MeshData {
 }
 
 /** Kesim yapmadan tapa hacimlerini, kapakları ve pimleri döndürür (C1 önizleme). */
+/** Pim yerleşimi (arayüzde pimi gerçek boyutuyla göstermek için). */
+export interface PinLayout {
+  /** Kesim yüzeyindeki nokta (pimin yüzeyle kesiştiği yer). */
+  surface: Vec3;
+  /** Gövdeye bakan birim eksen. */
+  axis: Vec3;
+  radius: number;
+  length: number;
+  /** Pim merkezi (gövde payına göre eksen boyunca kaydırılmış). */
+  center: Vec3;
+  shape: PinShape;
+}
+
+/**
+ * Keys pimlerinin kesimde kullanılacak yeri, ekseni ve boyutu (otomatik boyut
+ * ve otomatik yerleşim dahil). Kesim yapmaz; bölge yoksa boş.
+ */
+export function pinLayout(mesh: LabeledMesh, opts: CutOptions): PinLayout[] {
+  const islands = findIslands(mesh, opts.slot);
+  if (!islands.length) return [];
+  return pinCenters(mesh.positions, islands, opts.pins, opts.pin).map((p) => ({
+    surface: p.surface,
+    axis: p.axis,
+    radius: p.spec.radius,
+    length: p.spec.length,
+    center: p.center,
+    shape: p.spec.shape,
+  }));
+}
+
 export function previewCut(mesh: LabeledMesh, opts: CutOptions, model?: ModelProvider): CutPreview {
   return withModel(model, () => previewCutImpl(mesh, opts));
 }

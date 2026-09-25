@@ -45,7 +45,7 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
     icon: '⊕',
     label: 'Pim',
     key: 'P',
-    hint: 'Tıkla: pim ekle/seç. Sürükle: taşı. Gizmo: ekseni döndür. Shift+tık: sil.',
+    hint: 'Pime tıkla: seç (W taşı, R döndür). Boş yere tıkla: pim ekle, seçiliyken seçimi bırak. Shift+tık: sil.',
   },
 ];
 
@@ -96,6 +96,8 @@ export function ToolOptions() {
   const selectedPin = useStore((s) => s.selectedPin);
   const cut = useStore((s) => s.cut);
   const lineCount = useStore((s) => s.line.anchors.length);
+  const pinGizmo = useStore((s) => s.pinGizmo);
+  const keys = useKeymap((s) => s.map);
   const mirror = useStore((s) => s.mirror);
   const xray = useStore((s) => s.xray);
   useStore((s) => s.parts);
@@ -252,9 +254,33 @@ export function ToolOptions() {
       {tool === 'pin' && cut.mode !== 'keys' && (
         <span className="tool-hint">Pimler Keys kesiminde kullanılır; sağ panelde Keys'i seç.</span>
       )}
+      {tool === 'pin' && cut.mode === 'keys' && !pin && (
+        <span className="label">
+          Pime tıkla: seç, sonra oklarla taşı ya da halkalarla döndür · boş yere tıkla: pim ekle ·
+          Shift+tık: sil
+        </span>
+      )}
       {tool === 'pin' && cut.mode === 'keys' && pin && (
         <>
           <span className="tool-name">Pim {selectedPin + 1}</span>
+          <span className="row segmented gizmo-mode">
+            <button
+              type="button"
+              className={pinGizmo === 'translate' ? 'active' : ''}
+              onClick={() => set({ pinGizmo: 'translate' })}
+              title={`Kesim düzleminde oklarla taşı (${keys['pin.move']})`}
+            >
+              ✥ Taşı
+            </button>
+            <button
+              type="button"
+              className={pinGizmo === 'rotate' ? 'active' : ''}
+              onClick={() => set({ pinGizmo: 'rotate' })}
+              title={`Ekseni halkalarla döndür (${keys['pin.rotate']})`}
+            >
+              ⟳ Döndür
+            </button>
+          </span>
           {cut.pinAuto && pin.radius === undefined && pin.length === undefined ? (
             <span
               className="label"

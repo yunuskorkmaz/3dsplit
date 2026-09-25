@@ -74,6 +74,17 @@ test('X36 çizgi aracı, X35 deneme parçası, X27 ayrık görünüm', async ({ 
       { timeout: 30_000 },
     )
     .toBe(true);
+  // pim seçiliyken boş yere tıklamak seçimi bırakır, ikinci tıklama yeni pim ekler
+  expect((await state(page)).selectedPin).toBe(0);
+  const empty = await screenOf(page, front(8, 15));
+  await page.mouse.click(empty.x, empty.y);
+  expect((await state(page)).selectedPin).toBe(-1);
+  await page.mouse.click(empty.x, empty.y);
+  expect((await state(page)).pins.length).toBe(2);
+  await page.keyboard.press('r');
+  expect((await state(page)).pinGizmo).toBe('rotate');
+  await page.keyboard.press('w');
+  expect((await state(page)).pinGizmo).toBe('translate');
   await page.keyboard.press('Space');
   expect((await state(page)).previewActive).toBe(false);
 

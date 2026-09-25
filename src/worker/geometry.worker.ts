@@ -7,6 +7,7 @@ import {
   CutError,
   type CutOptions,
   cutRegion,
+  pinLayout,
   previewCut,
   splitComponents,
   suggestCutMode,
@@ -114,6 +115,16 @@ const api = {
   async preview(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {
     await ready;
     return previewCut(mesh, opts, modelProvider(mesh, geomKey));
+  },
+
+  async pinLayout(mesh: LabeledMesh, opts: CutOptions) {
+    await ready;
+    try {
+      return pinLayout(mesh, opts);
+    } catch {
+      // bölge henüz kesilebilir değil (ör. açık sınır): pim gösterilmez
+      return [];
+    }
   },
 
   async suggest(mesh: LabeledMesh, slot: number) {

@@ -272,11 +272,13 @@ export function ViewportHost() {
   }, [mirror, tool, parts, selectedPartId]);
 
   const pinRadius = useStore((s) => s.cut.pinRadius);
+  const pinAuto = useStore((s) => s.cut.pinAuto);
   useEffect(() => {
     vpRef.current?.setPinMarkers(
-      pins.map((p, i) => ({ point: p.point, radius: p.radius ?? pinRadius, selected: tool === 'pin' && i === selectedPin })),
+      // otomatik boyutta gerçek yarıçap kesitten çıkar (önizlemede görünür): işaretçi küçük nokta
+      pins.map((p, i) => ({ point: p.point, radius: p.radius ?? (pinAuto ? 0.8 : pinRadius), selected: tool === 'pin' && i === selectedPin })),
     );
-  }, [pins, pinRadius, selectedPin, tool]);
+  }, [pins, pinRadius, pinAuto, selectedPin, tool]);
 
   return <div ref={ref} className="viewport" />;
 }

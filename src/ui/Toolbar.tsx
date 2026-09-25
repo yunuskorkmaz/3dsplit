@@ -190,6 +190,17 @@ export function ToolOptions() {
       {tool === 'pin' && cut.mode === 'keys' && pin && (
         <>
           <span className="tool-name">Pim {selectedPin + 1}</span>
+          {cut.pinAuto && pin.radius === undefined && pin.length === undefined ? (
+            <span className="label" title="Boyut kesitten hesaplanır; önizlemede (Space) görünür. Değer girince bu pim elle boyutlanır">
+              Boyut: otomatik
+            </span>
+          ) : (
+            cut.pinAuto && (
+              <button type="button" onClick={() => updatePin(selectedPin, { radius: undefined, length: undefined })} title="Bu pimin boyutu yeniden kesitten hesaplansın">
+                Otomatiğe dön
+              </button>
+            )
+          )}
           <NumberField
             label="Yarıçap"
             value={pin.radius ?? cut.pinRadius}

@@ -18,7 +18,7 @@ Boyanmış bölgeyi (göz, kaş, kol…) modelden Socket veya Keys bağlantısı
 
 ```sh
 npm test            # çekirdek (Vitest)
-npm run e2e         # arayüz smoke testi (Playwright): yükle → Smart Fill → Socket → 3MF
+npm run e2e         # arayüz testleri (Playwright): yükle → Smart Fill → Socket → 3MF; çizgi aracı, deneme parçası, ayrık görünüm
 npx tsc --noEmit -p .
 npx vite build
 ```

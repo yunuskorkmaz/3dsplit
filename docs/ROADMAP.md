@@ -33,7 +33,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X40 | Otomatik pim boyutunda pim işaretçisi ve pim ayarı elle girilen yarıçapı gösteriyordu; artık "Boyut: otomatik", tek pim için elle boyut ve "Otomatiğe dön" | X33 eksiği | [x] |
 | X41 | Lint temizliği: `npm run lint` 70 hatayla kırmızıydı. Biçimlendirme uygulandı, gerçek bulgular düzeltildi (virgül operatörü, forEach dönüşü, yanlış "hook" adı `useSweepSocket`), projeye uymayan kurallar (`noVoidTypeReturn`, liste satırı a11y, CSS özgüllük sırası) `biome.json`da kapatıldı | Kod sağlığı | [x] |
 | X42 | Yumuşatma fırçası her darbede tüm üçgenleri tarıyordu (1.9M üçgende darbe başına ~25 ms). Adaylar vurulan üçgenden yüzey üzerinde yayılarak bulunuyor (~12 ms); sonuç tam taramayla birebir aynı (test) | Performans | [x] |
-| X43 | Uçtan uca test: çizgi aracı, tolerans deneme parçası, yardım ve görünürlük akışı | Yeni araçların arayüz testi yoktu | [ ] |
+| X43 | Uçtan uca test: çizgi aracı, tolerans deneme parçası, yardım ve görünürlük akışı | Yeni araçların arayüz testi yoktu | [x] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 
@@ -211,5 +211,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | X39: Türkçe Mac klavyesinde Option ile yazılan [ ] kısayolları | `7011f14` |
 | 2026-09-25 | X40: otomatik pim boyutunda işaretçi ve pim ayarı | `42da70e` |
 | 2026-09-25 | X41: lint temizliği ve biçimlendirme | `1d5bf39` |
+| 2026-09-25 | X42: yumuşatma fırçasında yüzeyde yayılan aday üçgenler | `8709fae` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

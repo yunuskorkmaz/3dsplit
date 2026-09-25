@@ -461,7 +461,7 @@ export function smoothActiveRegion(): void {
   const labels = part.mesh.labels;
   if (!labels.includes(slot)) return notify('warn', 'Bu slotta boyalı üçgen yok.');
   const topo = topologyOf(part.mesh);
-  const { smoothRadius } = get();
+  const { smoothRadius, smoothExact } = get();
   const radius = smoothRadius > 0 ? smoothRadius : smartOptions(topo).scale;
   const r = smoothRegionBoundary(
     part.mesh,
@@ -470,8 +470,9 @@ export function smoothActiveRegion(): void {
     radius,
     (t) => labels[t] === BASE_SLOT,
     (t) => neighborLabel(topo.adj, labels, t, slot),
+    smoothExact,
   );
-  const mesh = { positions: r.positions, indices: part.mesh.indices, labels: r.labels };
+  const mesh = r;
   const before = get().parts;
   const after = before.map((p) => (p.id === part.id ? { ...p, mesh } : p));
   lastSmart = null;

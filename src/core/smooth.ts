@@ -16,6 +16,11 @@ import type { LabeledMesh } from './types';
  *
  * `accept`: bölgeye katılabilecek üçgenler (ör. başka slota boyanmışlar hariç).
  * `outsideLabel`: bölgeden çıkan üçgenin alacağı etiket.
+ *
+ * `exact` (X30): 3. adım yerine sınır üçgenlerin içinden geçirilir: eğriye
+ * işaretli uzaklık köşe alanı olarak hesaplanır ve sıfır çizgisinin kestiği
+ * üçgenler bölünür. Köşeler yerinde kalır (şekil değişmez), sınır üçgen
+ * boyutundan bağımsız olarak eğriyi izler. Mesh'e yeni köşe ve üçgen eklenir.
  */
 export function smoothRegionBoundary(
   mesh: LabeledMesh,
@@ -24,13 +29,14 @@ export function smoothRegionBoundary(
   radius: number,
   accept: (t: number) => boolean,
   outsideLabel: (t: number) => number,
-): { labels: Uint16Array; positions: Float32Array } {
+  exact = false,
+): LabeledMesh {
   const labels = Uint16Array.from(mesh.labels);
   const positions = new Float32Array(mesh.positions);
   const triCount = labels.length;
   const mask = Uint8Array.from(labels, (l) => (l === slot ? 1 : 0));
   const loops = boundaryLoops(mesh, adj, mask).filter((l) => l.length >= 6);
-  if (!loops.length) return { labels, positions };
+  if (!loops.length) return { labels, positions, indices: mesh.indices };
 
   const curves = loops.map((loop) =>
     gaussianSmooth(
@@ -105,9 +111,149 @@ export function smoothRegionBoundary(
     else if (!cleaned[t] && labels[t] === slot) labels[t] = outsideLabel(t);
   }
 
+  if (exact) {
+    // üçgen içinden geçen sınırda alan, üçgen merkezli tahminden biraz farklı: offset iki adımda düzeltilir
+    let out = cutAlongCurves(mesh, labels, slot, index, band, offset, accept, outsideLabel);
+    for (let it = 0; it < 2; it++) {
+      const { areas: ar } = faceNormalsAndAreas(out);
+      let area = 0;
+      for (let t = 0; t < out.labels.length; t++) if (out.labels[t] === slot) area += ar[t];
+      const step = (areaBefore - area) / Math.max(perimeter, 1e-6);
+      if (Math.abs(step) < 1e-3) break;
+      offset = Math.max(-radius, Math.min(radius, offset + step));
+      out = cutAlongCurves(mesh, labels, slot, index, band, offset, accept, outsideLabel);
+    }
+    return out;
+  }
+
   // 3. yeni sınır köşelerini eğriye çek
   snapBoundaryToCurves({ positions, indices: mesh.indices, labels }, adj, slot, index, band, offset);
-  return { labels, positions };
+  return { labels, positions, indices: mesh.indices };
+}
+
+/**
+ * X30: eğriye (offset kadar dışına) işaretli uzaklığı köşelerde hesaplar ve
+ * mesh'i bu alanın sıfır çizgisi boyunca böler. `labels`: yaklaşık etiketleme
+ * (bandın dışındaki üçgenler bunu korur).
+ */
+function cutAlongCurves(
+  mesh: LabeledMesh,
+  labels: Uint16Array,
+  slot: number,
+  index: SegmentIndex,
+  band: number,
+  offset: number,
+  accept: (t: number) => boolean,
+  outsideLabel: (t: number) => number,
+): LabeledMesh {
+  const { positions: pos, indices: idx } = mesh;
+  const vCount = pos.length / 3;
+  const triCount = labels.length;
+  // alan ağırlıklı köşe normalleri
+  const vn = new Float32Array(3 * vCount);
+  for (let t = 0; t < triCount; t++) {
+    const a = idx[3 * t];
+    const b = idx[3 * t + 1];
+    const c = idx[3 * t + 2];
+    const u: V3 = [pos[3 * b] - pos[3 * a], pos[3 * b + 1] - pos[3 * a + 1], pos[3 * b + 2] - pos[3 * a + 2]];
+    const w: V3 = [pos[3 * c] - pos[3 * a], pos[3 * c + 1] - pos[3 * a + 1], pos[3 * c + 2] - pos[3 * a + 2]];
+    const n = cross(u, w);
+    for (const v of [a, b, c]) for (let k = 0; k < 3; k++) vn[3 * v + k] += n[k];
+  }
+  const phi = new Float64Array(vCount);
+  const inBand = new Uint8Array(vCount);
+  for (let v = 0; v < vCount; v++) {
+    const p: V3 = [pos[3 * v], pos[3 * v + 1], pos[3 * v + 2]];
+    const hit = index.closest(p, band);
+    if (!hit) continue;
+    const nl = Math.hypot(vn[3 * v], vn[3 * v + 1], vn[3 * v + 2]) || 1;
+    const n: V3 = [vn[3 * v] / nl, vn[3 * v + 1] / nl, vn[3 * v + 2] / nl];
+    phi[v] = dot(sub(p, hit.point), cross(n, hit.tangent)) + offset;
+    inBand[v] = 1;
+  }
+  // bant dışındaki köşe: çevresindeki üçgenlerin çoğunluğunun tarafı
+  const vote = new Int32Array(vCount);
+  for (let t = 0; t < triCount; t++) {
+    const d = labels[t] === slot ? 1 : -1;
+    for (let k = 0; k < 3; k++) vote[idx[3 * t + k]] += d;
+  }
+  for (let v = 0; v < vCount; v++) if (!inBand[v]) phi[v] = vote[v] > 0 ? band : -band;
+
+  // sıfır çizgisi bir köşeye çok yakın geçiyorsa köşeden geçsin: ince şerit üçgen oluşmaz
+  const EPS = 0.12;
+  for (let t = 0; t < triCount; t++) {
+    for (let e = 0; e < 3; e++) {
+      const a = idx[3 * t + e];
+      const b = idx[3 * t + ((e + 1) % 3)];
+      if (!(inBand[a] || inBand[b]) || phi[a] * phi[b] >= 0) continue;
+      const s = phi[a] / (phi[a] - phi[b]);
+      if (s < EPS) phi[a] = 0;
+      else if (s > 1 - EPS) phi[b] = 0;
+    }
+  }
+
+  const outPos: number[] = Array.from(pos);
+  const outIdx: number[] = [];
+  const outLab: number[] = [];
+  const crossing = new Map<number, number>();
+  const crossAt = (a: number, b: number): number => {
+    const key = a < b ? a * vCount + b : b * vCount + a;
+    let v = crossing.get(key);
+    if (v === undefined) {
+      const s = phi[a] / (phi[a] - phi[b]);
+      v = outPos.length / 3;
+      for (let k = 0; k < 3; k++) outPos.push(pos[3 * a + k] + (pos[3 * b + k] - pos[3 * a + k]) * s);
+      crossing.set(key, v);
+    }
+    return v;
+  };
+  // bant içinde etiket eğriden okunur (başlangıç etiketine göre); başka slotun üçgeni bölgeye girmez
+  const sideLabel = (t: number, inside: boolean) => {
+    const was = mesh.labels[t];
+    if (inside) return was === slot || accept(t) ? slot : was;
+    return was === slot ? outsideLabel(t) : was;
+  };
+  const emit = (poly: number[], label: number) => {
+    if (poly.length === 4) {
+      // dörtgen: kısa köşegenden böl
+      const d = (i: number, j: number) =>
+        Math.hypot(outPos[3 * poly[i]] - outPos[3 * poly[j]], outPos[3 * poly[i] + 1] - outPos[3 * poly[j] + 1], outPos[3 * poly[i] + 2] - outPos[3 * poly[j] + 2]);
+      if (d(1, 3) < d(0, 2)) poly = [poly[1], poly[2], poly[3], poly[0]];
+    }
+    for (let i = 1; i + 1 < poly.length; i++) {
+      outIdx.push(poly[0], poly[i], poly[i + 1]);
+      outLab.push(label);
+    }
+  };
+  for (let t = 0; t < triCount; t++) {
+    const v = [idx[3 * t], idx[3 * t + 1], idx[3 * t + 2]];
+    const banded = inBand[v[0]] || inBand[v[1]] || inBand[v[2]];
+    const sg = v.map((x) => Math.sign(phi[x]));
+    const hasPos = sg.includes(1);
+    const hasNeg = sg.includes(-1);
+    if (!banded || !(hasPos && hasNeg)) {
+      outIdx.push(v[0], v[1], v[2]);
+      // bantta: işarete göre; üç köşesi de sıfırsa yaklaşık etiket
+      outLab.push(banded && (hasPos || hasNeg) ? sideLabel(t, hasPos) : labels[t]);
+      continue;
+    }
+    // üçgeni kenar kesişimleriyle dolaş, iki tarafa ayır (sıfır köşe iki tarafta da)
+    const plus: number[] = [];
+    const minus: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const j = (i + 1) % 3;
+      if (sg[i] >= 0) plus.push(v[i]);
+      if (sg[i] <= 0) minus.push(v[i]);
+      if (sg[i] * sg[j] < 0) {
+        const x = crossAt(v[i], v[j]);
+        plus.push(x);
+        minus.push(x);
+      }
+    }
+    emit(plus, sideLabel(t, true));
+    emit(minus, sideLabel(t, false));
+  }
+  return { positions: Float32Array.from(outPos), indices: Uint32Array.from(outIdx), labels: Uint16Array.from(outLab) };
 }
 
 /**

@@ -92,6 +92,8 @@ export interface AppState {
   smartValley: boolean;
   /** "Tümünü yumuşat" yarıçapı, mm. 0: otomatik (Smart Fill ölçeği). */
   smoothRadius: number;
+  /** X30: "Tüm sınırı yumuşat" sınırı üçgenlerin içinden geçirsin (üçgenler bölünür). */
+  smoothExact: boolean;
   /** Yumuşatma fırçasının gücü, 0..1. */
   smoothStrength: number;
   gapArea: number;
@@ -141,6 +143,7 @@ export const useStore = create<AppState>(() => ({
   smartValley: true,
   smoothRadius: 0,
   smoothStrength: 0.5,
+  smoothExact: true,
   gapArea: 5,
   refineEdge: 1,
   cut: {

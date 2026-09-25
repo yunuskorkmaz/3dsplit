@@ -57,6 +57,7 @@ export function ToolOptions() {
   const smartConcave = useStore((s) => s.smartConcave);
   const smartValley = useStore((s) => s.smartValley);
   const smoothStrength = useStore((s) => s.smoothStrength);
+  const smoothExact = useStore((s) => s.smoothExact);
   const gapArea = useStore((s) => s.gapArea);
   const pin = useStore((s) => s.pins[s.selectedPin]);
   const selectedPin = useStore((s) => s.selectedPin);
@@ -150,6 +151,12 @@ export function ToolOptions() {
           <button type="button" onClick={smoothActiveRegion} title="Aktif slotun tüm sınırını tek seferde düzgün bir eğriye oturtur; alanı korur">
             Tüm sınırı yumuşat
           </button>
+          <Toggle
+            label="Üçgenleri böl"
+            checked={smoothExact}
+            title="Sınır üçgen kenarlarına bağlı kalmaz, eğri boyunca üçgenler bölünür: kaba mesh'te de düzgün kesim kenarı. Şekil değişmez, üçgen sayısı biraz artar"
+            onChange={(v) => set({ smoothExact: v })}
+          />
         </>
       )}
       {tool === 'bucket' && (

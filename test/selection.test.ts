@@ -110,6 +110,24 @@ describe('sınır yumuşatma', () => {
     expect(signedVolume(m1)).toBeCloseTo(8000, 2);
   });
 
+  it('X30: kaba mesh\'te sınır üçgenlerin içinden geçer, mesh kapalı kalır', () => {
+    // 2 mm ızgara: üçgen kenarına bağlı sınır ancak üçgen boyunda düzgün olabilir
+    const m = labelWhere(subdividedCube(20, 10), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));
+    const a = buildAdjacency(m);
+    const snapped = smoothRegionBoundary(m, a, 1, 2, (t) => m.labels[t] === 0, () => 0);
+    const exact = smoothRegionBoundary(m, a, 1, 2, (t) => m.labels[t] === 0, () => 0, true);
+    expect(exact.labels.length).toBeGreaterThan(m.labels.length);
+    // yeni köşeler eski kenarların üstünde: hacim birebir aynı, açık kenar yok
+    expect(signedVolume(exact)).toBeCloseTo(8000, 2);
+    const ea = buildAdjacency(exact);
+    expect(ea.every((n) => n >= 0)).toBe(true);
+    const se = stats(exact);
+    // kalan sapma yumuşatılmış eğrinin kendisinden (2 mm ızgarada köşeli başlangıç seçimi)
+    expect(se.std).toBeLessThan(stats(m).std * 0.4);
+    expect(se.std).toBeLessThan(stats(snapped).std);
+    expect(Math.abs(se.area - stats(m).area) / stats(m).area).toBeLessThan(0.1);
+  });
+
   it('tekrar basmak bölgeyi daraltmaz', () => {
     const m1 = smooth(make(), 2);
     const m2 = smooth(m1, 2);

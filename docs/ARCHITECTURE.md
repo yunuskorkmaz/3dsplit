@@ -63,6 +63,11 @@ Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan at
 - Sayı alanları (`src/ui/fields.tsx`): etiketi sürükleyerek değiştirilir (Shift ince ayar), kutuya yazılabilir; geniş aralıklı değerler oransal (log) değişir.
 - Kamera: sağ sürükle döndür, orta / Ctrl+sağ kaydır, tekerlek yakınlaştır, Alt+tekerlek fırça boyutu.
 
+## Dışa aktarma (`src/io`)
+
+- **3MF (Bambu/Orca)** (`bambu3mf.ts`): Bambu Studio'nun kendi proje yapısı (her parça `3D/Objects/object_N.model`, ana modelde bileşen), parça başına `extruder` numarası `Metadata/model_settings.config` içinde; aynı renk aynı numara. Parçalar tabanı z=0 olacak şekilde plakaya dizilir. Alt dosyalardaki nesne kimlikleri benzersiz olmalı (aynı olursa Bambu tüm parçaları tek mesh sanıyor). `project_settings.config` yazılmaz ve dosya Bambu projesi olarak etiketlenmez: eksik ön ayarlı Bambu projesi Bambu Studio'yu çökertiyor. Bambu Studio 2.8 komut satırıyla yüklenip yeniden dışa aktarılarak doğrulandı: adlar ve filament numaraları korunuyor.
+- **3MF (genel)**, **STL (ZIP)**, parça başına STL.
+
 ## Onarım (`src/core/repair.ts`)
 
 Köşe kaynaştırma → dejenere ve tekrarlı üçgen silme → yönelimi BFS ile eşitleme, bileşeni dışa baktırma → açık halkaları merkezden yelpazeyle kapama → manifold doğrulaması. Doğrulamadan geçmeyen parça `!` rozetiyle işaretlenir; boyanabilir ama kesim başarısız olabilir.

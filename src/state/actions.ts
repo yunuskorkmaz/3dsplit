@@ -12,6 +12,7 @@ import {
 } from '../core/paint';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { downloadBytes, type ExportObject, write3mf, writeStl, writeStlZip } from '../io/exportFile';
+import { filamentColors, write3mfBambu } from '../io/bambu3mf';
 import { importFile } from '../io/importFile';
 import { PROJECT_EXTENSION, readProject, writeProject } from '../io/project';
 import { geometry } from '../worker/client';
@@ -140,10 +141,26 @@ function exportObjects(): ExportObject[] {
     }));
 }
 
+/** A3: Bambu Studio / OrcaSlicer projesi; aynı renkli parçalar aynı filamentte, parçalar plakaya dizili. */
 export function export3mf(): void {
   const objs = exportObjects();
   if (!objs.length) return notify('warn', 'Dışa aktarılacak görünür parça yok.');
-  downloadBytes(write3mf(objs), 'parts.3mf', 'model/3mf');
+  const title = get().parts.find((p) => p.badge !== 'source')?.name ?? 'parts';
+  downloadBytes(write3mfBambu(objs, { title }), `${title}.3mf`, 'model/3mf');
+  // renkler dosyaya yazılamıyor (bkz. bambu3mf.ts): eşlemeyi kullanıcıya göster
+  const slots = get().slots;
+  const mapping = filamentColors(objs).map((c, i) => {
+    const slot = slots.find((s) => s.color.toUpperCase() === c);
+    return `Filament ${i + 1}: ${slot?.name ?? c}`;
+  });
+  notify('info', `3MF hazır. Bambu/Orca'da filamentlere renk ata — ${mapping.join(', ')}.`);
+}
+
+/** Herhangi bir slicer için düz çok nesneli 3MF (filament ataması yok). */
+export function export3mfGeneric(): void {
+  const objs = exportObjects();
+  if (!objs.length) return notify('warn', 'Dışa aktarılacak görünür parça yok.');
+  downloadBytes(write3mf(objs), 'parts-generic.3mf', 'model/3mf');
 }
 
 export function exportStlZip(): void {

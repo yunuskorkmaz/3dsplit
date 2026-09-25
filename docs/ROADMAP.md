@@ -27,7 +27,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X22 | Sayı alanları: etiketi sürükle (Shift ince), kutuya yaz; fırça boyutu Alt+tekerlek ve [ ] | Kaydırıcıyla sayı tutturmak zordu | [x] |
 | B6 | Tüm sınırı yumuşat (Yumuşat aracının şeridinde): sınır eğrisi Gauss ile düzleştirilir, alan dengesiyle büzülme telafi edilir, üçgenler eğrinin tarafına göre etiketlenir, sınır köşeleri eğriye çekilir. Tekrar basmak bölgeyi daraltmaz | İlk sürüm her basışta seçimi daraltıyordu, kenarlar girintili çıkıntılıydı | [x] |
 | X14 | Smart Fill ölçeğini tıklanan özelliğin boyutuna göre otomatik seçme (kulak 3 mm, göz 1.3 mm istedi) | Tek varsayılan her özellikte tutmuyor; kullanıcı ayarla uğraşmasın | [x] |
-| A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da renkleriyle, ayrı filamentle açılsın | [ ] |
+| A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da ayrı filamentle açılsın | [x] |
 | X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [ ] |
 | X6 | Pim/tapa duvar kalınlığı kontrolü, ince yeri önizlemede kırmızı gösterme | Baskıda kırılma riski | [ ] |
 | X7 | 1–2M üçgen performansı (yükleme, komşuluk, BVH) | testa.stl 275k'da yükleme ~1 s; 2M'de 7–8 s beklenir | [ ] |
@@ -55,7 +55,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | --- | --- | --- | --- | --- |
 | A1 | İçe aktarma: STL, OBJ, 3MF | 1 | [~] | Boyalı 3MF renkleri (Bambu `paint_color`) içe alınmıyor |
 | A2 | Otomatik onarım | 1 | [~] | Kaynaştırma, dejenere/tekrar silme, yönelim, delik kapama var. Voxel yedek onarım yok |
-| A3 | Dışa aktarma: parça STL, çok nesneli 3MF, ZIP | 1 | [~] | Bambu/Orca filament ataması (`model_settings.config`) yazılmıyor |
+| A3 | Dışa aktarma: parça STL, çok nesneli 3MF, ZIP | 1 | [x] | "3MF": Bambu/Orca için renk başına filament numarası, plakaya dizili (Bambu Studio 2.8 CLI ile doğrulandı). Renkler dosyaya yazılamıyor, eşleme mesajla gösterilir. "3MF (genel)": düz |
 | A4 | Proje kaydetme | 2 | [x] | `.3dsplit` (zip: project.json + ikili mesh); İçe aktar ile açılır. Undo geçmişi kaydedilmez |
 
 ### B. Seçim ve boyama
@@ -136,3 +136,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X17, X18, B6 ilk sürüm | `d80ab9d` |
 | 2026-09-25 | B6: eğri tabanlı, alan koruyan yumuşatma | `eb362d1` |
 | 2026-09-25 | X19–X22: yumuşatma fırçası, silgi, araç çubuğu, sayı alanları | `a9fba6f` |
+| 2026-09-25 | X14: otomatik Smart Fill ölçeği | `8ea7024` |

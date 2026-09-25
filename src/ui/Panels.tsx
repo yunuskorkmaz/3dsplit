@@ -5,6 +5,7 @@ import {
   addSlot,
   deletePart,
   export3mf,
+  export3mfGeneric,
   exportPartStl,
   exportStlZip,
   importFiles,
@@ -47,8 +48,11 @@ export function FilePanel() {
             e.target.value = '';
           }}
         />
-        <button type="button" onClick={export3mf}>
+        <button type="button" onClick={export3mf} title="Bambu Studio / OrcaSlicer projesi: renk başına filament, parçalar plakada dizili">
           3MF
+        </button>
+        <button type="button" onClick={export3mfGeneric} title="Her slicer'da açılan düz çok nesneli 3MF (filament ataması yok)">
+          3MF (genel)
         </button>
         <button type="button" onClick={exportStlZip}>
           STL (ZIP)

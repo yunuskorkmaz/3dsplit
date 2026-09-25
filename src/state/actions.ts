@@ -2,6 +2,7 @@ import type { CutOptions } from '../core/cut';
 import {
   brushSelect,
   bucketFill,
+  chooseSmartScale,
   cleanSelection,
   closeHoles,
   gapFill,
@@ -247,7 +248,19 @@ function smartSelect(topo: Topology, mesh: LabeledMesh, seed: number): Uint32Arr
   const opts = smartOptions(topo);
   const seedLabel = labels[seed];
   const same = (t: number) => labels[t] === seedLabel;
-  let tris: ArrayLike<number> = smartFill(topo.adj, topo.normals, topo.centroids, seed, opts);
+  let tris: ArrayLike<number>;
+  if (get().smartScale > 0) {
+    tris = smartFill(topo.adj, topo.normals, topo.centroids, seed, opts);
+  } else {
+    // X14: ölçek tıklanan özelliğe göre seçilir (göz küçük, kulak büyük ölçek ister)
+    const auto = chooseSmartScale(topo.adj, topo.normals, topo.centroids, topo.areas, seed, topo.meanEdge, {
+      maxAngleDeg: opts.maxAngleDeg,
+      concaveOnly: opts.concaveOnly,
+    });
+    tris = auto.tris;
+    opts.scale = auto.scale;
+    set({ smartAutoScale: auto.scale });
+  }
   if (get().smartValley) {
     const mask = new Uint8Array(labels.length);
     for (let i = 0; i < tris.length; i++) mask[tris[i]] = 1;
@@ -266,6 +279,8 @@ function smartSelect(topo: Topology, mesh: LabeledMesh, seed: number): Uint32Arr
 
 /** Otomatik ölçekte seçili parçanın kullanacağı değer (arayüzde göstermek için). */
 export function autoSmartScale(): number {
+  const { smartAutoScale } = get();
+  if (smartAutoScale > 0) return smartAutoScale;
   const part = selectedPart();
   return part ? topologyOf(part.mesh).meanEdge * 3 : 0;
 }

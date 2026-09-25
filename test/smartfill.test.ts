@@ -46,3 +46,26 @@ describe('smart fill çıkıntı', () => {
     expect(fill([0, 0, 14], false, 2)).toBeCloseTo(36, 0);
   });
 });
+
+describe('otomatik ölçek', () => {
+  it('çıkıntı için kararlı bir ölçek seçer ve çıkıntıyı döndürür', async () => {
+    const { chooseSmartScale, meanEdgeLength } = await import('../src/core/paint');
+    const adj = buildAdjacency(boss);
+    const { normals, areas } = faceNormalsAndAreas(boss);
+    const c = faceCentroids(boss);
+    let seed = 0;
+    let best = Infinity;
+    for (let t = 0; t < areas.length; t++) {
+      const d = Math.hypot(c[3 * t], c[3 * t + 1], c[3 * t + 2] - 14);
+      if (d < best) {
+        best = d;
+        seed = t;
+      }
+    }
+    const r = chooseSmartScale(adj, normals, c, areas, seed, meanEdgeLength(boss), { maxAngleDeg: 20, concaveOnly: true });
+    let a = 0;
+    for (const t of r.tris) a += areas[t];
+    expect(r.leaked).toBe(false);
+    expect(a).toBeCloseTo(132, 0);
+  });
+});

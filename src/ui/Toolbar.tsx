@@ -44,6 +44,7 @@ export function ToolOptions() {
   const brushRadius = useStore((s) => s.brushRadius);
   const smartAngle = useStore((s) => s.smartAngle);
   const smartScale = useStore((s) => s.smartScale);
+  useStore((s) => s.smartAutoScale);
   const smartConcave = useStore((s) => s.smartConcave);
   const smartValley = useStore((s) => s.smartValley);
   const smoothStrength = useStore((s) => s.smoothStrength);
@@ -85,7 +86,7 @@ export function ToolOptions() {
             step={0.05}
             unit="mm"
             log
-            title="Büyük özelliklerde (kulak, kol) büyüt"
+            title="Otomatikte tıklanan özelliğe göre seçilir; elle değiştirirsen sabitlenir"
             onChange={(v) => setSmartOptions({ smartScale: v })}
           />
           {smartScale > 0 && (

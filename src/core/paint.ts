@@ -59,6 +59,53 @@ export function smartFill(
   return Uint32Array.from(out);
 }
 
+/** Otomatik ölçekte denenen ölçekler (ortalama kenar uzunluğunun katı). */
+export const AUTO_SCALE_MULTIPLES = [3, 4, 6, 8, 12, 16];
+
+/**
+ * Smart Fill ölçeğini tıklanan özelliğe göre seçer. Ölçekler küçükten
+ * büyüğe denenir; modelin `leakFraction`'ından azını kaplayan ve sonraki iki
+ * ölçekten biriyle benzer alan veren (kararlı) ilk ölçek seçilir. Hiçbiri
+ * kararlı değilse taşmayan ilk ölçek, o da yoksa en küçük ölçek döner.
+ */
+export function chooseSmartScale(
+  adj: Int32Array,
+  normals: Float32Array,
+  centroids: Float32Array,
+  areas: Float32Array,
+  seed: number,
+  meanEdge: number,
+  opts: Omit<SmartFillOptions, 'scale'>,
+  leakFraction = 0.4,
+): { scale: number; tris: Uint32Array; leaked: boolean } {
+  let total = 0;
+  for (let t = 0; t < areas.length; t++) total += areas[t];
+  const results: { scale: number; tris: Uint32Array; area: number }[] = [];
+  const run = (i: number) => {
+    if (!results[i]) {
+      const scale = meanEdge * AUTO_SCALE_MULTIPLES[i];
+      const tris = smartFill(adj, normals, centroids, seed, { ...opts, scale });
+      let area = 0;
+      for (let k = 0; k < tris.length; k++) area += areas[tris[k]];
+      results[i] = { scale, tris, area };
+    }
+    return results[i];
+  };
+  const limit = total * leakFraction;
+  let firstOk = -1;
+  for (let i = 0; i < AUTO_SCALE_MULTIPLES.length; i++) {
+    const r = run(i);
+    if (r.area >= limit) continue;
+    if (firstOk < 0) firstOk = i;
+    for (let j = i + 1; j <= i + 2 && j < AUTO_SCALE_MULTIPLES.length; j++) {
+      const n = run(j);
+      if (Math.abs(n.area - r.area) <= r.area * 0.25) return { scale: r.scale, tris: r.tris, leaked: false };
+    }
+  }
+  if (firstOk >= 0) return { ...results[firstOk], leaked: false };
+  return { ...run(0), leaked: true };
+}
+
 function dist(c: Float32Array, a: number, b: number): number {
   return Math.hypot(c[3 * a] - c[3 * b], c[3 * a + 1] - c[3 * b + 1], c[3 * a + 2] - c[3 * b + 2]);
 }

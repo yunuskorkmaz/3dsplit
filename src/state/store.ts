@@ -59,8 +59,10 @@ export interface AppState {
   tool: Tool;
   brushRadius: number;
   smartAngle: number;
-  /** Smart Fill karşılaştırma ölçeği, mm. 0: otomatik (ortalama kenar × 3). */
+  /** Smart Fill karşılaştırma ölçeği, mm. 0: otomatik (tıklanan özelliğe göre seçilir). */
   smartScale: number;
+  /** Otomatik modda son tıklamada seçilen ölçek (gösterim için). */
+  smartAutoScale: number;
   /** Smart Fill sadece içbükey kıvrımlarda dursun (göz, burun gibi çıkıntılar için). */
   smartConcave: boolean;
   /** Smart Fill sonucu çıkıntının dibindeki vadi çizgisine oturtulsun. */
@@ -94,6 +96,7 @@ export const useStore = create<AppState>(() => ({
   brushRadius: 3,
   smartAngle: 20,
   smartScale: 0,
+  smartAutoScale: 0,
   smartConcave: true,
   smartValley: true,
   smoothRadius: 0,

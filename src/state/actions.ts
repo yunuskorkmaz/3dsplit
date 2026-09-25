@@ -1010,6 +1010,61 @@ export async function splitSelected(): Promise<void> {
   });
 }
 
+/**
+ * X35: tolerans deneme parçası. Seçili boşluğun 0.1 mm altı, kendisi ve
+ * 0.1 mm üstüyle delikli plaka + pimler; modelin yanına yeni parça olarak
+ * eklenir. Keys'te pim ayarları, Socket'te 4 mm yarıçaplı silindir tapa
+ * (boyu derinliğin iki katı) kullanılır.
+ */
+export async function makeToleranceCoupon(): Promise<void> {
+  const { cut } = get();
+  const c = cut.clearance;
+  const clearances = [...new Set([Math.max(0, c - 0.1), c, c + 0.1].map((x) => Math.round(x * 100) / 100))];
+  const pin =
+    cut.mode === 'keys'
+      ? { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: true, chamfer: cut.pinChamfer }
+      : { shape: 'cylinder' as const, radius: 4, length: 2 * cut.depth, onPart: true, chamfer: 0.4 };
+  const depthClearance = cut.mode === 'keys' ? cut.pinDepthClearance : c;
+  await busy('Deneme parçası hazırlanıyor…', async () => {
+    const coupon = await geometry.coupon(pin, clearances, depthClearance);
+    // görünür parçaların sağına yerleştir
+    const visible = get().parts.filter((p) => p.visible);
+    let maxX = 0;
+    let minY = 0;
+    for (const p of visible) {
+      const b = boundingBox(p.mesh.positions);
+      maxX = Math.max(maxX, b.max[0]);
+      minY = Math.min(minY, b.min[1]);
+    }
+    const shift = (m: LabeledMesh) => {
+      for (let i = 0; i < m.positions.length; i += 3) {
+        m.positions[i] += maxX + 10;
+        m.positions[i + 1] += minY;
+      }
+      return m;
+    };
+    const label = clearances.join(' / ');
+    const make = (mesh: LabeledMesh, name: string): Part => ({
+      id: newPartId(),
+      name,
+      mesh: shift(mesh),
+      visible: true,
+      badge: 'new',
+      colorSlot: BASE_SLOT,
+      manifold: true,
+    });
+    const newParts = [make(coupon.plate, `Tolerans plakası (${label} mm)`), ...coupon.pins.map((m, i) => make(m, `Tolerans pimi ${i + 1}`))];
+    const before = get().parts;
+    const after = [...before, ...newParts];
+    set({ parts: after });
+    pushHistory({ kind: 'parts', before, after });
+    notify(
+      'info',
+      `Deneme parçası eklendi: boşluklar soldan sağa ${label} mm (deliğin önündeki çentik sayısı: 1, 2, 3). Pimleri takıp en iyi oturanı seçin; bu parçaları dışa aktarırken sadece onları görünür bırakın.`,
+    );
+  });
+}
+
 // ---------- parça yönetimi ----------
 
 export function selectPart(id: string): void {

@@ -5,6 +5,7 @@ import {
   addSlot,
   autoSuggestFeatures,
   deletePart,
+  makeToleranceCoupon,
   refineSelected,
   renamePart,
   runCut,
@@ -360,6 +361,9 @@ export function CutPanel() {
             {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arasındaki boşluk. FDM'de 0.2 elle takılır; sıkı geçme için 0.1, yazıcı fazla akıtıyorsa
             0.3. Reçinede 0.05–0.1.
           </p>
+          <button type="button" onClick={makeToleranceCoupon} title="Seçili pim/tapa ile boşluğun −0.1, kendisi ve +0.1 mm'si için delikli küçük plaka ve pimler üretir; önce bunu basıp en iyi oturanı seçin">
+            Deneme parçası üret
+          </button>
         </Group>
       )}
       {cut.mode === 'keys' && (

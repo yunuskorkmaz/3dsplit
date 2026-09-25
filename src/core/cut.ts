@@ -671,7 +671,7 @@ function pinDepthClearance(opts: CutOptions): number {
 }
 
 /** `axis` boyunca uzanan, `center`'da ortalanmış pim. `growLength`: boyca (her uçta) büyüme. */
-function makePin(pin: PinOptions, center: Vec3, axis: Vec3, grow: number, scope: Scope, growLength = grow): Manifold {
+export function makePin(pin: PinOptions, center: Vec3, axis: Vec3, grow: number, scope: Scope, growLength = grow): Manifold {
   const { Manifold } = kernel();
   const r = pin.radius + grow;
   const h = pin.length + 2 * growLength;

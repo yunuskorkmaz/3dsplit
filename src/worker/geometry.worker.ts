@@ -1,3 +1,5 @@
+import type { PinOptions } from '../core/cut';
+import { toleranceCoupon } from '../core/coupon';
 import * as Comlink from 'comlink';
 import wasmUrl from 'manifold-3d/manifold.wasm?url';
 import { CutError, type CutOptions, cutRegion, previewCut, splitComponents, suggestCutMode } from '../core/cut';
@@ -114,6 +116,12 @@ const api = {
     return Comlink.transfer(r, buffersOf([r]));
   },
 
+  async coupon(pin: PinOptions, clearances: number[], depthClearance: number) {
+    await ready;
+    const c = toleranceCoupon(pin, clearances, depthClearance);
+    const all = [c.plate, ...c.pins];
+    return Comlink.transfer(c, buffersOf(all));
+  },
   async split(mesh: LabeledMesh) {
     await ready;
     const pieces = splitComponents(mesh);

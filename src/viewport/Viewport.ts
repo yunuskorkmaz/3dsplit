@@ -364,6 +364,20 @@ export class Viewport {
     this.requestRender();
   }
 
+  /**
+   * E1: kamera düzeni. `default`: sağ sürükle döndür, orta kaydır.
+   * `blender`: orta sürükle döndür (Shift+orta kaydır), sağ kaydır.
+   * Sol tuş her iki düzende de boşlukta döndürür, model üstünde araca gider.
+   */
+  setCameraMode(mode: 'default' | 'blender', invertZoom: boolean): void {
+    this.controls.mouseButtons =
+      mode === 'blender'
+        ? { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN }
+        : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
+    // OrbitControls yakınlaştırma çarpanı zoomSpeed üssüyle hesaplanıyor: eksi işaret yönü çevirir
+    this.controls.zoomSpeed = invertZoom ? -1 : 1;
+  }
+
   /** D5: kesim hatasında sorunlu sınır halkaları, her şeyin üstünde kırmızı. */
   setErrorLoops(loops: Vec3[][] | null): void {
     for (const c of [...this.errorLines.children]) {

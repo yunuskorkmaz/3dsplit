@@ -96,6 +96,8 @@ export interface AppState {
   pins: PinPlacement[];
   /** Pim aracında seçili pim (-1: yok). */
   selectedPin: number;
+  /** E1: kamera düzeni ve ters yakınlaştırma (tarayıcıda hatırlanır). */
+  camera: { mode: 'default' | 'blender'; invertZoom: boolean };
   /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
   mirror: { enabled: boolean; axis: 0 | 1 | 2; offset: number | null };
   /** Socket yön gizmosu açık mı. */
@@ -146,6 +148,7 @@ export const useStore = create<AppState>(() => ({
   pins: [],
   selectedPin: -1,
   mirror: { enabled: false, axis: 0, offset: null },
+  camera: loadCameraPrefs(),
   directionGizmo: false,
   preview: null,
   suggestion: null,
@@ -156,6 +159,28 @@ export const useStore = create<AppState>(() => ({
   undoStack: [],
   redoStack: [],
 }));
+
+function loadCameraPrefs(): { mode: 'default' | 'blender'; invertZoom: boolean } {
+  try {
+    const raw = localStorage.getItem('3dsplit.camera');
+    if (raw) {
+      const v = JSON.parse(raw);
+      return { mode: v.mode === 'blender' ? 'blender' : 'default', invertZoom: !!v.invertZoom };
+    }
+  } catch {
+    // depolama kapalı olabilir: varsayılan
+  }
+  return { mode: 'default', invertZoom: false };
+}
+
+export function setCameraPrefs(camera: { mode: 'default' | 'blender'; invertZoom: boolean }): void {
+  useStore.setState({ camera });
+  try {
+    localStorage.setItem('3dsplit.camera', JSON.stringify(camera));
+  } catch {
+    // depolama kapalı: sadece bu oturum
+  }
+}
 
 export const set = useStore.setState;
 export const get = useStore.getState;

@@ -23,7 +23,7 @@ import {
   undo,
   updateSlot,
 } from '../state/actions';
-import { type CutSettings, dismiss, set, useStore } from '../state/store';
+import { type CutSettings, dismiss, set, setCameraPrefs, useStore } from '../state/store';
 import { NumberField } from './fields';
 import { cameraDirection } from './ViewportHost';
 
@@ -72,6 +72,37 @@ export function FilePanel() {
           Yinele
         </button>
       </div>
+    </section>
+  );
+}
+
+export function CameraPanel() {
+  const camera = useStore((s) => s.camera);
+  return (
+    <section>
+      <h3>Kamera</h3>
+      <div className="row">
+        <button
+          type="button"
+          className={camera.mode === 'default' ? 'active' : ''}
+          onClick={() => setCameraPrefs({ ...camera, mode: 'default' })}
+          title="Sağ sürükle döndür, orta / Ctrl+sağ kaydır"
+        >
+          Varsayılan
+        </button>
+        <button
+          type="button"
+          className={camera.mode === 'blender' ? 'active' : ''}
+          onClick={() => setCameraPrefs({ ...camera, mode: 'blender' })}
+          title="Orta sürükle döndür, Shift+orta kaydır, sağ kaydır"
+        >
+          Blender
+        </button>
+      </div>
+      <label className="field">
+        <input type="checkbox" checked={camera.invertZoom} onChange={(e) => setCameraPrefs({ ...camera, invertZoom: e.target.checked })} />
+        <span>Ters yakınlaştırma</span>
+      </label>
     </section>
   );
 }

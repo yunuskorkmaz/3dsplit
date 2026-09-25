@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { importFiles, redo, scheduleSuggestion, togglePreview, undo } from '../state/actions';
 import { get, set, useStore } from '../state/store';
-import { CutPanel, FilePanel, PartsPanel, SlotPanel, StatusBar } from './Panels';
+import { CameraPanel, CutPanel, FilePanel, PartsPanel, SlotPanel, StatusBar } from './Panels';
 import { ToolBar, ToolOptions, TOOLS } from './Toolbar';
 import { ViewportHost } from './ViewportHost';
 
@@ -64,6 +64,7 @@ export function App() {
       <aside className="left">
         <FilePanel />
         <PartsPanel />
+        <CameraPanel />
       </aside>
       <main>
         <ToolOptions />

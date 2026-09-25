@@ -231,6 +231,12 @@ export function ViewportHost() {
     vpRef.current?.setErrorLoops(errorLoops);
   }, [errorLoops]);
 
+  // E1: kamera düzeni
+  const camera = useStore((s) => s.camera);
+  useEffect(() => {
+    vpRef.current?.setCameraMode(camera.mode, camera.invertZoom);
+  }, [camera]);
+
   // ayna düzlemi
   const mirror = useStore((s) => s.mirror);
   useEffect(() => {

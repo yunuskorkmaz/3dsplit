@@ -24,7 +24,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | D5 | Kesim hatasında sorunlu bölgeyi göster | Hata mesajı nereye bakılacağını söylemiyor | [x] |
 | C12 | Link all: kapalıyken her ada kendi ayarıyla (derinlik) | Aynı slotta farklı boyda bölgeler | [x] |
 | C11 | Snap pim (yapıştırıcısız, esnek dilli) | Faz 2 kalanı | [x] |
-| E1 | Kamera: ters yakınlaştırma, Blender tarzı (orta tuş döndür) seçeneği | Faz 1 kalanı | [ ] |
+| E1 | Kamera: ters yakınlaştırma, Blender tarzı (orta tuş döndür) seçeneği | Faz 1 kalanı | [x] |
 | B7 | X-ray boyama: arkadaki yüzleri de boya | Faz 3 | [ ] |
 | X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği | [ ] |
 | A2 | Voxel yedek onarım (kapanmayan mesh için) | A2'nin eksiği | [ ] |
@@ -123,7 +123,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 
 | # | Özellik | Faz | Durum | Not |
 | --- | --- | --- | --- | --- |
-| E1 | Kamera modları | 1 | [~] | Sağ sürükle döndür, orta/Ctrl+sağ kaydır, Alt+sol döndür (X17). Blender tarzı / ters zoom yok |
+| E1 | Kamera modları | 1 | [x] | Varsayılan (sağ döndür, orta kaydır) ve Blender (orta döndür, Shift+orta kaydır); ters yakınlaştırma; tarayıcıda hatırlanır |
 | E2 | Özelleştirilebilir kısayollar | 3 | [~] | Sabit kısayollar: F, B, E, S, G, P, 0–9, Space, [ ], Alt+tekerlek |
 
 ## Sonraki sprintler için bekleyen ek işler
@@ -167,3 +167,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X5: kesim modu önerisi | `25769a5` |
 | 2026-09-25 | D5: kesim hatasında sorunlu bölge | `56e121d` |
 | 2026-09-25 | C12: Link all | `b2e94df` |
+| 2026-09-25 | C11: snap pim | `ba96195` |

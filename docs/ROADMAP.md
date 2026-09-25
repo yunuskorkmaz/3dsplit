@@ -212,5 +212,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | X40: otomatik pim boyutunda işaretçi ve pim ayarı | `42da70e` |
 | 2026-09-25 | X41: lint temizliği ve biçimlendirme | `1d5bf39` |
 | 2026-09-25 | X42: yumuşatma fırçasında yüzeyde yayılan aday üçgenler | `8709fae` |
+| 2026-09-25 | X43: uçtan uca test: çizgi aracı, deneme parçası, ayrık görünüm | `723e41f` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

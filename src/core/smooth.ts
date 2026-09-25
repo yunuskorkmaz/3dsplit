@@ -437,7 +437,8 @@ function smoothField(
   // fırça altındaki üçgenler ve köşeler (yerel numaralı); aday listesi verilirse sadece onlara bakılır
   const near: number[] = [];
   if (candidates) {
-    for (let i = 0; i < candidates.length; i++) if (dist2(idx[3 * candidates[i]]) <= reach2) near.push(candidates[i]);
+    for (let i = 0; i < candidates.length; i++)
+      if (dist2(idx[3 * candidates[i]]) <= reach2) near.push(candidates[i]);
     // tam taramayla aynı sıra: köşeler sırayla kaydırıldığından sonuç sıraya bağlı
     near.sort((x, y) => x - y);
   } else {

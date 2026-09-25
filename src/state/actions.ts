@@ -628,7 +628,9 @@ export function smoothAt(point: Vec3, tri?: number): void {
   // darbe boyunca köşeler kaydığı için ağırlık merkezlerine pay bırakılır
   const reach = brushRadius * 1.5 + 2 * topo.meanEdge;
   const nearOf = (t: number | undefined, p: Vec3) =>
-    t === undefined || t >= labels.length ? undefined : brushSelect(adj, topo.centroids, t, p, reach);
+    t === undefined || t >= labels.length
+      ? undefined
+      : brushSelect(adj, topo.centroids, t, p, reach);
   const tris = smoothBoundaryAt(
     mesh,
     slot,

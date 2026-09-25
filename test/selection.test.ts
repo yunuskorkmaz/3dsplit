@@ -183,8 +183,16 @@ describe('yumuşatma fırçası', () => {
   it('X42: yüzeyde yayılan aday listesiyle sonuç tüm mesh taramasıyla aynı', async () => {
     const { smoothBoundaryAt } = await import('../src/core/smooth');
     const { brushSelect } = await import('../src/core/paint');
-    const base = labelWhere(subdividedCube(20, 40), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));
-    const copy = () => ({ positions: new Float32Array(base.positions), indices: base.indices, labels: Uint16Array.from(base.labels) });
+    const base = labelWhere(
+      subdividedCube(20, 40),
+      1,
+      (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)),
+    );
+    const copy = () => ({
+      positions: new Float32Array(base.positions),
+      indices: base.indices,
+      labels: Uint16Array.from(base.labels),
+    });
     const a = copy();
     const b = copy();
     const adj = buildAdjacency(base);
@@ -199,8 +207,25 @@ describe('yumuşatma fırçası', () => {
         seed = t;
       }
     }
-    smoothBoundaryAt(a, 1, p, 1.5, 1, (t) => a.labels[t] === 0, () => 0);
-    smoothBoundaryAt(b, 1, p, 1.5, 1, (t) => b.labels[t] === 0, () => 0, brushSelect(adj, c, seed, p, 1.5 * 1.5 + 1));
+    smoothBoundaryAt(
+      a,
+      1,
+      p,
+      1.5,
+      1,
+      (t) => a.labels[t] === 0,
+      () => 0,
+    );
+    smoothBoundaryAt(
+      b,
+      1,
+      p,
+      1.5,
+      1,
+      (t) => b.labels[t] === 0,
+      () => 0,
+      brushSelect(adj, c, seed, p, 1.5 * 1.5 + 1),
+    );
     expect(Array.from(b.labels)).toEqual(Array.from(a.labels));
     expect(Array.from(b.positions)).toEqual(Array.from(a.positions));
   });

@@ -293,6 +293,16 @@ export function ToolOptions() {
             log
             onChange={(v) => updatePin(selectedPin, { length: v })}
           />
+          <NumberField
+            label="Gövdede"
+            value={Math.round((pin.bodyRatio ?? cut.pinBodyRatio) * 100)}
+            min={5}
+            max={95}
+            step={5}
+            unit="%"
+            title="Bu pimin gövde tarafında kalan payı (önizleme açıksa hemen görünür)"
+            onChange={(v) => updatePin(selectedPin, { bodyRatio: v / 100 })}
+          />
           <button
             type="button"
             disabled={!pin.axis}

@@ -237,6 +237,22 @@ describe('kesim', () => {
     expect(previewCut(region, { ...baseOpts, mode: 'keys' }).pins.length).toBe(1);
   });
 
+  it('gövde payı: pim gövdeye daha derin girer, parçadaki kısmı kısalır', () => {
+    const half = cutRegion(capRegion, { ...baseOpts, mode: 'keys' });
+    const deep = cutRegion(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, bodyRatio: 0.75 },
+    });
+    // 6 mm pim: gövde tarafı 3 → 4.5 mm; delik 1.5 mm daha derin
+    const hole = Math.PI * 2.2 * 2.2 * 1.5;
+    expect(volume(half.body) - volume(deep.body)).toBeGreaterThan(hole * 0.8);
+    expect(volume(half.body) - volume(deep.body)).toBeLessThan(hole * 1.2);
+    // parçaya eklenen hacim (pimin parça dışında kalan kısmı) daha büyük: parça + pim toplamı aynı,
+    // ama parça içine gömülen kısım azaldığı için dışarıda kalan artar
+    expect(volume(deep.parts[0])).toBeGreaterThan(volume(half.parts[0]) + 1);
+  });
+
   it('Keys: pim başına boyut ve eğik eksen', () => {
     const fast = cutRegion(capRegion, { ...baseOpts, mode: 'fast' });
     const r = cutRegion(capRegion, {

@@ -54,6 +54,8 @@ export interface CutSettings {
   pinChamfer: number;
   /** X33: pim yarıçapı ve boyu kesitten hesaplansın. */
   pinAuto: boolean;
+  /** Pim boyunun gövde (yuva) tarafında kalan payı, 0..1 (0.5: yarı yarıya). */
+  pinBodyRatio: number;
 }
 
 export interface Message {
@@ -62,8 +64,11 @@ export interface Message {
   text: string;
 }
 
-/** Undo kaydı: boyamada değişen üçgenler, kesimde parça listesinin önceki hali. */
-export type HistoryEntry =
+/**
+ * Undo kaydı: boyamada değişen üçgenler, kesimde parça listesinin önceki hali.
+ * `label`: geçmiş panelinde görünen ad.
+ */
+type HistoryData =
   // boyama kaydı parça kimliğine değil mesh nesnesine bağlı: inceltme/kesim mesh'i değiştirse de kayıt kendi mesh'ine yazar
   | { kind: 'paint'; mesh: LabeledMesh; tris: Uint32Array; before: Uint16Array; after: Uint16Array }
   | { kind: 'parts'; before: Part[]; after: Part[] }
@@ -80,6 +85,8 @@ export type HistoryEntry =
       labelsBefore: Uint16Array;
       labelsAfter: Uint16Array;
     };
+
+export type HistoryEntry = HistoryData & { label?: string };
 
 const DEFAULT_COLORS = [
   '#b0b0b0',
@@ -136,6 +143,11 @@ export interface AppState {
   explode: number;
   /** X26: yardım penceresi açık mı. */
   helpOpen: boolean;
+  /**
+   * Önizleme modu açık mı. Açıkken kesim ayarı, pim, slot, boyama veya parça
+   * değişince önizleme kendiliğinden yenilenir (kapanmaz).
+   */
+  previewActive: boolean;
   /** Socket yön gizmosu açık mı. */
   directionGizmo: boolean;
   preview: CutPreview | null;
@@ -191,6 +203,7 @@ export const useStore = create<AppState>(() => ({
     pinDepthClearance: 0.3,
     pinChamfer: 0.4,
     pinAuto: true,
+    pinBodyRatio: 0.5,
   },
   pins: [],
   selectedPin: -1,
@@ -202,6 +215,7 @@ export const useStore = create<AppState>(() => ({
   helpOpen: false,
   directionGizmo: false,
   preview: null,
+  previewActive: false,
   suggestion: null,
   errorLoops: null,
   busy: null,
@@ -271,6 +285,16 @@ export function selectedPart(): Part | undefined {
   return s.parts.find((p) => p.id === s.selectedPartId);
 }
 
-export function pushHistory(entry: HistoryEntry): void {
+export function pushHistory(entry: HistoryEntry, label?: string): void {
+  if (label) entry.label = label;
   set((s) => ({ undoStack: [...s.undoStack.slice(-99), entry], redoStack: [] }));
+}
+
+/** Geçmiş panelinde kaydın adı. */
+export function historyLabel(e: HistoryEntry): string {
+  if (e.label) return e.label;
+  if (e.kind === 'paint') return 'Boyama';
+  if (e.kind === 'geometry') return 'Yumuşatma';
+  if (e.kind === 'split') return 'Üçgen bölme';
+  return 'Parça değişikliği';
 }

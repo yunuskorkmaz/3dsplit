@@ -41,6 +41,12 @@ export interface PinOptions {
    * adadaki pim başına düşen alanın payı; boy yarıçapın 4 katı.
    */
   auto?: boolean;
+  /**
+   * Pim boyunun gövde (kesim yüzeyinin eksen yönündeki) tarafında kalan payı,
+   * 0..1; verilmezse 0.5 (yarı yarıya). Pim parçadaysa bu, gövdedeki yuvanın
+   * derinliğini belirler.
+   */
+  bodyRatio?: number;
 }
 
 /** Tek bir pimin yeri ve (isteğe bağlı) kendine özgü boyutu/ekseni. */
@@ -51,6 +57,8 @@ export interface PinPlacement {
   length?: number;
   /** Pimin ekseni (herhangi bir yönde verilebilir; gövdeye bakacak şekilde çevrilir). */
   axis?: Vec3;
+  /** Bu pime özgü gövde payı (`PinOptions.bodyRatio`). */
+  bodyRatio?: number;
 }
 
 export interface CutOptions {
@@ -821,7 +829,7 @@ function pinCenters(
   islands: Island[],
   pins: PinPlacement[] | undefined,
   base: PinOptions,
-): { island: Island; center: Vec3; axis: Vec3; spec: PinOptions }[] {
+): { island: Island; center: Vec3; surface: Vec3; axis: Vec3; spec: PinOptions }[] {
   const raw: { island: Island; pin: PinPlacement }[] =
     !pins || pins.length === 0
       ? islands.flatMap((island) =>
@@ -863,7 +871,10 @@ function pinCenters(
       ({ radius, length } = autoPinSize(positions, island, center, shared));
     }
     const spec = { ...base, radius: pin.radius ?? radius, length: pin.length ?? length };
-    return { island, center, axis, spec };
+    // pimin gövde tarafındaki payı: merkez eksen boyunca kaydırılır (eksen gövdeye bakıyor)
+    const ratio = Math.min(0.95, Math.max(0.05, pin.bodyRatio ?? base.bodyRatio ?? 0.5));
+    const shifted = add(center, scale(axis, (ratio - 0.5) * spec.length));
+    return { island, center: shifted, surface: center, axis, spec };
   });
 }
 
@@ -1192,7 +1203,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
           }
           return split;
         };
-        for (const [k, { island, center, axis, spec }] of placed.entries()) {
+        for (const [k, { island, center, surface, axis, spec }] of placed.entries()) {
           pins.push(manifoldMesh(makePin(spec, center, axis, 0, scope)));
           // yuva, pimin karşı tarafındaki katıda açılır
           const inward = opts.pin.onPart ? axis : scale(axis, -1);
@@ -1209,7 +1220,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
                 pinDepthClearance(opts) + minWall,
               ),
             inward,
-            ref: center,
+            ref: surface,
             slack: slackOf(island, island.capNormal),
             name: placed.length > 1 ? `Pim ${k + 1}` : 'Pim',
           });

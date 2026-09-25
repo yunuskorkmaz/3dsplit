@@ -710,3 +710,37 @@ ol.steps li {
 .help-table .hint {
   margin: 2px 0 0;
 }
+
+/* geçmiş zaman çizelgesi */
+ol.history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+ol.history li button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+  padding: 2px 6px;
+  display: flex;
+  gap: 6px;
+}
+ol.history li button:hover {
+  background: #3a3c42;
+}
+ol.history li.current button {
+  background: #2f6fd655;
+  border-color: #2f6fd6;
+}
+ol.history li.undone button {
+  color: #777;
+  font-style: italic;
+}
+ol.history .step {
+  color: #777;
+  min-width: 20px;
+  text-align: right;
+}

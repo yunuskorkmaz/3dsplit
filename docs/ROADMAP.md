@@ -37,6 +37,9 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X44 | Çizgi aracında ayna: ayna açıksa karşı tarafta da aynı halka boyanır | Göz, yanak gibi çift bölgeler | [x] |
 | X45 | Keys: uzun/yassı kesitte birden fazla otomatik pim (kesitin uzun ekseni boyunca) | Tek pim uzun kesitte dönmeye izin veriyor | [x] |
 | X46 | Dışa aktarmada parçaları plakaya alan verimli yerleştirme (satır paketleme yerine raf/kutu paketleme, parçalar arası boşluk ayarı) | Çok parçalı figürlerde plaka taşması | [x] |
+| X47 | Önizleme modu: açıkken modele tıklamak, pim eklemek/sürüklemek, ayar/slot/boyama değişikliği önizlemeyi kapatmaz, 300 ms sonra yeniler. Pim gövde payı (% gövdede; genel ve pim başına) | Kullanıcı istedi | [x] |
+| X48 | Seçimi temizle: aktif slotun seçili parçadaki boyasını siler (düğme + Delete) | Kullanıcı istedi | [x] |
+| X49 | Geçmiş zaman çizelgesi: adlandırılmış adımlar, tıklanan adıma gitme | Kullanıcı istedi | [x] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 

@@ -17,7 +17,8 @@ export type Command =
   | 'part.solo'
   | 'part.showAll'
   | 'view.explode'
-  | 'help';
+  | 'help'
+  | 'slot.clear';
 
 export const COMMANDS: { id: Command; label: string }[] = [
   { id: 'tool.smart', label: 'Smart Fill' },
@@ -36,6 +37,7 @@ export const COMMANDS: { id: Command; label: string }[] = [
   { id: 'part.showAll', label: 'Tüm parçaları göster' },
   { id: 'view.explode', label: 'Ayrık görünüm aç/kapa' },
   { id: 'help', label: 'Yardım' },
+  { id: 'slot.clear', label: 'Aktif slotun seçimini temizle' },
 ];
 
 export const DEFAULT_KEYMAP: Record<Command, string> = {
@@ -55,6 +57,7 @@ export const DEFAULT_KEYMAP: Record<Command, string> = {
   'part.showAll': 'U',
   'view.explode': 'X',
   help: '?',
+  'slot.clear': 'Delete',
 };
 
 /** Klavye olayının kısayol adı: tek karakterler büyük harf, boşluk "Space", Shift'li harf "Shift+H". */

@@ -4,6 +4,7 @@ import {
   activeIslands,
   addSlot,
   autoSuggestFeatures,
+  clearActiveSlot,
   deletePart,
   makeToleranceCoupon,
   refineSelected,
@@ -208,6 +209,7 @@ export function MeshToolsPanel() {
 }
 
 export function SlotPanel() {
+  const keys = useKeymap((s) => s.map);
   const slots = useStore((s) => s.slots);
   const active = useStore((s) => s.activeSlot);
   return (
@@ -245,6 +247,13 @@ export function SlotPanel() {
         >
           Çıkıntıları öner
         </button>
+        <button
+          type="button"
+          onClick={clearActiveSlot}
+          title={`Seçili parçada aktif slotun tüm boyasını siler (${keys['slot.clear']}). Tek bir yeri silmek için: Smart Fill'de Shift+tık, Silgi (E) veya Ctrl/Cmd+Z`}
+        >
+          Seçimi temizle
+        </button>
       </div>
     </Panel>
   );
@@ -262,7 +271,7 @@ const TOLERANCE_PRESETS = [
 
 /** Sağ panelin altına sabit: önizleme ve kesim düğmeleri. */
 export function CutActions() {
-  const previewOn = useStore((s) => s.preview !== null);
+  const previewOn = useStore((s) => s.previewActive);
   const activeSlot = useStore((s) => s.activeSlot);
   const hasParts = useStore((s) => s.parts.length > 0);
   const keys = useKeymap((s) => s.map);
@@ -306,8 +315,7 @@ export function CutPanel() {
   const islands = cut.mode === 'socket' ? activeIslands() : [];
   const activeSlot = useStore((s) => s.activeSlot);
   const slotName = useStore((s) => s.slots.find((x) => x.id === s.activeSlot)?.name);
-  const update = (patch: Partial<CutSettings>) =>
-    set((s) => ({ cut: { ...s.cut, ...patch }, preview: null }));
+  const update = (patch: Partial<CutSettings>) => set((s) => ({ cut: { ...s.cut, ...patch } }));
   return (
     <Panel id="cut" grow title={`Kesim — ${activeSlot === 0 ? 'slot seçin' : slotName}`}>
       <div className="row segmented">
@@ -552,6 +560,16 @@ export function CutPanel() {
               />
             </>
           )}
+          <NumberField
+            label="Gövdede"
+            value={Math.round(cut.pinBodyRatio * 100)}
+            min={5}
+            max={95}
+            step={5}
+            unit="%"
+            title="Pim boyunun gövde tarafında kalan payı. %50: yarı yarıya; artırınca pim gövdeye daha derin girer. Pim aracında tek pim için ayrıca ayarlanır"
+            onChange={(v) => update({ pinBodyRatio: v / 100 })}
+          />
           {cut.pinShape !== 'snap' && (
             <NumberField
               label="Uç pahı"
@@ -583,7 +601,7 @@ export function CutPanel() {
             <button
               type="button"
               disabled={!pinCount}
-              onClick={() => set({ pins: [], selectedPin: -1, preview: null })}
+              onClick={() => set({ pins: [], selectedPin: -1 })}
             >
               Temizle ({pinCount})
             </button>

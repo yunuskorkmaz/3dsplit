@@ -95,7 +95,7 @@ export function ViewportHost() {
     const vp = new Viewport(ref.current, {
       onDown(hit: Hit, e: PointerEvent) {
         const { tool, selectedPartId: sel } = get();
-        if (hit.partId !== sel) set({ selectedPartId: hit.partId, preview: null });
+        if (hit.partId !== sel) set({ selectedPartId: hit.partId });
         if (tool === 'smart') smartFillAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'line') lineClick(hit.partId, hit.tri, hit.point);
@@ -115,13 +115,13 @@ export function ViewportHost() {
             drag = 'pin';
             return true;
           } else if (!e.shiftKey) {
-            set({ pins: [...list, { point: hit.point }], selectedPin: list.length, preview: null });
+            set({ pins: [...list, { point: hit.point }], selectedPin: list.length });
           }
         } else if (tool === 'brush' || tool === 'erase') {
           // silgi aracında Shift boyar, fırçada Shift siler
           eraseStroke = (tool === 'erase') !== e.shiftKey;
           drag = 'paint';
-          beginStroke(hit.partId);
+          beginStroke(hit.partId, eraseStroke ? 'Silgi' : 'Fırça');
         } else if (tool === 'smooth') {
           if (!beginSmoothStroke(hit.partId)) return false;
           drag = 'smooth';

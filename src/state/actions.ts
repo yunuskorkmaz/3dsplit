@@ -46,6 +46,7 @@ import {
   reservePartIds,
   selectedPart,
   set,
+  useStore,
 } from './store';
 import {
   concavityOf,
@@ -101,7 +102,7 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
         };
         const before = get().parts;
         set({ parts: [...before, part], selectedPartId: part.id });
-        pushHistory({ kind: 'parts', before, after: get().parts });
+        pushHistory({ kind: 'parts', before, after: get().parts }, `Aç: ${part.name}`);
       }
     });
   }
@@ -138,7 +139,7 @@ export function regionFrame(): { center: Vec3; normal: Vec3 } | null {
 }
 
 export function setSocketDirection(direction: Vec3 | null): void {
-  set((s) => ({ cut: { ...s.cut, direction }, preview: null }));
+  set((s) => ({ cut: { ...s.cut, direction } }));
 }
 
 /** A4: parçalar, etiketler ve slotlar tek dosyada. */
@@ -164,6 +165,7 @@ async function openProject(file: File): Promise<void> {
       activeSlot: data.activeSlot,
       selectedPartId: data.selectedPartId,
       preview: null,
+      previewActive: false,
       pins: [],
       selectedPin: -1,
       undoStack: [],
@@ -252,6 +254,8 @@ export function exportPartStl(id: string): void {
 interface Stroke {
   partId: string;
   before: Map<number, number>;
+  /** Geçmiş panelindeki ad. */
+  label: string;
 }
 
 let stroke: Stroke | null = null;
@@ -317,8 +321,8 @@ export function setLabelsChangedHook(fn: typeof onLabelsChanged): void {
   onLabelsChanged = fn;
 }
 
-export function beginStroke(partId: string): void {
-  stroke = { partId, before: new Map() };
+export function beginStroke(partId: string, label = 'Boyama'): void {
+  stroke = { partId, before: new Map(), label };
 }
 
 export function endStroke(): Extract<HistoryEntry, { kind: 'paint' }> | null {
@@ -330,7 +334,7 @@ export function endStroke(): Extract<HistoryEntry, { kind: 'paint' }> | null {
   const tris = Uint32Array.from(s.before.keys());
   const before = Uint16Array.from(s.before.values());
   const after = Uint16Array.from(tris, (t) => part.mesh.labels[t]);
-  const entry = { kind: 'paint' as const, mesh: part.mesh, tris, before, after };
+  const entry = { kind: 'paint' as const, mesh: part.mesh, tris, before, after, label: s.label };
   pushHistory(entry);
   return entry;
 }
@@ -357,7 +361,7 @@ export function brushAt(partId: string, tri: number, point: Vec3, erase: boolean
 export function bucketAt(partId: string, tri: number, erase: boolean): void {
   const part = partById(partId);
   if (!part) return;
-  beginStroke(partId);
+  beginStroke(partId, erase ? 'Kova (sil)' : 'Kova');
   const m = mirrored(part, triCenter(part, tri));
   const mirrorTris = m ? bucketFill(topologyOf(part.mesh).adj, part.mesh.labels, m.tri) : [];
   applyLabels(
@@ -456,7 +460,7 @@ export function smartFillAt(partId: string, tri: number, erase: boolean): void {
   const part = partById(partId);
   if (!part) return;
   const topo = topologyOf(part.mesh);
-  beginStroke(partId);
+  beginStroke(partId, erase ? 'Smart Fill (sil)' : 'Smart Fill');
   const m = mirrored(part, triCenter(part, tri));
   const seeds = m && m.tri !== tri ? [tri, m.tri] : [tri];
   const tris = smartSelectMany(topo, part.mesh, seeds);
@@ -525,7 +529,7 @@ export function gapFillSelected(): void {
     if (list) list.push(t);
     else byLabel.set(newLabels[i], [t]);
   });
-  beginStroke(part.id);
+  beginStroke(part.id, 'Gap Fill');
   for (const [label, list] of byLabel) applyLabels(part, list, label);
   endStroke();
   notify('info', `${tris.length} üçgen komşu renge çevrildi.`);
@@ -570,8 +574,8 @@ export function smoothActiveRegion(): void {
   const before = get().parts;
   const after = before.map((p) => (p.id === part.id ? { ...p, mesh } : p));
   lastSmart = null;
-  set({ parts: after, preview: null });
-  pushHistory({ kind: 'parts', before, after });
+  set({ parts: after });
+  pushHistory({ kind: 'parts', before, after }, 'Tüm sınırı yumuşat');
 }
 
 /** `t`'nin komşularında `exclude` dışındaki en sık etiket; yoksa taban. */
@@ -619,7 +623,6 @@ export function beginSmoothStroke(partId: string): boolean {
     return false;
   }
   lastSmart = null;
-  if (get().preview) set({ preview: null });
   smoothStroke = {
     partId,
     mesh: part.mesh,
@@ -792,6 +795,7 @@ export function endSmoothStroke(): void {
     return out;
   };
   pushHistory({
+    label: 'Yumuşatma fırçası',
     kind: 'geometry',
     mesh,
     verts: Uint32Array.from(verts),
@@ -830,7 +834,7 @@ function splitStroke(mesh: LabeledMesh, path: Vec3[]): void {
  */
 function applyMeshSplit(mesh: LabeledMesh, diff: SplitDiff, record = true): void {
   replaceMeshArrays(mesh, applySplit(mesh, diff), diff);
-  if (record) pushHistory({ kind: 'split', mesh, diff });
+  if (record) pushHistory({ kind: 'split', mesh, diff }, 'Kenarı üçgenlere işle');
 }
 
 /** `forward` verilirse fark ileri uygulandı: önbellekler yerinde güncellenir; yoksa atılır. */
@@ -844,7 +848,6 @@ function replaceMeshArrays(mesh: LabeledMesh, next: LabeledMesh, forward?: Split
   // viewport geometrisi yeniden kurulsun: parça nesnesi yenilenir, mesh aynı kalır
   set((s) => ({
     parts: s.parts.map((p) => (p.mesh === mesh ? { ...p } : p)),
-    preview: null,
     paintVersion: s.paintVersion + 1,
   }));
 }
@@ -900,12 +903,11 @@ export function activeIslands(): IslandInfo[] {
 export function updatePin(index: number, patch: Partial<PinPlacement>): void {
   set((s) => ({
     pins: s.pins.map((p, i) => (i === index ? { ...p, ...patch } : p)),
-    preview: null,
   }));
 }
 
 export function removePin(index: number): void {
-  set((s) => ({ pins: s.pins.filter((_, i) => i !== index), selectedPin: -1, preview: null }));
+  set((s) => ({ pins: s.pins.filter((_, i) => i !== index), selectedPin: -1 }));
 }
 
 // ---------- otomatik öneri (B9) ----------
@@ -931,7 +933,7 @@ export function autoSuggestFeatures(): void {
   let nextId = Math.max(...slots.map((s) => s.id)) + 1;
   const labels = part.mesh.labels;
   const ours = new Set<number>();
-  beginStroke(part.id);
+  beginStroke(part.id, 'Çıkıntıları öner');
   for (const tris of found) {
     const id = nextId++;
     slots.push({ id, name: `Öneri ${ours.size + 1}`, color: nextSlotColor(id) });
@@ -983,6 +985,7 @@ function cutOptions(): CutOptions {
       onPart: cut.pinOnPart,
       depthClearance: cut.pinDepthClearance,
       chamfer: cut.pinChamfer,
+      bodyRatio: cut.pinBodyRatio,
       auto: cut.pinAuto,
     },
     pins: cut.mode === 'keys' ? pins : undefined,
@@ -1045,16 +1048,64 @@ export function scheduleSuggestion(): void {
   }, 400);
 }
 
+/**
+ * Önizleme modunu açar/kapatır. Açıkken ayar, pim, slot, boyama veya parça
+ * değişince önizleme kendiliğinden yenilenir (pim sürüklerken de açık kalır).
+ */
 export async function togglePreview(): Promise<void> {
-  if (get().preview) return set({ preview: null });
-  const part = cutTarget();
-  if (!part) return;
-  await busy('Önizleme hazırlanıyor…', async () => {
-    const p = await geometry.preview(part.mesh, cutOptions(), geomKey(part.mesh));
-    for (const w of p.warnings) notify('warn', w);
-    set({ preview: p });
-  });
+  if (get().previewActive) return set({ previewActive: false, preview: null });
+  if (!cutTarget()) return;
+  set({ previewActive: true });
+  await refreshPreview(true);
 }
+
+let previewSeq = 0;
+let previewTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Önizlemeyi yeniden hesaplar; `loud` ise hazırlanırken meşgul gösterilir. */
+async function refreshPreview(loud = false): Promise<void> {
+  const part = selectedPart();
+  const seq = ++previewSeq;
+  if (!get().previewActive) return;
+  if (!part || get().activeSlot === BASE_SLOT || !part.mesh.labels.includes(get().activeSlot)) {
+    set({ preview: null });
+    return;
+  }
+  const run = async () => {
+    try {
+      const p = await geometry.preview(part.mesh, cutOptions(), geomKey(part.mesh));
+      // bu arada yeni istek geldiyse ya da mod kapandıysa eski sonucu gösterme
+      if (seq !== previewSeq || !get().previewActive) return;
+      if (loud) for (const w of p.warnings) notify('warn', w);
+      set({ preview: p });
+    } catch (e) {
+      if (seq !== previewSeq) return;
+      notify('error', `Önizleme: ${e instanceof Error ? e.message : String(e)}`);
+      set({ preview: null });
+    }
+  };
+  if (loud) await busy('Önizleme hazırlanıyor…', run);
+  else await run();
+}
+
+/** Önizleme açıkken girdiler değişince kısa gecikmeyle yenile (sürüklemede her adımda değil). */
+useStore.subscribe((s, prev) => {
+  if (!s.previewActive) return;
+  if (
+    s.cut === prev.cut &&
+    s.pins === prev.pins &&
+    s.activeSlot === prev.activeSlot &&
+    s.selectedPartId === prev.selectedPartId &&
+    s.paintVersion === prev.paintVersion &&
+    s.parts === prev.parts
+  )
+    return;
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => {
+    previewTimer = null;
+    refreshPreview();
+  }, 300);
+});
 
 export async function runCut(): Promise<void> {
   const part = cutTarget();
@@ -1107,7 +1158,11 @@ export async function runCut(): Promise<void> {
       directionGizmo: false,
       cut: { ...s.cut, direction: null, islandDepths: {}, ringProfile: [0, 0, 0, 0, 0, 0, 0, 0] },
     }));
-    pushHistory({ kind: 'parts', before, after });
+    pushHistory(
+      { kind: 'parts', before, after },
+      `Kes (${opts.mode === 'socket' ? 'Socket' : opts.mode === 'keys' ? 'Keys' : 'Fast'})`,
+    );
+    set({ previewActive: false, preview: null });
     notify('info', `Kesildi: ${newParts.length} yeni parça. Kaynak parça gizlendi (sarı rozet).`);
   });
 }
@@ -1121,8 +1176,8 @@ export async function refineSelected(): Promise<void> {
     const mesh = await geometry.refine(part.mesh, edge);
     const before = get().parts;
     const after = before.map((p) => (p.id === part.id ? { ...p, mesh } : p));
-    set({ parts: after, preview: null });
-    pushHistory({ kind: 'parts', before, after });
+    set({ parts: after });
+    pushHistory({ kind: 'parts', before, after }, 'İncelt');
     notify('info', `${part.name}: ${part.mesh.labels.length} → ${mesh.labels.length} üçgen.`);
   });
 }
@@ -1137,8 +1192,8 @@ export async function voxelRepairSelected(resolution = 200): Promise<void> {
     const after = before.map((p) =>
       p.id === part.id ? { ...p, mesh: r.mesh, manifold: true } : p,
     );
-    set({ parts: after, preview: null });
-    pushHistory({ kind: 'parts', before, after });
+    set({ parts: after });
+    pushHistory({ kind: 'parts', before, after }, 'Voxel onar');
     notify(
       'info',
       `${part.name}: voxel onarım (voksel ${r.voxelSize.toFixed(2)} mm), ${r.mesh.labels.length} üçgen.`,
@@ -1163,7 +1218,7 @@ export async function splitSelected(): Promise<void> {
     const before = get().parts;
     const after = before.flatMap((p) => (p.id === part.id ? newParts : [p]));
     set({ parts: after, selectedPartId: newParts[0].id });
-    pushHistory({ kind: 'parts', before, after });
+    pushHistory({ kind: 'parts', before, after }, 'Kopukları ayır');
     notify('info', `${pieces.length} parçaya bölündü.`);
   });
 }
@@ -1232,7 +1287,7 @@ export async function makeToleranceCoupon(): Promise<void> {
     const before = get().parts;
     const after = [...before, ...newParts];
     set({ parts: after });
-    pushHistory({ kind: 'parts', before, after });
+    pushHistory({ kind: 'parts', before, after }, 'Deneme parçası');
     notify(
       'info',
       `Deneme parçası eklendi: boşluklar soldan sağa ${label} mm (deliğin önündeki çentik sayısı: 1, 2, 3). Pimleri takıp en iyi oturanı seçin; bu parçaları dışa aktarırken sadece onları görünür bırakın.`,
@@ -1398,6 +1453,7 @@ export function lineClose(): void {
     tris: Uint32Array.from(unique),
     before,
     after: new Uint16Array(unique.length).fill(slot),
+    label: 'Çizgi',
   });
   onLabelsChanged?.(part.id, unique);
   lineCancel();
@@ -1425,7 +1481,7 @@ export function lineClose(): void {
 // ---------- parça yönetimi ----------
 
 export function selectPart(id: string): void {
-  set({ selectedPartId: id, preview: null });
+  set({ selectedPartId: id });
 }
 
 export function toggleVisible(id: string): void {
@@ -1443,7 +1499,6 @@ export function soloPart(id: string): void {
   set({
     parts: parts.map((p) => ({ ...p, visible: p.id === id })),
     selectedPartId: id,
-    preview: null,
   });
 }
 
@@ -1459,7 +1514,6 @@ export function hideSelectedPart(): void {
   if (id)
     set((s) => ({
       parts: s.parts.map((p) => (p.id === id ? { ...p, visible: false } : p)),
-      preview: null,
     }));
 }
 
@@ -1474,7 +1528,7 @@ export function deletePart(id: string): void {
     parts: after,
     selectedPartId: s.selectedPartId === id ? (after[0]?.id ?? null) : s.selectedPartId,
   }));
-  pushHistory({ kind: 'parts', before, after });
+  pushHistory({ kind: 'parts', before, after }, 'Parça sil');
 }
 
 export function renamePart(id: string, name: string): void {
@@ -1525,9 +1579,37 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
       selectedPartId: parts.some((p) => p.id === s.selectedPartId)
         ? s.selectedPartId
         : (parts[0]?.id ?? null),
-      preview: null,
     }));
   }
+}
+
+/** Seçili parçada aktif slotun boyasını siler (yanlış seçimi temizlemek için). */
+export function clearActiveSlot(): void {
+  const part = selectedPart();
+  const slot = get().activeSlot;
+  if (!part || slot === BASE_SLOT) return;
+  const labels = part.mesh.labels;
+  const tris: number[] = [];
+  for (let t = 0; t < labels.length; t++) if (labels[t] === slot) tris.push(t);
+  if (!tris.length) return notify('info', 'Bu slotta boyalı üçgen yok.');
+  for (const t of tris) labels[t] = BASE_SLOT;
+  lastSmart = null;
+  pushHistory({
+    kind: 'paint',
+    mesh: part.mesh,
+    tris: Uint32Array.from(tris),
+    before: new Uint16Array(tris.length).fill(slot),
+    after: new Uint16Array(tris.length).fill(BASE_SLOT),
+    label: 'Seçimi temizle',
+  });
+  onLabelsChanged?.(part.id, tris);
+  set((s) => ({ paintVersion: s.paintVersion + 1 }));
+}
+
+/** Geçmişte `undoCount` kayıt uygulanmış duruma gider (geri al / yinele tekrarı). */
+export function jumpToHistory(undoCount: number): void {
+  while (get().undoStack.length > undoCount) undo();
+  while (get().undoStack.length < undoCount && get().redoStack.length) redo();
 }
 
 export function undo(): void {

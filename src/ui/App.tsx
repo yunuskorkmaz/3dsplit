@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import {
+  clearActiveSlot,
   hideSelectedPart,
   importFiles,
   lineCancel,
@@ -17,6 +18,7 @@ import { type Command, commandFor, keyName, shortcutCapture } from '../state/key
 import { get, set, type Tool, useStore } from '../state/store';
 import { Header } from './Header';
 import { HelpDialog } from './HelpDialog';
+import { HistoryPanel } from './HistoryPanel';
 import {
   CameraPanel,
   CutActions,
@@ -42,6 +44,7 @@ function runCommand(cmd: Command): void {
   } else if (cmd === 'part.showAll') showAllParts();
   else if (cmd === 'view.explode') toggleExplode();
   else if (cmd === 'help') set((s) => ({ helpOpen: !s.helpOpen }));
+  else if (cmd === 'slot.clear') clearActiveSlot();
   else if (cmd === 'brush.larger')
     set({ brushRadius: Math.round(Math.min(50, get().brushRadius * 1.2) * 100) / 100 });
 }
@@ -94,7 +97,7 @@ function useShortcuts() {
       }
       if (/^[0-9]$/.test(e.key)) {
         const id = Number(e.key);
-        if (get().slots.some((s) => s.id === id)) set({ activeSlot: id, preview: null });
+        if (get().slots.some((s) => s.id === id)) set({ activeSlot: id });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -128,6 +131,7 @@ export function App() {
       <Header />
       <aside className="left">
         <PartsPanel />
+        <HistoryPanel />
         <MeshToolsPanel />
         <CameraPanel />
       </aside>

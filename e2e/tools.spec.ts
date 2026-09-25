@@ -55,8 +55,47 @@ test('X36 çizgi aracı, X35 deneme parçası, X27 ayrık görünüm', async ({ 
   // kenar çizgi boyunca üçgenlerin içinden geçti: üçgen sayısı arttı
   expect(after.tris).toBeGreaterThan(trisBefore);
 
+  // önizleme açıkken pim aracıyla modele tıklamak önizlemeyi kapatmaz, pim önizlemeye girer
+  await page.getByRole('button', { name: 'Keys', exact: true }).click();
+  await page.keyboard.press('Space');
+  await expect
+    .poll(async () => (await state(page)).preview !== null, { timeout: 30_000 })
+    .toBe(true);
+  await page.keyboard.press('p');
+  const pinAt = await screenOf(page, front(0, 30));
+  await page.mouse.click(pinAt.x, pinAt.y);
+  expect((await state(page)).previewActive).toBe(true);
+  await expect
+    .poll(
+      async () => {
+        const st = await state(page);
+        return st.pins.length === 1 && st.preview?.pins.length === 1;
+      },
+      { timeout: 30_000 },
+    )
+    .toBe(true);
+  await page.keyboard.press('Space');
+  expect((await state(page)).previewActive).toBe(false);
+
+  // geçmiş: başlangıca dön, sonra son adıma geri gel
+  const steps = (await state(page)).undoStack.length;
+  await page.getByRole('heading', { name: /Geçmiş/ }).click();
+  await page.getByRole('button', { name: 'Başlangıç' }).click();
+  expect((await state(page)).undoStack.length).toBe(0);
+  await page.locator('ol.history li').last().locator('button').click();
+  expect((await state(page)).undoStack.length).toBe(steps);
+  const repainted = await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    const m = (window as any).app.store.get().parts[0].mesh;
+    let n = 0;
+    for (const l of m.labels) if (l === 2) n++;
+    return n;
+  });
+  expect(repainted).toBe(after.painted);
+
   // X44: aynayla (X ekseni, figür x=0'da simetrik) sağda çizilen halka solda da boyanır
   await page.keyboard.press('3');
+  await page.keyboard.press('l');
   await page.evaluate(() => {
     // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
     (window as any).app.store.set({ mirror: { enabled: true, axis: 0, offset: null } });

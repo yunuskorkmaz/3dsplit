@@ -78,6 +78,8 @@ function Workflow() {
       <li>
         <b>Bölgeyi seç.</b> Smart Fill (F) ile çıkıntıya tıkla, Fırça (B) / Silgi (E) ile düzelt,
         Yumuşat (S) ile kenarı düzgünleştir. Çift özelliklerde (iki göz) üst şeritteki Ayna'yı aç.
+        Yanlış seçimi silmek için: Smart Fill'de Shift+tık, Silgi, "Seçimi temizle" (Delete) ya da
+        Ctrl/Cmd+Z. Sol paneldeki Geçmiş'ten istediğin adıma dönebilirsin.
       </li>
       <li>
         <b>Kesim modunu seç.</b> Socket: ince, yüzeysel bölgeler (göz, kaş) — bölge tapa olur,
@@ -89,8 +91,11 @@ function Workflow() {
         normal, 0.3 gevşek. Önce küçük bir deneme baskısı almak iyi olur.
       </li>
       <li>
-        <b>Önizle (Space), sonra Kes.</b> Önizlemede kırmızı alanlar incelen duvardır. Kesimden
-        sonra yeni parça listede "yeni" olarak çıkar; sonraki bölge için slot değiştirip devam et.
+        <b>Önizle (Space), sonra Kes.</b> Önizleme açıkken ayar değiştirip pim ekleyip
+        sürükleyebilirsin; önizleme kapanmaz, kendini yeniler. Pimin gövdeye ne kadar gireceği
+        "Gövdede %" ile (pim aracında tek pim için de) ayarlanır. Kırmızı alanlar incelen duvardır.
+        Kesimden sonra yeni parça listede "yeni" olarak çıkar; sonraki bölge için slot değiştirip
+        devam et.
       </li>
       <li>
         <b>İncele.</b> Parça listesinde göz simgesi gizler/gösterir, Alt+tık (veya Shift+H) yalnız o

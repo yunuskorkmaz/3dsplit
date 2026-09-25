@@ -10,6 +10,7 @@ import {
   gapFillSelected,
   importFiles,
   redo,
+  refineSelected,
   renamePart,
   runCut,
   selectPart,
@@ -100,6 +101,7 @@ export function FilePanel() {
 export function PartsPanel() {
   const parts = useStore((s) => s.parts);
   const selected = useStore((s) => s.selectedPartId);
+  const refineEdge = useStore((s) => s.refineEdge);
   return (
     <section className="grow">
       <h3>Parçalar</h3>
@@ -127,6 +129,11 @@ export function PartsPanel() {
           Split
         </button>
       </div>
+      <NumberField label="Kenar" value={refineEdge} min={0.1} max={5} step={0.05} unit="mm" onChange={(v) => set({ refineEdge: v })} />
+      <button type="button" onClick={refineSelected} title="Seçili parçayı küçük üçgenlere böler; ince sınırlar için">
+        İncelt
+      </button>
+      <p className="hint">Sınır tırtıklıysa önce inceltin; etiketler korunur.</p>
     </section>
   );
 }

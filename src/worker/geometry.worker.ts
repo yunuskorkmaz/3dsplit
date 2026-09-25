@@ -2,6 +2,7 @@ import * as Comlink from 'comlink';
 import wasmUrl from 'manifold-3d/manifold.wasm?url';
 import { type CutOptions, cutRegion, previewCut, splitComponents } from '../core/cut';
 import { fromManifold, initKernel, KernelError, toManifold } from '../core/kernel';
+import { refineMesh } from '../core/refine';
 import { type RepairReport, repairMesh } from '../core/repair';
 import { BASE_SLOT, type LabeledMesh } from '../core/types';
 
@@ -52,6 +53,12 @@ const api = {
   async preview(mesh: LabeledMesh, opts: CutOptions) {
     await ready;
     return previewCut(mesh, opts);
+  },
+
+  async refine(mesh: LabeledMesh, edgeLength: number) {
+    await ready;
+    const r = refineMesh(mesh, edgeLength);
+    return Comlink.transfer(r, buffersOf([r]));
   },
 
   async split(mesh: LabeledMesh) {

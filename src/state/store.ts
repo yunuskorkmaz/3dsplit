@@ -41,7 +41,8 @@ export interface Message {
 
 /** Undo kaydı: boyamada değişen üçgenler, kesimde parça listesinin önceki hali. */
 export type HistoryEntry =
-  | { kind: 'paint'; partId: string; tris: Uint32Array; before: Uint16Array; after: Uint16Array }
+  // boyama kaydı parça kimliğine değil mesh nesnesine bağlı: inceltme/kesim mesh'i değiştirse de kayıt kendi mesh'ine yazar
+  | { kind: 'paint'; mesh: LabeledMesh; tris: Uint32Array; before: Uint16Array; after: Uint16Array }
   | { kind: 'parts'; before: Part[]; after: Part[] };
 
 const DEFAULT_COLORS = ['#b0b0b0', '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c', '#34495e', '#ff66cc'];
@@ -55,6 +56,8 @@ export interface AppState {
   brushRadius: number;
   smartAngle: number;
   gapArea: number;
+  /** İnceltme hedef kenar uzunluğu, mm. */
+  refineEdge: number;
   cut: CutSettings;
   pinPoints: Vec3[];
   preview: CutPreview | null;
@@ -75,6 +78,7 @@ export const useStore = create<AppState>(() => ({
   brushRadius: 3,
   smartAngle: 30,
   gapArea: 5,
+  refineEdge: 1,
   cut: {
     mode: 'socket',
     depth: 3,

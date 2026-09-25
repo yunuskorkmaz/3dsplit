@@ -126,7 +126,7 @@ export function endStroke(): Extract<HistoryEntry, { kind: 'paint' }> | null {
   const tris = Uint32Array.from(s.before.keys());
   const before = Uint16Array.from(s.before.values());
   const after = Uint16Array.from(tris, (t) => part.mesh.labels[t]);
-  const entry = { kind: 'paint' as const, partId: part.id, tris, before, after };
+  const entry = { kind: 'paint' as const, mesh: part.mesh, tris, before, after };
   pushHistory(entry);
   return entry;
 }
@@ -167,8 +167,8 @@ export function setSmartAngle(angle: number): void {
   const undo = get().undoStack;
   if (!lastSmart || undo[undo.length - 1] !== lastSmart.entry) return;
   const part = partById(lastSmart.partId);
-  if (!part) return;
   const { entry } = lastSmart;
+  if (!part || part.mesh !== entry.mesh) return;
   const labels = part.mesh.labels;
   for (let i = 0; i < entry.tris.length; i++) labels[entry.tris[i]] = entry.before[i];
   onLabelsChanged?.(part.id, entry.tris);
@@ -291,6 +291,21 @@ export async function runCut(): Promise<void> {
   });
 }
 
+export async function refineSelected(): Promise<void> {
+  const part = selectedPart();
+  if (!part) return notify('warn', 'Önce bir parça seçin.');
+  if (!part.manifold) return notify('warn', 'Parça kapalı mesh değil; inceltilemez.');
+  const edge = get().refineEdge;
+  await busy('İnceltiliyor…', async () => {
+    const mesh = await geometry.refine(part.mesh, edge);
+    const before = get().parts;
+    const after = before.map((p) => (p.id === part.id ? { ...p, mesh } : p));
+    set({ parts: after, preview: null });
+    pushHistory({ kind: 'parts', before, after });
+    notify('info', `${part.name}: ${part.mesh.labels.length} → ${mesh.labels.length} üçgen.`);
+  });
+}
+
 export async function splitSelected(): Promise<void> {
   const part = selectedPart();
   if (!part) return notify('warn', 'Önce bir parça seçin.');
@@ -338,11 +353,10 @@ export function renamePart(id: string, name: string): void {
 
 function applyEntry(entry: HistoryEntry, reverse: boolean): void {
   if (entry.kind === 'paint') {
-    const part = partById(entry.partId);
-    if (!part) return;
     const values = reverse ? entry.before : entry.after;
-    for (let i = 0; i < entry.tris.length; i++) part.mesh.labels[entry.tris[i]] = values[i];
-    onLabelsChanged?.(part.id, entry.tris);
+    for (let i = 0; i < entry.tris.length; i++) entry.mesh.labels[entry.tris[i]] = values[i];
+    const part = get().parts.find((p) => p.mesh === entry.mesh);
+    if (part) onLabelsChanged?.(part.id, entry.tris);
     set((s) => ({ paintVersion: s.paintVersion + 1 }));
   } else {
     const parts = reverse ? entry.before : entry.after;

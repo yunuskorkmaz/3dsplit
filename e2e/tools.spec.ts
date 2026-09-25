@@ -55,6 +55,33 @@ test('X36 çizgi aracı, X35 deneme parçası, X27 ayrık görünüm', async ({ 
   // kenar çizgi boyunca üçgenlerin içinden geçti: üçgen sayısı arttı
   expect(after.tris).toBeGreaterThan(trisBefore);
 
+  // X44: aynayla (X ekseni, figür x=0'da simetrik) sağda çizilen halka solda da boyanır
+  await page.keyboard.press('3');
+  await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    (window as any).app.store.set({ mirror: { enabled: true, axis: 0, offset: null } });
+  });
+  for (const c of [front(3, 14), front(9, 14), front(9, 20), front(3, 20), front(3, 14)]) {
+    const s = await screenOf(page, c);
+    await page.mouse.click(s.x, s.y);
+  }
+  await expect(page.locator('.msg', { hasText: 'aynayla iki halka' })).toBeVisible();
+  const sides = await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    const m = (window as any).app.store.get().parts[0].mesh;
+    let left = 0;
+    let right = 0;
+    for (let t = 0; t < m.labels.length; t++) {
+      if (m.labels[t] !== 3) continue;
+      const x = m.positions[3 * m.indices[3 * t]];
+      if (x < 0) left++;
+      else right++;
+    }
+    return { left, right };
+  });
+  expect(sides.left).toBeGreaterThan(20);
+  expect(Math.abs(sides.left - sides.right) / sides.right).toBeLessThan(0.3);
+
   // tolerans deneme parçası: plaka + 3 pim
   await page.getByRole('button', { name: 'Deneme parçası üret' }).click();
   await expect(page.locator('ul.parts li')).toHaveCount(5, { timeout: 30_000 });

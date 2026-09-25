@@ -1334,36 +1334,58 @@ export function lineClose(): void {
   const slot = get().activeSlot;
   if (slot === BASE_SLOT) return notify('warn', 'Boyanacak slotu seçin (taban değil).');
   const mesh = part.mesh;
-  const closing = surfacePath(
-    mesh,
-    neighborsOf(mesh),
-    line.anchors[line.anchors.length - 1],
-    line.anchors[0],
-  );
-  const loop = [...line.path, ...closing.slice(1, -1)];
-  const topo = topologyOf(mesh);
-  const inside = regionInsideLoop(mesh, topo.adj, topo.areas, loop);
-  if (!inside) return notify('warn', 'Çizgi yüzeyi iki parçaya ayırmıyor; halkayı kontrol edin.');
-  const tris: number[] = [];
-  for (let t = 0; t < inside.length; t++)
-    if (inside[t] && mesh.labels[t] !== slot && mesh.labels[t] === BASE_SLOT) tris.push(t);
-  const before = Uint16Array.from(tris, (t) => mesh.labels[t]);
-  for (const t of tris) mesh.labels[t] = slot;
-  pushHistory({
-    kind: 'paint',
-    mesh,
-    tris: Uint32Array.from(tris),
-    before,
-    after: new Uint16Array(tris.length).fill(slot),
-  });
-  onLabelsChanged?.(part.id, tris);
-  lineCancel();
-  // zikzakı düzelt: çizgi boyunca yumuşatıp üçgenlerin içinden geçir
-  const pts: Vec3[] = [...loop, loop[0]].map((v) => [
+  const nbr = neighborsOf(mesh);
+  const closeLoop = (anchors: number[], path: number[]) => [
+    ...path,
+    ...surfacePath(mesh, nbr, anchors[anchors.length - 1], anchors[0]).slice(1, -1),
+  ];
+  const loops = [closeLoop(line.anchors, line.path)];
+  // X44: ayna açıksa karşı tarafta da aynı halka
+  const at = (v: number): Vec3 => [
     mesh.positions[3 * v],
     mesh.positions[3 * v + 1],
     mesh.positions[3 * v + 2],
-  ]);
+  ];
+  const mirroredAnchors = line.anchors.map((v) => {
+    const m = mirrored(part, at(v));
+    return m ? nearestCorner(mesh, m.tri, m.point) : -1;
+  });
+  if (get().mirror.enabled) {
+    if (mirroredAnchors.includes(-1)) {
+      notify('warn', 'Aynadaki karşılık yüzeyde bulunamadı; sadece çizilen halka boyandı.');
+    } else if (!mirroredAnchors.every((v, i) => v === line.anchors[i])) {
+      let path = [mirroredAnchors[0]];
+      for (let i = 1; i < mirroredAnchors.length; i++) {
+        path = [...path, ...surfacePath(mesh, nbr, mirroredAnchors[i - 1], mirroredAnchors[i]).slice(1)];
+      }
+      loops.push(closeLoop(mirroredAnchors, path));
+    }
+  }
+  const topo = topologyOf(mesh);
+  const tris: number[] = [];
+  for (const loop of loops) {
+    const inside = regionInsideLoop(mesh, topo.adj, topo.areas, loop);
+    if (!inside) {
+      notify('warn', 'Çizgi yüzeyi iki parçaya ayırmıyor; halkayı kontrol edin.');
+      continue;
+    }
+    for (let t = 0; t < inside.length; t++) if (inside[t] && mesh.labels[t] === BASE_SLOT) tris.push(t);
+  }
+  const unique = [...new Set(tris)];
+  if (!unique.length) return;
+  const before = Uint16Array.from(unique, (t) => mesh.labels[t]);
+  for (const t of unique) mesh.labels[t] = slot;
+  pushHistory({
+    kind: 'paint',
+    mesh,
+    tris: Uint32Array.from(unique),
+    before,
+    after: new Uint16Array(unique.length).fill(slot),
+  });
+  onLabelsChanged?.(part.id, unique);
+  lineCancel();
+  // zikzakı düzelt: çizgi boyunca yumuşatıp üçgenlerin içinden geçir
+  const pts: Vec3[] = loops.flatMap((loop) => [...loop, loop[0]].map(at));
   const labels = mesh.labels;
   const radius = Math.max(3 * topo.meanEdge, get().smoothRadius || 0);
   const diff = smoothStrokeSplit(
@@ -1377,7 +1399,7 @@ export function lineClose(): void {
   );
   if (diff && (diff.changedTris.length || diff.addedIndices.length)) applyMeshSplit(mesh, diff);
   else set((s) => ({ paintVersion: s.paintVersion + 1 }));
-  notify('info', `Çizgi kapatıldı: ${tris.length} üçgen boyandı.`);
+  notify('info', `Çizgi kapatıldı: ${unique.length} üçgen boyandı${loops.length > 1 ? ' (aynayla iki halka)' : ''}.`);
 }
 
 // ---------- parça yönetimi ----------

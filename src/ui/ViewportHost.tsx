@@ -320,7 +320,8 @@ export function ViewportHost() {
       tool === 'brush' ||
       tool === 'erase' ||
       tool === 'smooth' ||
-      tool === 'bucket';
+      tool === 'bucket' ||
+      tool === 'line';
     vpRef.current?.setMirrorPlane(
       mirror.enabled && paintTool ? { axis: mirror.axis, offset: mirrorOffset() } : null,
     );

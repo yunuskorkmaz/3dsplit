@@ -104,7 +104,8 @@ export function ToolOptions() {
     tool === 'brush' ||
     tool === 'erase' ||
     tool === 'smooth' ||
-    tool === 'bucket';
+    tool === 'bucket' ||
+    tool === 'line';
   const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
   useStore((s) => s.selectedPartId);
   const info = TOOLS.find((t) => t.id === tool);

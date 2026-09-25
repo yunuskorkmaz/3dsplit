@@ -8,6 +8,7 @@ export type Command =
   | 'tool.smooth'
   | 'tool.bucket'
   | 'tool.pin'
+  | 'tool.line'
   | 'preview'
   | 'fit'
   | 'brush.smaller'
@@ -25,6 +26,7 @@ export const COMMANDS: { id: Command; label: string }[] = [
   { id: 'tool.smooth', label: 'Yumuşat' },
   { id: 'tool.bucket', label: 'Kova' },
   { id: 'tool.pin', label: 'Pim' },
+  { id: 'tool.line', label: 'Çizgi' },
   { id: 'preview', label: 'Önizleme' },
   { id: 'fit', label: 'Görünümü sığdır' },
   { id: 'brush.smaller', label: 'Fırça küçült' },
@@ -43,6 +45,7 @@ export const DEFAULT_KEYMAP: Record<Command, string> = {
   'tool.smooth': 'S',
   'tool.bucket': 'G',
   'tool.pin': 'P',
+  'tool.line': 'L',
   preview: 'Space',
   fit: 'Home',
   'brush.smaller': '[',

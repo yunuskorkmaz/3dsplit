@@ -385,7 +385,7 @@ export function triangleConcavity(mesh: MeshData, normals: Float32Array, areas: 
 }
 
 /** Küçük ikili yığın (öncelik kuyruğu), anahtar küçük olan önce. */
-class MinHeap {
+export class MinHeap {
   private keys: number[] = [];
   private vals: number[] = [];
   get size(): number {

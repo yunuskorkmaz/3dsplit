@@ -1,4 +1,7 @@
 import {
+  lineCancel,
+  lineClose,
+  lineUndo,
   autoSmartScale,
   gapFillSelected,
   mirrorOffset,
@@ -18,6 +21,7 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
   { id: 'erase', icon: '◌', label: 'Silgi', key: 'E', hint: 'Sürükle: seçimi sil. Shift: boya.' },
   { id: 'smooth', icon: '≈', label: 'Yumuşat', key: 'S', hint: 'Sınırın üstünde gezdir: girinti/çıkıntıyı düzeltir.' },
   { id: 'bucket', icon: '▣', label: 'Kova', key: 'G', hint: 'Tıkla: aynı renkli bölgeyi doldur.' },
+  { id: 'line', icon: '✎', label: 'Çizgi', key: 'L', hint: 'Tıkla: nokta ekle. İlk noktaya tıkla ya da Enter: kapat ve boya. Backspace: son nokta, Esc: iptal.' },
   { id: 'pin', icon: '⊕', label: 'Pim', key: 'P', hint: 'Tıkla: pim ekle/seç. Sürükle: taşı. Gizmo: ekseni döndür. Shift+tık: sil.' },
 ];
 
@@ -62,6 +66,7 @@ export function ToolOptions() {
   const pin = useStore((s) => s.pins[s.selectedPin]);
   const selectedPin = useStore((s) => s.selectedPin);
   const cut = useStore((s) => s.cut);
+  const lineCount = useStore((s) => s.line.anchors.length);
   const mirror = useStore((s) => s.mirror);
   const xray = useStore((s) => s.xray);
   useStore((s) => s.parts);
@@ -164,6 +169,20 @@ export function ToolOptions() {
           <NumberField label="Boşluk" value={gapArea} min={0.1} max={200} step={0.1} unit="mm²" log onChange={(v) => set({ gapArea: v })} />
           <button type="button" onClick={gapFillSelected} title="Bu alandan küçük renk adalarını komşu renge çevir">
             Gap Fill
+          </button>
+        </>
+      )}
+      {tool === 'line' && (
+        <>
+          <span className="label">{lineCount ? `${lineCount} nokta` : 'Yüzeye tıklayarak başla'}</span>
+          <button type="button" disabled={lineCount < 3} onClick={lineClose} title="Enter">
+            Kapat ve boya
+          </button>
+          <button type="button" disabled={!lineCount} onClick={lineUndo} title="Backspace">
+            Son noktayı sil
+          </button>
+          <button type="button" disabled={!lineCount} onClick={lineCancel} title="Esc">
+            İptal
           </button>
         </>
       )}

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import type { CutMode, CutPreview, CutSuggestion, PinPlacement, PinShape } from '../core/cut';
 import type { LabeledMesh, Vec3 } from '../core/types';
 
-export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin';
+export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin' | 'line';
 /** source: kesilmiş eski parça (sarı rozet), new: kesimden yeni çıkan parça (mavi rozet). */
 export type PartBadge = 'source' | 'new' | null;
 
@@ -119,6 +119,8 @@ export interface AppState {
   camera: { mode: 'default' | 'blender'; invertZoom: boolean };
   /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
   mirror: { enabled: boolean; axis: 0 | 1 | 2; offset: number | null };
+  /** X36: çizgi aracında tıklanan köşeler ve aralarındaki yüzey yolu (köşe numaraları). */
+  line: { partId: string | null; anchors: number[]; path: number[] };
   /** X27: patlatılmış görünüm çarpanı (0: kapalı). Sadece görüntü. */
   explode: number;
   /** X26: yardım penceresi açık mı. */
@@ -180,6 +182,7 @@ export const useStore = create<AppState>(() => ({
   mirror: { enabled: false, axis: 0, offset: null },
   camera: loadCameraPrefs(),
   xray: false,
+  line: { partId: null, anchors: [], path: [] },
   explode: 0,
   helpOpen: false,
   directionGizmo: false,

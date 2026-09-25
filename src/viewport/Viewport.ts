@@ -64,6 +64,8 @@ export class Viewport {
   private onDirectionChange: ((dir: Vec3) => void) | null = null;
   private mirrorPlane: THREE.Mesh | null = null;
   private errorLines = new THREE.Group();
+  /** X36: çizgi aracının yolu ve noktaları. */
+  private lineGroup = new THREE.Group();
   /**
    * Seçili parçaya bağlı yardımcılar (önizleme, pimler, yön oku, ayna, hata
    * halkaları). Patlatılmış görünümde parçayla birlikte kayar.
@@ -90,6 +92,7 @@ export class Viewport {
     this.scene.add(this.anchor);
     this.anchor.add(this.overlay);
     this.anchor.add(this.errorLines);
+    this.anchor.add(this.lineGroup);
 
     this.brushCursor = new THREE.Mesh(
       new THREE.RingGeometry(0.95, 1, 48),
@@ -408,6 +411,32 @@ export class Viewport {
       m.userData.marker = true;
       this.overlay.add(m);
     }
+    this.requestRender();
+  }
+
+  /** X36: çizgi aracının yüzeydeki yolu (sarı) ve tıklanan noktalar. */
+  setLinePath(path: Vec3[], anchors: Vec3[], markerSize: number): void {
+    for (const c of [...this.lineGroup.children]) {
+      this.lineGroup.remove(c);
+      if (c instanceof THREE.Line || c instanceof THREE.Mesh) c.geometry.dispose();
+    }
+    if (path.length > 1) {
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(path.map((p) => new THREE.Vector3(...p))),
+        new THREE.LineBasicMaterial({ color: '#ffd400', depthTest: false }),
+      );
+      line.renderOrder = 8;
+      this.lineGroup.add(line);
+    }
+    anchors.forEach((p, i) => {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(markerSize, 12, 8),
+        new THREE.MeshBasicMaterial({ color: i === 0 ? '#ff9900' : '#ffd400', depthTest: false }),
+      );
+      m.position.set(...p);
+      m.renderOrder = 9;
+      this.lineGroup.add(m);
+    });
     this.requestRender();
   }
 

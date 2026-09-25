@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { hideSelectedPart, importFiles, redo, scheduleSuggestion, showAllParts, soloPart, toggleExplode, togglePreview, undo } from '../state/actions';
+import { hideSelectedPart, importFiles, lineCancel, lineClose, lineUndo, redo, scheduleSuggestion, showAllParts, soloPart, toggleExplode, togglePreview, undo } from '../state/actions';
 import { type Command, commandFor, keyName, shortcutCapture } from '../state/keymap';
 import { get, set, type Tool, useStore } from '../state/store';
 import { Header } from './Header';
@@ -42,6 +42,18 @@ function useShortcuts() {
         return;
       }
       if (mod || e.altKey) return;
+      // X36: çizgi aracı tuşları
+      if (get().tool === 'line' && get().line.anchors.length) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          return lineClose();
+        }
+        if (e.key === 'Backspace') {
+          e.preventDefault();
+          return lineUndo();
+        }
+        if (e.key === 'Escape') return lineCancel();
+      }
       // yardım açıkken sadece yardım kısayolu (kapatmak için) çalışır
       if (get().helpOpen && commandFor(keyName(e)) !== 'help') return;
       const cmd = commandFor(keyName(e));

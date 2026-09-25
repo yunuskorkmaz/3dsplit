@@ -17,6 +17,8 @@ import {
   smartFillAt,
   smoothAt,
   updatePin,
+  lineClick,
+  linePreview,
 } from '../state/actions';
 import { get, notify, set, useStore } from '../state/store';
 import { type Hit, Viewport } from '../viewport/Viewport';
@@ -91,6 +93,7 @@ export function ViewportHost() {
         if (hit.partId !== sel) set({ selectedPartId: hit.partId, preview: null });
         if (tool === 'smart') smartFillAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, e.shiftKey);
+        else if (tool === 'line') lineClick(hit.partId, hit.tri, hit.point);
         else if (tool === 'pin') {
           // pime yakın tıklama: seç ve sürükleyerek taşı; Shift ile sil. Boşluğa tıklama: yeni pim
           const { pins: list, cut } = get();
@@ -235,6 +238,13 @@ export function ViewportHost() {
   useEffect(() => {
     vpRef.current?.setErrorLoops(errorLoops);
   }, [errorLoops]);
+
+  // X36: çizgi aracının yolu
+  const line = useStore((s) => s.line);
+  useEffect(() => {
+    const { path, anchors, size } = linePreview();
+    vpRef.current?.setLinePath(path, anchors, size);
+  }, [line]);
 
   // X27: patlatılmış görünüm
   const explode = useStore((s) => s.explode);

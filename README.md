@@ -15,14 +15,16 @@ node samples/make-figure.mjs   # samples/figure.stl test modeli
 
 ## Kullanım
 
-1. STL / OBJ / 3MF (boyalı Bambu/Orca 3MF dahil) dosyasını sürükle-bırak veya **İçe aktar**. Yüklemede otomatik onarım; kapanmazsa voxel onarım.
+1. STL / OBJ / 3MF (boyalı Bambu/Orca 3MF dahil) dosyasını sürükle-bırak veya üst çubukta **Aç**. Yüklemede otomatik onarım; kapanmazsa voxel onarım.
 2. Slot seç (0–9). **Çıkıntıları öner** göz, burun, kaş, kulak gibi bölgeleri kendisi bulup boyar.
-3. Araç çubuğu (sol): **Smart Fill** F (tıkla, ölçek otomatik), **Fırça** B, **Silgi** E, **Yumuşat** S (sınırın üstünde gezdir), **Kova** G, **Pim** P. Ayna, X-ray ve araç ayarları üstteki şeritte. Sayı alanlarında etiketi sürükle.
-4. Kesim paneli: **Socket** (tapa + yuva: derinlik, ayak payı, kesit şekli, squeeze, yön), **Keys** (pim; pim başına boyut/eksen, snap pim), **Fast**; Keys/Fast için **Düzlemle kes**. Panel bölgeye göre mod önerir.
-5. **Space** önizleme (ince duvar kırmızı), **Kes**. Eski parça sarı "kaynak" rozetiyle gizlenir, yeni parçalar mavi.
-6. **3MF** (Bambu/Orca için renk başına filament, plakaya dizili), **3MF (genel)**, **STL (ZIP)**; **Projeyi kaydet** (`.3dsplit`).
+3. Araç çubuğu (sol): **Smart Fill** F (tıkla, ölçek otomatik), **Fırça** B, **Silgi** E, **Yumuşat** S (sınırın üstünde gezdir; "Üçgenleri böl" açıkken kenar üçgenlerin içinden geçer), **Kova** G, **Çizgi** L (yüzeye noktalar tıklayıp kapalı halka çiz), **Pim** P. Ayna ve araç ayarları üstteki şeritte. Sayı alanlarında etiketi sürükle.
+4. Kesim paneli: **Socket** (tapa + yuva: derinlik, ayak payı, kesit şekli, squeeze, yön), **Keys** (pim: otomatik boyut, uç pahı, pim başına boyut/eksen, snap pim), **Fast**; Keys/Fast için **Düzlemle kes**. Panel bölgeye göre mod önerir.
+5. **Tolerans**: parça ile yuva arasındaki boşluk (Sıkı 0.1 / Normal 0.2 / Gevşek 0.3 mm), Keys'te ayrıca boy boşluğu. **Deneme parçası üret** seçili ayarla üç farklı boşlukta küçük bir test plakası ve pimler ekler.
+6. **Space** önizleme (ince duvar kırmızı), **Kes**. Eski parça sarı "kaynak" rozetiyle gizlenir, yeni parçalar mavi.
+7. Parçalar: göz simgesi gizle/göster, Alt+tık ya da ◎ yalnız o parça, **Tümünü göster**; üst çubukta **Ayrık** (X) parçaları birbirinden uzaklaştırır.
+8. **Dışa aktar**: 3MF (Bambu/Orca için renk başına filament, plakaya dizili), 3MF (genel), STL (ZIP); **Kaydet** (`.3dsplit`).
 
-Kamera: sağ sürükle döndür, orta / Ctrl+sağ kaydır, tekerlek yakınlaştır, Alt+tekerlek fırça boyu, **Home** / boşluğa çift tık görünümü sığdır (Blender düzeni ve ters yakınlaştırma sol panelde). Ctrl/Cmd+Z geri al. Kısayollar sol panelden değiştirilebilir.
+Kısayollar, fare hareketleri ve iş akışı: **?** tuşu veya sağ üstte **Yardım** (kısayollar oradan değiştirilir).
 
 ## Dokümanlar
 

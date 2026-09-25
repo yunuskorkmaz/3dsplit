@@ -19,6 +19,16 @@ export interface PinOptions {
   onPart: boolean;
 }
 
+/** Tek bir pimin yeri ve (isteğe bağlı) kendine özgü boyutu/ekseni. */
+export interface PinPlacement {
+  /** Yüzeyde tıklanan nokta; kapak yüzeyine izdüşürülür. */
+  point: Vec3;
+  radius?: number;
+  length?: number;
+  /** Pimin ekseni (herhangi bir yönde verilebilir; gövdeye bakacak şekilde çevrilir). */
+  axis?: Vec3;
+}
+
 export interface CutOptions {
   mode: CutMode;
   slot: number;
@@ -31,8 +41,8 @@ export interface CutOptions {
   /** Socket uzama yönü (dışa doğru). Verilmezse bölge normallerinin ortalaması. */
   direction?: Vec3;
   pin: PinOptions;
-  /** Keys: yüzeyde tıklanan pim noktaları. Boşsa her adanın kapak merkezine bir pim. */
-  pinPoints?: Vec3[];
+  /** Keys: yüzeyde tıklanan pimler. Boşsa her adanın kapak merkezine bir pim. */
+  pins?: PinPlacement[];
 }
 
 export interface CutResult {
@@ -534,29 +544,35 @@ function makePin(pin: PinOptions, center: Vec3, axis: Vec3, grow: number, scope:
 function pinCenters(
   positions: Float32Array,
   islands: Island[],
-  points: Vec3[] | undefined,
-): { island: Island; center: Vec3 }[] {
-  const raw: { island: Island; point: Vec3 }[] =
-    !points || points.length === 0
-      ? islands.map((island) => ({ island, point: island.capCenter }))
-      : points.map((p) => {
+  pins: PinPlacement[] | undefined,
+  base: PinOptions,
+): { island: Island; center: Vec3; axis: Vec3; spec: PinOptions }[] {
+  const raw: { island: Island; pin: PinPlacement }[] =
+    !pins || pins.length === 0
+      ? islands.map((island) => ({ island, pin: { point: island.capCenter } }))
+      : pins.map((pin) => {
           let best = islands[0];
           let bestDist = Infinity;
           for (const island of islands) {
-            const d = Math.hypot(...sub(p, island.capCenter));
+            const d = Math.hypot(...sub(pin.point, island.capCenter));
             if (d < bestDist) {
               best = island;
               bestDist = d;
             }
           }
-          return { island: best, point: p };
+          return { island: best, pin };
         });
   // nokta, kapak normali boyunca kapak yüzeyine taşınır (kapak düz olmayabilir)
-  return raw.map(({ island, point }) => {
+  return raw.map(({ island, pin }) => {
     const cap = triangulateLoop(positions, island.mainLoop);
     const n = island.capNormal;
-    const onPlane = sub(point, scale(n, dot(sub(point, island.capCenter), n)));
-    return { island, center: lineCapIntersection(positions, cap, onPlane, n) ?? onPlane };
+    const onPlane = sub(pin.point, scale(n, dot(sub(pin.point, island.capCenter), n)));
+    const center = lineCapIntersection(positions, cap, onPlane, n) ?? onPlane;
+    // eksen gövdeye doğru bakmalı (kapak normalinin tersi yönde)
+    let axis = pin.axis ? normalize(pin.axis) : scale(n, -1);
+    if (dot(axis, n) > 0) axis = scale(axis, -1);
+    const spec = { ...base, radius: pin.radius ?? base.radius, length: pin.length ?? base.length };
+    return { island, center, axis, spec };
   });
 }
 
@@ -651,8 +667,8 @@ export function previewCut(mesh: LabeledMesh, opts: CutOptions): CutPreview {
         volumes.push(extractTriangles({ positions: mesh.positions, indices: Uint32Array.from(idx) }, range(idx.length / 3)).mesh);
       }
       if (opts.mode === 'keys') {
-        for (const { island, center } of pinCenters(mesh.positions, islands, opts.pinPoints)) {
-          pins.push(manifoldMesh(makePin(opts.pin, center, scale(island.capNormal, -1), 0, scope)));
+        for (const { center, axis, spec } of pinCenters(mesh.positions, islands, opts.pins, opts.pin)) {
+          pins.push(manifoldMesh(makePin(spec, center, axis, 0, scope)));
         }
       }
     }
@@ -692,12 +708,12 @@ export function cutRegion(mesh: LabeledMesh, opts: CutOptions): CutResult {
     }
 
     if (opts.mode === 'keys') {
-      for (const { island, center } of pinCenters(mesh.positions, islands, opts.pinPoints)) {
+      const placed = pinCenters(mesh.positions, islands, opts.pins, opts.pin);
+      for (const [k, { island, center, axis, spec }] of placed.entries()) {
         const i = islands.indexOf(island);
-        const axis = scale(island.capNormal, -1); // gövdeye doğru
-        const pin = makePin(opts.pin, center, axis, 0, scope);
-        const hole = makePin(opts.pin, center, axis, opts.clearance, scope);
-        checkPinContainment(pin, parts[i], body, opts.pin, warnings);
+        const pin = makePin(spec, center, axis, 0, scope);
+        const hole = makePin(spec, center, axis, opts.clearance, scope);
+        checkPinContainment(pin, parts[i], body, spec, warnings, placed.length > 1 ? `Pim ${k + 1}` : 'Pim');
         if (opts.pin.onPart) {
           parts[i] = scope.keep(parts[i].add(pin));
           body = scope.keep(body.subtract(hole));
@@ -717,7 +733,14 @@ export function cutRegion(mesh: LabeledMesh, opts: CutOptions): CutResult {
   }
 }
 
-function checkPinContainment(pin: Manifold, part: Manifold, body: Manifold, opts: PinOptions, warnings: string[]): void {
+function checkPinContainment(
+  pin: Manifold,
+  part: Manifold,
+  body: Manifold,
+  opts: PinOptions,
+  warnings: string[],
+  name = 'Pim',
+): void {
   const half = pin.volume() / 2;
   const scope = new Scope();
   try {
@@ -726,11 +749,11 @@ function checkPinContainment(pin: Manifold, part: Manifold, body: Manifold, opts
     // pim modelin dışına taşıyorsa duvar incedir; bir tarafta çok az kalıyorsa tutmaz
     if (inPart + inBody < 0.98 * 2 * half) {
       warnings.push(
-        `Pim modelin dışına taşıyor (%${Math.round((50 * (inPart + inBody)) / half)} içeride). Duvar ince olabilir; pimi küçültün veya yerini değiştirin.`,
+        `${name} modelin dışına taşıyor (%${Math.round((50 * (inPart + inBody)) / half)} içeride). Duvar ince olabilir; pimi küçültün veya yerini değiştirin.`,
       );
     } else if (inPart < 0.5 * half || inBody < 0.5 * half) {
       warnings.push(
-        `Pim kesim yüzeyine ortalanmamış (parçada %${Math.round((50 * inPart) / half)}, gövdede %${Math.round((50 * inBody) / half)}).`,
+        `${name} kesim yüzeyine ortalanmamış (parçada %${Math.round((50 * inPart) / half)}, gövdede %${Math.round((50 * inBody) / half)}).`,
       );
     }
     if (opts.radius <= 0 || opts.length <= 0) warnings.push('Pim boyutu geçersiz.');

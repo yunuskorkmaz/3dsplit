@@ -294,16 +294,21 @@ export class Viewport {
     this.requestRender();
   }
 
-  /** Keys pim işaretleri: yüzeyde tıklanan noktalar, pim yarıçapında. */
-  setPinMarkers(points: Vec3[], radius: number): void {
-    this.overlay.children.filter((c) => c.userData.marker).forEach((c) => this.overlay.remove(c));
-    for (const p of points) {
+  /** Keys pim işaretleri: yüzeyde tıklanan noktalar, pim yarıçapında; seçili pim turuncu. */
+  setPinMarkers(pins: { point: Vec3; radius: number; selected: boolean }[]): void {
+    this.overlay.children
+      .filter((c) => c.userData.marker)
+      .forEach((c) => {
+        this.overlay.remove(c);
+        if (c instanceof THREE.Mesh) c.geometry.dispose();
+      });
+    for (const p of pins) {
       const m = new THREE.Mesh(
-        new THREE.SphereGeometry(radius, 16, 12),
-        new THREE.MeshBasicMaterial({ color: '#2f80ff', transparent: true, opacity: 0.7, depthTest: false }),
+        new THREE.SphereGeometry(p.radius, 16, 12),
+        new THREE.MeshBasicMaterial({ color: p.selected ? '#ff9900' : '#2f80ff', transparent: true, opacity: 0.7, depthTest: false }),
       );
       m.renderOrder = 5;
-      m.position.set(...p);
+      m.position.set(...p.point);
       m.userData.marker = true;
       this.overlay.add(m);
     }

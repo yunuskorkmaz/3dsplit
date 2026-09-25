@@ -121,6 +121,21 @@ describe('kesim', () => {
     expect(r.warnings).toEqual([]);
   });
 
+  it('Keys: pim başına boyut ve eğik eksen', () => {
+    const fast = cutRegion(capRegion, { ...baseOpts, mode: 'fast' });
+    const r = cutRegion(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      // eksen yukarı verilse de gövdeye (aşağı) çevrilmeli
+      pins: [{ point: [0, 0, 10], radius: 1.5, length: 6, axis: [0.3, 0, 1] }],
+    });
+    const pinVol = Math.PI * 1.5 * 1.5 * 6;
+    const added = volume(r.parts[0]) - volume(fast.parts[0]);
+    expect(added).toBeGreaterThan(pinVol * 0.35);
+    expect(added).toBeLessThan(pinVol * 0.65);
+    expect(r.warnings.filter((w) => w.includes('dışına'))).toEqual([]);
+  });
+
   it('Keys: pim ince duvara taşarsa uyarır', () => {
     const r = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, length: 14 } });
     expect(r.warnings.length).toBe(1);

@@ -8,12 +8,14 @@ import {
   endSmoothStroke,
   endStroke,
   regionFrame,
+  removePin,
   setSocketDirection,
   setGeometryChangedHook,
   setLabelsChangedHook,
   setSmartAngle,
   smartFillAt,
   smoothAt,
+  updatePin,
 } from '../state/actions';
 import { get, notify, set, useStore } from '../state/store';
 import { type Hit, Viewport } from '../viewport/Viewport';
@@ -51,7 +53,9 @@ export function ViewportHost() {
   const selectedPartId = useStore((s) => s.selectedPartId);
   const slots = useStore((s) => s.slots);
   const preview = useStore((s) => s.preview);
-  const pinPoints = useStore((s) => s.pinPoints);
+  const pins = useStore((s) => s.pins);
+  const selectedPin = useStore((s) => s.selectedPin);
+  const tool = useStore((s) => s.tool);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -82,17 +86,22 @@ export function ViewportHost() {
         if (tool === 'smart') smartFillAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'pin') {
-          // mevcut pime yakın tıklama: Shift ile sil, değilse sürükleyerek taşı
-          const { pinPoints: pins, cut } = get();
-          const near = nearestPin(pins, hit.point, Math.max(1.5, cut.pinRadius * 1.5));
+          // pime yakın tıklama: seç ve sürükleyerek taşı; Shift ile sil. Boşluğa tıklama: yeni pim
+          const { pins: list, cut } = get();
+          const near = nearestPin(
+            list.map((p) => p.point),
+            hit.point,
+            Math.max(1.5, (cut.pinRadius) * 1.5),
+          );
           if (near >= 0 && e.shiftKey) {
-            set({ pinPoints: pins.filter((_, i) => i !== near), preview: null });
+            removePin(near);
           } else if (near >= 0) {
+            set({ selectedPin: near });
             draggingPin = near;
             drag = 'pin';
             return true;
           } else if (!e.shiftKey) {
-            set({ pinPoints: [...pins, hit.point], preview: null });
+            set({ pins: [...list, { point: hit.point }], selectedPin: list.length, preview: null });
           }
         } else if (tool === 'brush' || tool === 'erase') {
           // silgi aracında Shift boyar, fırçada Shift siler
@@ -115,7 +124,7 @@ export function ViewportHost() {
         cursor(hit);
         if (drag === 'pin' && hit) {
           const i = draggingPin;
-          set((s) => ({ pinPoints: s.pinPoints.map((p, j) => (j === i ? hit.point : p)), preview: null }));
+          updatePin(i, { point: hit.point });
           return;
         }
         // darbe başladığı parçada kalır
@@ -192,7 +201,8 @@ export function ViewportHost() {
     else vp.clearOverlay();
   }, [preview]);
 
-  // Socket yön oku: önizlemede veya gizmo açıkken
+  // Yön oku + döndürme gizmosu: Socket yönü (önizlemede veya "Döndür" açıkken)
+  // ya da Keys'te pim aracında seçili pimin ekseni
   const cutMode = useStore((s) => s.cut.mode);
   const direction = useStore((s) => s.cut.direction);
   const directionGizmo = useStore((s) => s.directionGizmo);
@@ -201,15 +211,25 @@ export function ViewportHost() {
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;
+    const pin = cutMode === 'keys' && tool === 'pin' ? pins[selectedPin] : undefined;
+    if (pin) {
+      const frame = regionFrame();
+      // varsayılan eksen: bölgeden gövdeye doğru
+      const axis = pin.axis ?? (frame ? (frame.normal.map((x) => -x) as [number, number, number]) : [0, 0, -1]);
+      vp.showDirection(pin.point, axis, true, (d) => updatePin(selectedPin, { axis: d }));
+      return;
+    }
     const show = cutMode === 'socket' && (directionGizmo || preview !== null);
     const frame = show ? regionFrame() : null;
     vp.showDirection(frame?.center ?? null, direction ?? frame?.normal ?? [0, 0, 1], directionGizmo, (d) => setSocketDirection(d));
-  }, [cutMode, direction, directionGizmo, preview, activeSlot, selectedPartId, paintVersion]);
+  }, [cutMode, direction, directionGizmo, preview, activeSlot, selectedPartId, paintVersion, tool, pins, selectedPin]);
 
   const pinRadius = useStore((s) => s.cut.pinRadius);
   useEffect(() => {
-    vpRef.current?.setPinMarkers(pinPoints, pinRadius);
-  }, [pinPoints, pinRadius]);
+    vpRef.current?.setPinMarkers(
+      pins.map((p, i) => ({ point: p.point, radius: p.radius ?? pinRadius, selected: tool === 'pin' && i === selectedPin })),
+    );
+  }, [pins, pinRadius, selectedPin, tool]);
 
   return <div ref={ref} className="viewport" />;
 }

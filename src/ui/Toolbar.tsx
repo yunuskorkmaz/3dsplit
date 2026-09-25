@@ -1,6 +1,8 @@
 import {
   autoSmartScale,
   gapFillSelected,
+  removePin,
+  updatePin,
   setSmartAngle,
   setSmartOptions,
   smoothActiveRegion,
@@ -14,7 +16,7 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
   { id: 'erase', icon: '◌', label: 'Silgi', key: 'E', hint: 'Sürükle: seçimi sil. Shift: boya.' },
   { id: 'smooth', icon: '≈', label: 'Yumuşat', key: 'S', hint: 'Sınırın üstünde gezdir: girinti/çıkıntıyı düzeltir.' },
   { id: 'bucket', icon: '▣', label: 'Kova', key: 'G', hint: 'Tıkla: aynı renkli bölgeyi doldur.' },
-  { id: 'pin', icon: '⊕', label: 'Pim', key: 'P', hint: 'Keys kesimi için pim yeri. Sürükle: taşı. Shift+tık: sil.' },
+  { id: 'pin', icon: '⊕', label: 'Pim', key: 'P', hint: 'Tıkla: pim ekle/seç. Sürükle: taşı. Gizmo: ekseni döndür. Shift+tık: sil.' },
 ];
 
 /** Viewport'un solundaki dikey araç çubuğu. */
@@ -49,6 +51,9 @@ export function ToolOptions() {
   const smartValley = useStore((s) => s.smartValley);
   const smoothStrength = useStore((s) => s.smoothStrength);
   const gapArea = useStore((s) => s.gapArea);
+  const pin = useStore((s) => s.pins[s.selectedPin]);
+  const selectedPin = useStore((s) => s.selectedPin);
+  const cut = useStore((s) => s.cut);
   const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
   useStore((s) => s.selectedPartId);
   const info = TOOLS.find((t) => t.id === tool);
@@ -131,6 +136,38 @@ export function ToolOptions() {
           <NumberField label="Boşluk" value={gapArea} min={0.1} max={200} step={0.1} unit="mm²" log onChange={(v) => set({ gapArea: v })} />
           <button type="button" onClick={gapFillSelected} title="Bu alandan küçük renk adalarını komşu renge çevir">
             Gap Fill
+          </button>
+        </>
+      )}
+      {tool === 'pin' && cut.mode !== 'keys' && <span className="tool-hint">Pimler Keys kesiminde kullanılır; sağ panelde Keys'i seç.</span>}
+      {tool === 'pin' && cut.mode === 'keys' && pin && (
+        <>
+          <span className="tool-name">Pim {selectedPin + 1}</span>
+          <NumberField
+            label="Yarıçap"
+            value={pin.radius ?? cut.pinRadius}
+            min={0.5}
+            max={20}
+            step={0.1}
+            unit="mm"
+            log
+            onChange={(v) => updatePin(selectedPin, { radius: v })}
+          />
+          <NumberField
+            label="Boy"
+            value={pin.length ?? cut.pinLength}
+            min={1}
+            max={60}
+            step={0.5}
+            unit="mm"
+            log
+            onChange={(v) => updatePin(selectedPin, { length: v })}
+          />
+          <button type="button" disabled={!pin.axis} onClick={() => updatePin(selectedPin, { axis: undefined })} title="Ekseni kesim yüzeyine dik yap">
+            Ekseni sıfırla
+          </button>
+          <button type="button" onClick={() => removePin(selectedPin)}>
+            Pimi sil
           </button>
         </>
       )}

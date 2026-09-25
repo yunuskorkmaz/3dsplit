@@ -1,4 +1,4 @@
-import type { CutOptions } from '../core/cut';
+import type { CutOptions, PinPlacement } from '../core/cut';
 import {
   brushSelect,
   bucketFill,
@@ -122,7 +122,8 @@ async function openProject(file: File): Promise<void> {
       activeSlot: data.activeSlot,
       selectedPartId: data.selectedPartId,
       preview: null,
-      pinPoints: [],
+      pins: [],
+      selectedPin: -1,
       undoStack: [],
       redoStack: [],
     });
@@ -503,6 +504,16 @@ export function endSmoothStroke(): void {
   set((s) => ({ paintVersion: s.paintVersion + 1 }));
 }
 
+// ---------- pimler ----------
+
+export function updatePin(index: number, patch: Partial<PinPlacement>): void {
+  set((s) => ({ pins: s.pins.map((p, i) => (i === index ? { ...p, ...patch } : p)), preview: null }));
+}
+
+export function removePin(index: number): void {
+  set((s) => ({ pins: s.pins.filter((_, i) => i !== index), selectedPin: -1, preview: null }));
+}
+
 // ---------- slotlar ----------
 
 export function addSlot(): void {
@@ -519,7 +530,7 @@ export function updateSlot(id: number, patch: { name?: string; color?: string })
 // ---------- kesim ----------
 
 function cutOptions(): CutOptions {
-  const { cut, activeSlot, pinPoints } = get();
+  const { cut, activeSlot, pins } = get();
   return {
     mode: cut.mode,
     slot: activeSlot,
@@ -528,7 +539,7 @@ function cutOptions(): CutOptions {
     squeeze: cut.mode === 'socket' ? cut.squeeze : 0,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
     pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart },
-    pinPoints: cut.mode === 'keys' ? pinPoints : undefined,
+    pins: cut.mode === 'keys' ? pins : undefined,
   };
 }
 
@@ -594,7 +605,8 @@ export async function runCut(): Promise<void> {
       parts: after,
       selectedPartId: newParts[0].id,
       preview: null,
-      pinPoints: [],
+      pins: [],
+      selectedPin: -1,
       directionGizmo: false,
       cut: { ...s.cut, direction: null },
     }));

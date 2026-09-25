@@ -29,7 +29,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X23 | Hata: yumuşatma sırasında model kayboluyordu. Her darbe mesh'in tam kopyasını saklıyor ve ekran geometrisini baştan kuruyordu; uzun oturumda bellek dolup grafik bağlamı düşüyordu. Artık darbe mesh'i yerinde değiştirir, geri alma sadece değişen köşeleri tutar (60 darbede bellek artmıyor); bağlam düşerse uyarılır ve model yeniden çizilir | Kullanıcı bildirdi | [x] |
 | X14 | Smart Fill ölçeğini tıklanan özelliğin boyutuna göre otomatik seçme (kulak 3 mm, göz 1.3 mm istedi) | Tek varsayılan her özellikte tutmuyor; kullanıcı ayarla uğraşmasın | [x] |
 | A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da ayrı filamentle açılsın | [x] |
-| X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [ ] |
+| X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [x] |
 | X6 | Pim/tapa duvar kalınlığı kontrolü, ince yeri önizlemede kırmızı gösterme | Baskıda kırılma riski | [ ] |
 | X7 | 1–2M üçgen performansı (yükleme, komşuluk, BVH) | testa.stl 275k'da yükleme ~1 s; 2M'de 7–8 s beklenir | [ ] |
 | X8 | Playwright smoke testi: yükle → Smart Fill → Socket → dışa aktar | Arayüz regresyonları elle yakalanıyor | [ ] |
@@ -84,7 +84,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C5 | Socket: Squeeze | 2 | [x] | Taban yüzde olarak daralır; yedek (prizma) yolunda uygulanmaz |
 | C6 | Socket: Ring Selection | 3 | [ ] | |
 | C7 | Socket: full surface | 3 | [ ] | |
-| C8 | Keys: pim yerleştirme | 1 | [~] | Tıkla ekle, sürükle taşı, Shift+tık sil (X3); kapak yüzeyine izdüşer. Pim başına boyut/döndürme gizmosu yok |
+| C8 | Keys: pim yerleştirme | 1 | [x] | Tıkla ekle/seç, sürükle taşı, Shift+tık sil; seçili pime yarıçap/boy ve döndürme gizmosuyla eksen (X16) |
 | C9 | Keys: clearance | 1 | [x] | |
 | C10 | Keys: çoklu pim | 2 | [x] | Her tıklama bir pim |
 | C11 | Keys: şekiller | 2 | [~] | Silindir, sekizgen, küp var; snap pim yok |
@@ -139,3 +139,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X19–X22: yumuşatma fırçası, silgi, araç çubuğu, sayı alanları | `a9fba6f` |
 | 2026-09-25 | X14: otomatik Smart Fill ölçeği | `8ea7024` |
 | 2026-09-25 | A3: Bambu/Orca için filament atamalı 3MF | `bb62b3e` |
+| 2026-09-25 | X23: yumuşatmada model kaybolması | `e33d261` |

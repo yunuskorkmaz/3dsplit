@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CutMode, CutPreview, PinShape } from '../core/cut';
+import type { CutMode, CutPreview, PinPlacement, PinShape } from '../core/cut';
 import type { LabeledMesh, Vec3 } from '../core/types';
 
 export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin';
@@ -86,7 +86,10 @@ export interface AppState {
   /** İnceltme hedef kenar uzunluğu, mm. */
   refineEdge: number;
   cut: CutSettings;
-  pinPoints: Vec3[];
+  /** Keys pimleri; boyut/eksen verilmemişse kesim ayarındaki değerler kullanılır. */
+  pins: PinPlacement[];
+  /** Pim aracında seçili pim (-1: yok). */
+  selectedPin: number;
   /** Socket yön gizmosu açık mı. */
   directionGizmo: boolean;
   preview: CutPreview | null;
@@ -125,7 +128,8 @@ export const useStore = create<AppState>(() => ({
     pinLength: 8,
     pinOnPart: true,
   },
-  pinPoints: [],
+  pins: [],
+  selectedPin: -1,
   directionGizmo: false,
   preview: null,
   busy: null,

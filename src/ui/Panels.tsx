@@ -146,7 +146,7 @@ const MODES: { id: CutMode; label: string; hint: string }[] = [
 export function CutPanel() {
   const cut = useStore((s) => s.cut);
   const tool = useStore((s) => s.tool);
-  const pinCount = useStore((s) => s.pinPoints.length);
+  const pinCount = useStore((s) => s.pins.length);
   const directionGizmo = useStore((s) => s.directionGizmo);
   const previewOn = useStore((s) => s.preview !== null);
   const activeSlot = useStore((s) => s.activeSlot);
@@ -212,7 +212,7 @@ export function CutPanel() {
             <button type="button" className={tool === 'pin' ? 'active' : ''} onClick={() => set({ tool: tool === 'pin' ? 'smart' : 'pin' })}>
               Pim yerleştir
             </button>
-            <button type="button" disabled={!pinCount} onClick={() => set({ pinPoints: [], preview: null })}>
+            <button type="button" disabled={!pinCount} onClick={() => set({ pins: [], selectedPin: -1, preview: null })}>
               Temizle ({pinCount})
             </button>
           </div>

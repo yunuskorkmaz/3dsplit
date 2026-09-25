@@ -30,6 +30,9 @@ export function ViewportHost() {
   useEffect(() => {
     if (!ref.current) return;
     let brushing = false;
+    // son fırça noktası: hızlı sürüklemede aradaki boşluğu doldurmak için
+    let last: { x: number; y: number; point: [number, number, number] } | null = null;
+    let strokePart = '';
     const vp = new Viewport(ref.current, {
       onDown(hit: Hit, e: PointerEvent) {
         const { tool, selectedPartId: sel } = get();
@@ -42,17 +45,33 @@ export function ViewportHost() {
           beginStroke(hit.partId);
           brushAt(hit.partId, hit.tri, hit.point, erase);
           brushing = true;
+          strokePart = hit.partId;
+          last = { x: e.clientX, y: e.clientY, point: hit.point };
           return true;
         }
         return false;
       },
       onMove(hit, e) {
         vp.setBrushCursor(get().tool === 'brush' ? hit : null, get().brushRadius);
-        if (brushing && hit) brushAt(hit.partId, hit.tri, hit.point, e.shiftKey);
+        // darbe başladığı parçada kalır
+        if (!brushing || !hit || hit.partId !== strokePart) return;
+        const radius = get().brushRadius;
+        if (last) {
+          const dist = Math.hypot(hit.point[0] - last.point[0], hit.point[1] - last.point[1], hit.point[2] - last.point[2]);
+          const steps = Math.min(64, Math.floor(dist / (radius * 0.5)));
+          for (let i = 1; i < steps; i++) {
+            const f = i / steps;
+            const mid = vp.pick({ clientX: last.x + (e.clientX - last.x) * f, clientY: last.y + (e.clientY - last.y) * f });
+            if (mid && mid.partId === strokePart) brushAt(mid.partId, mid.tri, mid.point, e.shiftKey);
+          }
+        }
+        brushAt(hit.partId, hit.tri, hit.point, e.shiftKey);
+        last = { x: e.clientX, y: e.clientY, point: hit.point };
       },
       onUp() {
         if (brushing) endStroke();
         brushing = false;
+        last = null;
       },
       onThresholdDrag(dx) {
         setSmartAngle(get().smartAngle + dx * 0.25);

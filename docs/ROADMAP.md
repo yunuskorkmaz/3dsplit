@@ -25,7 +25,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X15 | Tırtıklı/kavisli sınırda kapak üretilemiyordu (kulak Keys, kaş Socket): izdüşümü kendini kesen halka yumuşatılıp gerekirse çembere eşlenerek üçgenlenir; pim kapağın alan merkezinde | [x] |
 | X12 | Socket çıkıntılarda (burun, göz) hızlı ve sağlam: kapakla ayır + kapak prizması tapa; bölge içi delikler kesime katılır; yedek yöntem sadece sorunlu üçgenlerde prizma | [x] |
 | C5 | Socket Squeeze: tapa tabanı içe daraltılır, yandan taşma önlenir | [x] |
-| C4 | Socket yönü: önizlemede ok, gizmo ile döndürme; "kameradan al" ve "otomatik" | [ ] |
+| C4 | Socket yönü: önizlemede ok, gizmo ile döndürme; "kameradan al" ve "otomatik" | [x] |
 | X3 | Pim düzenleme: pime tıklayıp silme, sürükleyip taşıma | [x] |
 | A4 | Proje kaydetme / açma (`.3dsplit`): parçalar, etiketler, slotlar | [x] |
 
@@ -61,7 +61,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C1 | Önizleme (Space) | 1 | [x] | Önizlemede model yarı saydam |
 | C2 | Fast | 1 | [x] | Sınır halkasından düz kapak; boolean yok |
 | C3 | Socket: Depth | 1 | [x] | Düz yamada süpürme, çıkıntıda kapak prizması (X12), alttan oyuk bölgede süpürme + prizma |
-| C4 | Socket: gizmo yönü | 2 | [ ] | Sprint 1 |
+| C4 | Socket: gizmo yönü | 2 | [x] | Ok + döndürme gizmosu, Kameradan, Oto. Elle yön çıkıntı yönteminde kapak izdüşümü olarak da kullanılır |
 | C5 | Socket: Squeeze | 2 | [x] | Taban yüzde olarak daralır; yedek (prizma) yolunda uygulanmaz |
 | C6 | Socket: Ring Selection | 3 | [ ] | |
 | C7 | Socket: full surface | 3 | [ ] | |
@@ -113,3 +113,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X15: kendini kesen kapak izdüşümleri, pim merkezi | `a2c5c3b` |
 | 2026-09-25 | C5: Socket squeeze | `77b165f` |
 | 2026-09-25 | X3: pim düzenleme | `7d8acdc` |
+| 2026-09-25 | A4: proje kaydetme / açma | `1aad440` |

@@ -309,15 +309,18 @@ function polygonSelfIntersects(pts: [number, number][]): boolean {
 }
 
 /** Fast/Keys: bölgeyi sınır halkası boyunca düz kapakla ayırır. */
+/** Kapak izdüşüm yönü: verilmezse her halkanın kendi düzlemi. */
+type Projection = ((island: Island) => Vec3) | undefined;
+
 /**
- * `regionNormal`: kapaklar halka düzlemi yerine bölgenin ortalama normaline
- * izdüşürülür. Kavisli halkalar (kaş gibi) kendi düzleminde katlanabiliyor.
+ * `projection`: kapaklar halka düzlemi yerine bu yöne izdüşürülür (bölge
+ * normali veya elle verilen yön). Kavisli halkalar kendi düzleminde katlanabiliyor.
  */
 function capSplit(
   mesh: LabeledMesh,
   islands: Island[],
   slot: number,
-  regionNormal = false,
+  projection?: Projection,
 ): { body: LabeledMesh; parts: LabeledMesh[] } {
   const triCount = mesh.labels.length;
   const inIsland = new Uint8Array(triCount);
@@ -334,7 +337,7 @@ function capSplit(
       partLabels.push(mesh.labels[t]);
     }
     for (const loop of island.loops) {
-      const cap = triangulateLoop(mesh.positions, loop, regionNormal ? island.normal : undefined);
+      const cap = triangulateLoop(mesh.positions, loop, projection?.(island));
       for (let i = 0; i < cap.length; i += 3) {
         partIdx.push(cap[i], cap[i + 1], cap[i + 2]);
         partLabels.push(slot);
@@ -428,11 +431,11 @@ function capPlugVolumes(
   island: Island,
   depth: number,
   eps: number,
-  regionNormal = false,
+  projection?: Projection,
   squeeze = 0,
 ): { mesh: MeshData; dir: Vec3 }[] {
   return island.loops.map((loop) => {
-    const dir = regionNormal ? island.normal : loopPlane(positions, loop).normal;
+    const dir = projection?.(island) ?? loopPlane(positions, loop).normal;
     // triangulateLoop gövdeye bakan kapak verir; süpürme için dışa (dir) bakanı gerekir
     const cap = flipAll(triangulateLoop(positions, loop, dir));
     return { mesh: extrudePatch(positions, cap, [loop], dir, depth, eps, squeeze), dir };
@@ -630,7 +633,9 @@ export function previewCut(mesh: LabeledMesh, opts: CutOptions): CutPreview {
       // çıkıntı yöntemi: kesim kapakları ve gövdeye giren tapa prizmaları
       const eps = Math.max(1, 4 * opts.clearance);
       for (const island of islands) {
-        for (const { mesh: vol } of capPlugVolumes(mesh.positions, island, opts.depth, eps, false, opts.squeeze)) volumes.push(vol);
+        for (const { mesh: vol } of capPlugVolumes(mesh.positions, island, opts.depth, eps, capProjections(opts)[0], opts.squeeze)) {
+          volumes.push(vol);
+        }
       }
     } else if (opts.mode === 'socket') {
       const eps = Math.max(0.5, 4 * opts.clearance);
@@ -735,11 +740,11 @@ function checkPinContainment(pin: Manifold, part: Manifold, body: Manifold, opts
 }
 
 /**
- * Süpürme kullanılabilir mi: yön elle verildiyse veya her ada kendi yönünde
- * yükseklik alanıysa (düz/sığ yamalar). Değilse çıkıntı yöntemi denenir.
+ * Süpürme kullanılabilir mi: her ada kendi yönünde yükseklik alanıysa
+ * (düz/sığ yamalar). Değilse çıkıntı yöntemi denenir.
  */
 function useSweepSocket(mesh: MeshData, islands: Island[], opts: CutOptions): boolean {
-  return opts.direction !== undefined || islands.every((i) => isHeightField(mesh, i, socketDirection(i, opts)));
+  return islands.every((i) => isHeightField(mesh, i, socketDirection(i, opts)));
 }
 
 function socketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, warnings: string[]): CutResult {
@@ -757,21 +762,32 @@ function socketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope
 }
 
 /** Çıkıntı socket'i: kapakla ayır, kapak prizmasını tapaya ekle, büyütülmüş halini gövdeden çıkar. */
-function capSocketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, warnings: string[]): CutResult {
-  let r: CutResult;
-  try {
-    r = capSocketCutWith(mesh, islands, opts, scope, false);
-  } catch (e) {
-    if (!(e instanceof CutError || e instanceof KernelError)) throw e;
-    // halka kendi düzleminde katlanıyorsa bölgeye önden bakarak dene
-    r = capSocketCutWith(mesh, islands, opts, scope, true);
+/** Denenecek kapak izdüşümleri: elle verilen yön, yoksa halka düzlemi ve sonra bölge normali. */
+function capProjections(opts: CutOptions): Projection[] {
+  if (opts.direction) {
+    const d = normalize(opts.direction);
+    return [() => d];
   }
-  return { ...r, warnings: [...warnings, ...r.warnings] };
+  return [undefined, (island) => island.normal];
 }
 
-function capSocketCutWith(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, regionNormal: boolean): CutResult {
+function capSocketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, warnings: string[]): CutResult {
+  let lastError: unknown;
+  for (const projection of capProjections(opts)) {
+    try {
+      const r = capSocketCutWith(mesh, islands, opts, scope, projection);
+      return { ...r, warnings: [...warnings, ...r.warnings] };
+    } catch (e) {
+      if (!(e instanceof CutError || e instanceof KernelError)) throw e;
+      lastError = e;
+    }
+  }
+  throw lastError;
+}
+
+function capSocketCutWith(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, projection: Projection): CutResult {
   const warnings: string[] = [];
-  const split = capSplit(mesh, islands, opts.slot, regionNormal);
+  const split = capSplit(mesh, islands, opts.slot, projection);
   const bodyBase = scope.keep(toManifold(split.body, split.body.labels));
   // gövdeye giren kısım orijinal modelden alınır: kapağın üstüne de biraz taşar,
   // çıkıntıyla çakışan yüzey yerine hacim olarak üst üste biner
@@ -781,7 +797,7 @@ function capSocketCutWith(mesh: LabeledMesh, islands: Island[], opts: CutOptions
   const holes: Manifold[] = [];
   islands.forEach((island, i) => {
     let part = scope.keep(toManifold(split.parts[i], split.parts[i].labels));
-    for (const { mesh: volMesh, dir } of capPlugVolumes(mesh.positions, island, opts.depth, eps, regionNormal, opts.squeeze)) {
+    for (const { mesh: volMesh, dir } of capPlugVolumes(mesh.positions, island, opts.depth, eps, projection, opts.squeeze)) {
       const vol = scope.keep(toManifold(volMesh, CUT_FACE_ID));
       part = scope.keep(part.add(scope.keep(vol.intersect(model))));
       holes.push(growVolume(vol, dir, opts.clearance, scope));

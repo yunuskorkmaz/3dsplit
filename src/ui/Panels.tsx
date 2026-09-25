@@ -14,6 +14,7 @@ import {
   renamePart,
   runCut,
   saveProject,
+  setSocketDirection,
   selectPart,
   setSmartAngle,
   setSmartOptions,
@@ -25,6 +26,7 @@ import {
   updateSlot,
 } from '../state/actions';
 import { type CutSettings, dismiss, set, type Tool, useStore } from '../state/store';
+import { cameraDirection } from './ViewportHost';
 
 function NumberField(props: {
   label: string;
@@ -243,6 +245,7 @@ export function CutPanel() {
   const cut = useStore((s) => s.cut);
   const tool = useStore((s) => s.tool);
   const pinCount = useStore((s) => s.pinPoints.length);
+  const directionGizmo = useStore((s) => s.directionGizmo);
   const previewOn = useStore((s) => s.preview !== null);
   const activeSlot = useStore((s) => s.activeSlot);
   const slotName = useStore((s) => s.slots.find((x) => x.id === s.activeSlot)?.name);
@@ -261,6 +264,18 @@ export function CutPanel() {
       {cut.mode === 'socket' && (
         <>
           <NumberField label="Derinlik" value={cut.depth} min={0.4} max={30} step={0.1} unit="mm" onChange={(v) => update({ depth: v })} />
+          <div className="row">
+            <span className="label">Yön: {cut.direction ? 'elle' : 'otomatik'}</span>
+            <button type="button" className={directionGizmo ? 'active' : ''} onClick={() => set({ directionGizmo: !directionGizmo })} title="Ok üzerindeki gizmo ile döndür">
+              Döndür
+            </button>
+            <button type="button" onClick={() => setSocketDirection(cameraDirection())} title="Tapa yönü = şu anki bakış yönü">
+              Kameradan
+            </button>
+            <button type="button" disabled={!cut.direction} onClick={() => setSocketDirection(null)}>
+              Oto
+            </button>
+          </div>
           <NumberField
             label="Squeeze"
             value={Math.round(cut.squeeze * 100)}

@@ -138,10 +138,11 @@ describe('kesim', () => {
     expect(r.parts[0].labels.every((l) => l === 1)).toBe(true);
   });
 
-  it('Socket: yükseklik alanı olmayan bölgede yedek yöntem', () => {
+  it('Socket: elle yön verilince çıkıntı yöntemi o yönde kullanılır', () => {
     const r = cutRegion(capRegion, { ...baseOpts, mode: 'socket', direction: [0, 0, 1] });
-    expect(r.warnings.length).toBe(1);
-    expect(volume(r.parts[0])).toBeCloseTo(1200, 0);
+    expect(r.warnings).toEqual([]);
+    // üst kapak (~2000) + kapağın altında 20x20x3 tapa (1200)
+    expect(Math.abs(volume(r.parts[0]) - 3200)).toBeLessThan(100);
   });
 
   it('önizleme hacim ve pim döndürür', () => {

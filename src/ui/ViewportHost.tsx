@@ -5,6 +5,8 @@ import {
   brushAt,
   bucketAt,
   endStroke,
+  regionFrame,
+  setSocketDirection,
   setLabelsChangedHook,
   setSmartAngle,
   smartFillAt,
@@ -28,6 +30,13 @@ function nearestPin(pins: [number, number, number][], p: [number, number, number
     }
   });
   return best;
+}
+
+let activeViewport: Viewport | null = null;
+
+/** Hedeften kameraya bakan yön; Socket yönünü "kameradan al" için. */
+export function cameraDirection(): [number, number, number] | null {
+  return activeViewport ? activeViewport.viewDirection() : null;
 }
 
 /** Viewport'u React ağacına bağlar; araç olaylarını aksiyonlara çevirir. */
@@ -113,12 +122,14 @@ export function ViewportHost() {
       },
     });
     vpRef.current = vp;
+    activeViewport = vp;
     setLabelsChangedHook((partId, tris) => vp.recolor(partId, slotColor, tris));
     (window as unknown as { viewport: Viewport }).viewport = vp;
     return () => {
       setLabelsChangedHook(null);
       vp.dispose();
       vpRef.current = null;
+      activeViewport = null;
     };
   }, []);
 
@@ -135,6 +146,20 @@ export function ViewportHost() {
     if (preview) vp.setPreview(preview.volumes, preview.pins);
     else vp.clearOverlay();
   }, [preview]);
+
+  // Socket yön oku: önizlemede veya gizmo açıkken
+  const cutMode = useStore((s) => s.cut.mode);
+  const direction = useStore((s) => s.cut.direction);
+  const directionGizmo = useStore((s) => s.directionGizmo);
+  const activeSlot = useStore((s) => s.activeSlot);
+  const paintVersion = useStore((s) => s.paintVersion);
+  useEffect(() => {
+    const vp = vpRef.current;
+    if (!vp) return;
+    const show = cutMode === 'socket' && (directionGizmo || preview !== null);
+    const frame = show ? regionFrame() : null;
+    vp.showDirection(frame?.center ?? null, direction ?? frame?.normal ?? [0, 0, 1], directionGizmo, (d) => setSocketDirection(d));
+  }, [cutMode, direction, directionGizmo, preview, activeSlot, selectedPartId, paintVersion]);
 
   const pinRadius = useStore((s) => s.cut.pinRadius);
   useEffect(() => {

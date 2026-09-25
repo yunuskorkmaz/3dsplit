@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { acceleratedRaycast, MeshBVH } from 'three-mesh-bvh';
 import type { LabeledMesh, MeshData, Vec3 } from '../core/types';
 
@@ -49,6 +50,11 @@ export class Viewport {
   private fitted = false;
   private frame = 0;
   private resizeObserver: ResizeObserver;
+  /** Socket yönü: ok + döndürme gizmosu (C4). Ok, tutamağın yerel +Z ekseni boyunca. */
+  private dirHandle = new THREE.Object3D();
+  private dirArrow: THREE.ArrowHelper;
+  private gizmo: TransformControls;
+  private onDirectionChange: ((dir: Vec3) => void) | null = null;
 
   constructor(
     private container: HTMLElement,
@@ -87,6 +93,23 @@ export class Viewport {
     el.addEventListener('pointerup', this.onPointerUp);
     el.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    this.dirArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 10, 0xff9900);
+    this.dirHandle.add(this.dirArrow);
+    this.dirHandle.visible = false;
+    this.scene.add(this.dirHandle);
+    this.gizmo = new TransformControls(this.camera, el);
+    this.gizmo.setMode('rotate');
+    this.gizmo.setSpace('local');
+    this.scene.add(this.gizmo.getHelper());
+    this.gizmo.addEventListener('dragging-changed', (e) => {
+      this.controls.enabled = !e.value;
+    });
+    this.gizmo.addEventListener('change', () => this.requestRender());
+    this.gizmo.addEventListener('objectChange', () => {
+      const d = new THREE.Vector3(0, 0, 1).applyQuaternion(this.dirHandle.quaternion).normalize();
+      this.onDirectionChange?.(d.toArray() as Vec3);
+    });
+
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
     this.resize();
@@ -94,6 +117,8 @@ export class Viewport {
 
   dispose(): void {
     this.resizeObserver.disconnect();
+    this.gizmo.detach();
+    this.gizmo.dispose();
     this.controls.dispose();
     for (const p of this.parts.values()) p.mesh.geometry.dispose();
     this.renderer.dispose();
@@ -215,6 +240,47 @@ export class Viewport {
     this.requestRender();
   }
 
+  /**
+   * Socket yön okunu gösterir. `editable` ise döndürme gizmosu bağlanır;
+   * değişiklik `onChange` ile bildirilir. `center` null ise gizlenir.
+   */
+  showDirection(center: Vec3 | null, dir: Vec3, editable: boolean, onChange: (dir: Vec3) => void): void {
+    this.onDirectionChange = onChange;
+    if (!center) {
+      this.dirHandle.visible = false;
+      this.gizmo.detach();
+      this.requestRender();
+      return;
+    }
+    this.dirHandle.visible = true;
+    this.dirHandle.position.set(...center);
+    // sürükleme sırasında store'dan dönen yön tutamağı geri çevirmesin
+    if (!this.gizmo.dragging) {
+      this.dirHandle.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...dir).normalize());
+    }
+    const size = this.sceneDiagonal() * 0.15;
+    this.dirArrow.setLength(size, size * 0.25, size * 0.12);
+    if (editable) {
+      if (this.gizmo.object !== this.dirHandle) this.gizmo.attach(this.dirHandle);
+      this.gizmo.size = 0.8;
+    } else {
+      this.gizmo.detach();
+    }
+    this.requestRender();
+  }
+
+  /** Kameradan hedefe değil, hedeften kameraya bakan birim yön (Socket "kameradan"). */
+  viewDirection(): Vec3 {
+    const d = new THREE.Vector3().subVectors(this.camera.position, this.controls.target).normalize();
+    return d.toArray() as Vec3;
+  }
+
+  private sceneDiagonal(): number {
+    const box = new THREE.Box3();
+    for (const p of this.parts.values()) if (p.mesh.visible) box.expandByObject(p.mesh);
+    return box.isEmpty() ? 100 : box.getSize(new THREE.Vector3()).length();
+  }
+
   /** Önizlemede iç hacimler görünsün diye parçalar yarı saydam çizilir. */
   private setXray(on: boolean): void {
     for (const p of this.parts.values()) {
@@ -278,6 +344,11 @@ export class Viewport {
 
   private onPointerDown = (e: PointerEvent): void => {
     this.lastX = e.clientX;
+    // gizmo ekseninin üstündeyse olay gizmoya kalır
+    if (this.gizmo.object && this.gizmo.axis !== null) {
+      this.controls.enabled = false;
+      return;
+    }
     if (e.button === 2 && e.shiftKey) {
       this.dragging = 'threshold';
       this.controls.enabled = false;

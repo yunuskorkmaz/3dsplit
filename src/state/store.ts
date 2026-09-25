@@ -29,6 +29,8 @@ export interface CutSettings {
   clearance: number;
   /** Socket squeeze, 0..0.9 */
   squeeze: number;
+  /** Socket uzama yönü (dışa doğru); null: otomatik. */
+  direction: Vec3 | null;
   pinShape: PinShape;
   pinRadius: number;
   pinLength: number;
@@ -66,6 +68,8 @@ export interface AppState {
   refineEdge: number;
   cut: CutSettings;
   pinPoints: Vec3[];
+  /** Socket yön gizmosu açık mı. */
+  directionGizmo: boolean;
   preview: CutPreview | null;
   busy: string | null;
   messages: Message[];
@@ -92,12 +96,14 @@ export const useStore = create<AppState>(() => ({
     depth: 3,
     clearance: 0.2,
     squeeze: 0,
+    direction: null,
     pinShape: 'cylinder',
     pinRadius: 2,
     pinLength: 8,
     pinOnPart: true,
   },
   pinPoints: [],
+  directionGizmo: false,
   preview: null,
   busy: null,
   messages: [],

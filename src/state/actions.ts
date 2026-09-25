@@ -59,6 +59,37 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
   }
 }
 
+/**
+ * Seçili parçada aktif slot bölgesinin merkezi ve alan ağırlıklı ortalama
+ * normali (Socket'in otomatik yönü). Bölge yoksa null.
+ */
+export function regionFrame(): { center: Vec3; normal: Vec3 } | null {
+  const part = selectedPart();
+  const slot = get().activeSlot;
+  if (!part) return null;
+  const topo = topologyOf(part.mesh);
+  const labels = part.mesh.labels;
+  const c: Vec3 = [0, 0, 0];
+  const n: Vec3 = [0, 0, 0];
+  let area = 0;
+  for (let t = 0; t < labels.length; t++) {
+    if (labels[t] !== slot) continue;
+    const a = topo.areas[t];
+    area += a;
+    for (let k = 0; k < 3; k++) {
+      c[k] += topo.centroids[3 * t + k] * a;
+      n[k] += topo.normals[3 * t + k] * a;
+    }
+  }
+  if (area === 0) return null;
+  const len = Math.hypot(...n) || 1;
+  return { center: [c[0] / area, c[1] / area, c[2] / area], normal: [n[0] / len, n[1] / len, n[2] / len] };
+}
+
+export function setSocketDirection(direction: Vec3 | null): void {
+  set((s) => ({ cut: { ...s.cut, direction }, preview: null }));
+}
+
 /** A4: parçalar, etiketler ve slotlar tek dosyada. */
 export function saveProject(): void {
   const { parts, slots, activeSlot, selectedPartId } = get();
@@ -295,6 +326,7 @@ function cutOptions(): CutOptions {
     depth: cut.mode === 'socket' ? cut.depth : 0,
     clearance: cut.clearance,
     squeeze: cut.mode === 'socket' ? cut.squeeze : 0,
+    direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
     pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart },
     pinPoints: cut.mode === 'keys' ? pinPoints : undefined,
   };
@@ -357,7 +389,15 @@ export async function runCut(): Promise<void> {
       const cleared = p.badge === 'new' ? { ...p, badge: null } : p;
       return p.id === part.id ? [{ ...p, badge: 'source' as const, visible: false }, ...newParts] : [cleared];
     });
-    set({ parts: after, selectedPartId: newParts[0].id, preview: null, pinPoints: [] });
+    // yön ve pimler bölgeye özgü: sonraki kesim otomatikten başlar
+    set((s) => ({
+      parts: after,
+      selectedPartId: newParts[0].id,
+      preview: null,
+      pinPoints: [],
+      directionGizmo: false,
+      cut: { ...s.cut, direction: null },
+    }));
     pushHistory({ kind: 'parts', before, after });
     notify('info', `Kesildi: ${newParts.length} yeni parça. Kaynak parça gizlendi (sarı rozet).`);
   });

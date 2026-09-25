@@ -744,3 +744,26 @@ ol.history .step {
   min-width: 20px;
   text-align: right;
 }
+
+/* kesim paneli: sade görünüm + gelişmiş ayarlar */
+.pin-placement {
+  margin-top: 6px;
+}
+.pin-placement > span {
+  color: #bbb;
+  font-size: 12px;
+}
+details.advanced {
+  margin-top: 10px;
+  border-top: 1px solid #33353a;
+  padding-top: 6px;
+}
+details.advanced summary {
+  cursor: pointer;
+  color: #999;
+  font-size: 12px;
+  user-select: none;
+}
+details.advanced[open] summary {
+  margin-bottom: 4px;
+}

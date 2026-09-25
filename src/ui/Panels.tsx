@@ -259,6 +259,17 @@ export function SlotPanel() {
   );
 }
 
+const PIN_SHAPES: { id: PinShape; label: string; hint: string }[] = [
+  { id: 'cylinder', label: 'Silindir', hint: 'En yaygın; yapıştırılır ya da sıkı geçer' },
+  { id: 'cube', label: 'Küp', hint: 'Dönmeyi engeller; tek pimde parça yerinde durur' },
+  {
+    id: 'octagon',
+    label: 'Sekizgen',
+    hint: 'Silindir gibi ama baskıda daha temiz, dönmeye biraz direnir',
+  },
+  { id: 'snap', label: 'Snap', hint: 'Yapıştırıcısız: esnek dilli tırnakla yerine oturur' },
+];
+
 const TOLERANCE_PRESETS = [
   {
     label: 'Sıkı',
@@ -438,55 +449,53 @@ export function CutPanel() {
           />
         </Group>
       )}
-      {cut.mode !== 'socket' && (
-        <label
-          className="field"
-          title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)"
-        >
-          <input
-            type="checkbox"
-            checked={cut.planar}
-            onChange={(e) => update({ planar: e.target.checked })}
-          />
-          <span>Düzlemle kes</span>
-        </label>
-      )}
-      {cut.mode !== 'fast' && (
-        <NumberField
-          label="Duvar"
-          value={cut.minWall}
-          min={0}
-          max={5}
-          step={0.1}
-          unit="mm"
-          title="Önizlemede yuva çevresinde bundan ince kalan duvar kırmızı gösterilir (0: kontrol yok)"
-          onChange={(v) => update({ minWall: v })}
-        />
+      {cut.mode === 'keys' && (
+        <Group title="Pim">
+          <div className="row segmented">
+            {PIN_SHAPES.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={cut.pinShape === p.id ? 'active' : ''}
+                onClick={() => update({ pinShape: p.id })}
+                title={p.hint}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="pin-placement">
+            <span>
+              {pinCount
+                ? `${pinCount} pim elle yerleştirildi`
+                : 'Pimler otomatik: kesitin ortasına (uzun kesitte 2–3 pim)'}
+            </span>
+            <div className="row">
+              <button
+                type="button"
+                className={tool === 'pin' ? 'active' : ''}
+                onClick={() => set({ tool: tool === 'pin' ? 'smart' : 'pin' })}
+                title="Pim aracını aç/kapa (P)"
+              >
+                {tool === 'pin' ? 'Yerleştirmeyi bitir' : 'Elle yerleştir'}
+              </button>
+              {pinCount > 0 && (
+                <button type="button" onClick={() => set({ pins: [], selectedPin: -1 })}>
+                  Otomatiğe dön
+                </button>
+              )}
+            </div>
+            {tool === 'pin' && (
+              <p className="hint">
+                Bölgeye tıkla: pim ekle · pime tıklayıp sürükle: taşı · Shift+tık: sil. Seçili pimin
+                ayarları üst şeritte.
+              </p>
+            )}
+          </div>
+        </Group>
       )}
       {cut.mode !== 'fast' && (
         <Group title="Tolerans">
-          <NumberField
-            label="Boşluk"
-            value={cut.clearance}
-            min={0}
-            max={1}
-            step={0.01}
-            unit="mm"
-            title="Tapa/pim ile yuva arasında her yüzeyde bırakılan boşluk. Yuva bu kadar büyütülür, parça boyutu değişmez"
-            onChange={(v) => update({ clearance: Math.round(v * 100) / 100 })}
-          />
-          {cut.mode === 'keys' && (
-            <NumberField
-              label="Boy boşluğu"
-              value={cut.pinDepthClearance}
-              min={0}
-              max={2}
-              step={0.05}
-              unit="mm"
-              title="Delik pimden her uçta bu kadar derin: pim dibe oturmaz, iki parçanın kesim yüzleri birbirine tam değer"
-              onChange={(v) => update({ pinDepthClearance: Math.round(v * 100) / 100 })}
-            />
-          )}
           <div className="row segmented">
             {TOLERANCE_PRESETS.map((t) => (
               <button
@@ -496,13 +505,13 @@ export function CutPanel() {
                 onClick={() => update({ clearance: t.value })}
                 title={t.hint}
               >
-                {t.label} {t.value}
+                {t.label}
               </button>
             ))}
           </div>
           <p className="hint">
-            {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arasındaki boşluk. FDM'de
-            0.2 elle takılır; sıkı geçme için 0.1, yazıcı fazla akıtıyorsa 0.3. Reçinede 0.05–0.1.
+            {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arası {cut.clearance} mm.
+            Emin değilsen önce deneme parçası bas.
           </p>
           <button
             type="button"
@@ -513,105 +522,128 @@ export function CutPanel() {
           </button>
         </Group>
       )}
-      {cut.mode === 'keys' && (
-        <Group title="Pim">
-          <label className="field">
-            <span>Pim şekli</span>
-            <select
-              value={cut.pinShape}
-              onChange={(e) => update({ pinShape: e.target.value as PinShape })}
+      <details className="advanced">
+        <summary>Gelişmiş ayarlar</summary>
+        {cut.mode === 'keys' && (
+          <>
+            <label
+              className="field"
+              title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Uzun kesitte (pim aracıyla pim konmadıysa) uzun eksen boyunca 2–3 pim dizilir. Pim aracında tek tek boyut verilen pimler hariç"
             >
-              <option value="cylinder">Silindir</option>
-              <option value="octagon">Sekizgen</option>
-              <option value="cube">Küp</option>
-              <option value="snap">Snap (yapıştırıcısız)</option>
-            </select>
-          </label>
+              <input
+                type="checkbox"
+                checked={cut.pinAuto}
+                onChange={(e) => update({ pinAuto: e.target.checked })}
+              />
+              <span>Pim boyutu otomatik</span>
+            </label>
+            {!cut.pinAuto && (
+              <>
+                <NumberField
+                  label="Yarıçap"
+                  value={cut.pinRadius}
+                  min={0.5}
+                  max={20}
+                  step={0.1}
+                  unit="mm"
+                  onChange={(v) => update({ pinRadius: v })}
+                />
+                <NumberField
+                  label="Boy"
+                  value={cut.pinLength}
+                  min={1}
+                  max={60}
+                  step={0.5}
+                  unit="mm"
+                  onChange={(v) => update({ pinLength: v })}
+                />
+              </>
+            )}
+            <NumberField
+              label="Gövdede"
+              value={Math.round(cut.pinBodyRatio * 100)}
+              min={5}
+              max={95}
+              step={5}
+              unit="%"
+              title="Pim boyunun gövde tarafında kalan payı. %50: yarı yarıya; artırınca pim gövdeye daha derin girer. Pim aracında tek pim için ayrıca ayarlanır"
+              onChange={(v) => update({ pinBodyRatio: v / 100 })}
+            />
+            {cut.pinShape !== 'snap' && (
+              <NumberField
+                label="Uç pahı"
+                value={cut.pinChamfer}
+                min={0}
+                max={3}
+                step={0.1}
+                unit="mm"
+                title="Pim uçları konik: yuvaya kolay girer, baskıda uç sarkmaz. 0: düz uç"
+                onChange={(v) => update({ pinChamfer: v })}
+              />
+            )}
+            <label
+              className="field"
+              title="Kapalıyken pim gövdede kalır, delik kesilen parçada açılır"
+            >
+              <input
+                type="checkbox"
+                checked={cut.pinOnPart}
+                onChange={(e) => update({ pinOnPart: e.target.checked })}
+              />
+              <span>Pim kesilen parçada</span>
+            </label>
+          </>
+        )}
+        {cut.mode !== 'fast' && (
+          <>
+            <NumberField
+              label="Boşluk"
+              value={cut.clearance}
+              min={0}
+              max={1}
+              step={0.01}
+              unit="mm"
+              title="Tapa/pim ile yuva arasında her yüzeyde bırakılan boşluk. Yuva bu kadar büyütülür, parça boyutu değişmez"
+              onChange={(v) => update({ clearance: Math.round(v * 100) / 100 })}
+            />
+            {cut.mode === 'keys' && (
+              <NumberField
+                label="Boy boşluğu"
+                value={cut.pinDepthClearance}
+                min={0}
+                max={2}
+                step={0.05}
+                unit="mm"
+                title="Delik pimden her uçta bu kadar derin: pim dibe oturmaz, iki parçanın kesim yüzleri birbirine tam değer"
+                onChange={(v) => update({ pinDepthClearance: Math.round(v * 100) / 100 })}
+              />
+            )}
+            <NumberField
+              label="Duvar"
+              value={cut.minWall}
+              min={0}
+              max={5}
+              step={0.1}
+              unit="mm"
+              title="Önizlemede yuva çevresinde bundan ince kalan duvar kırmızı gösterilir (0: kontrol yok)"
+              onChange={(v) => update({ minWall: v })}
+            />
+          </>
+        )}
+        {cut.mode !== 'socket' && (
           <label
             className="field"
-            title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Uzun kesitte (pim aracıyla pim konmadıysa) uzun eksen boyunca 2–3 pim dizilir. Pim aracında tek tek boyut verilen pimler hariç"
+            title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)"
           >
             <input
               type="checkbox"
-              checked={cut.pinAuto}
-              onChange={(e) => update({ pinAuto: e.target.checked })}
+              checked={cut.planar}
+              onChange={(e) => update({ planar: e.target.checked })}
             />
-            <span>Boyut kesitten (otomatik)</span>
+            <span>Düzlemle kes</span>
           </label>
-          {!cut.pinAuto && (
-            <>
-              <NumberField
-                label="Pim yarıçapı"
-                value={cut.pinRadius}
-                min={0.5}
-                max={20}
-                step={0.1}
-                unit="mm"
-                onChange={(v) => update({ pinRadius: v })}
-              />
-              <NumberField
-                label="Pim boyu"
-                value={cut.pinLength}
-                min={1}
-                max={60}
-                step={0.5}
-                unit="mm"
-                onChange={(v) => update({ pinLength: v })}
-              />
-            </>
-          )}
-          <NumberField
-            label="Gövdede"
-            value={Math.round(cut.pinBodyRatio * 100)}
-            min={5}
-            max={95}
-            step={5}
-            unit="%"
-            title="Pim boyunun gövde tarafında kalan payı. %50: yarı yarıya; artırınca pim gövdeye daha derin girer. Pim aracında tek pim için ayrıca ayarlanır"
-            onChange={(v) => update({ pinBodyRatio: v / 100 })}
-          />
-          {cut.pinShape !== 'snap' && (
-            <NumberField
-              label="Uç pahı"
-              value={cut.pinChamfer}
-              min={0}
-              max={3}
-              step={0.1}
-              unit="mm"
-              title="Pim uçları konik: yuvaya kolay girer, baskıda uç sarkmaz. 0: düz uç"
-              onChange={(v) => update({ pinChamfer: v })}
-            />
-          )}
-          <label className="field">
-            <input
-              type="checkbox"
-              checked={cut.pinOnPart}
-              onChange={(e) => update({ pinOnPart: e.target.checked })}
-            />
-            <span>Pim kesilen parçada</span>
-          </label>
-          <div className="row">
-            <button
-              type="button"
-              className={tool === 'pin' ? 'active' : ''}
-              onClick={() => set({ tool: tool === 'pin' ? 'smart' : 'pin' })}
-            >
-              Pim yerleştir
-            </button>
-            <button
-              type="button"
-              disabled={!pinCount}
-              onClick={() => set({ pins: [], selectedPin: -1 })}
-            >
-              Temizle ({pinCount})
-            </button>
-          </div>
-          <p className="hint">
-            Bölgeye tıkla: pim ekle. Pime tıklayıp sürükle: taşı. Shift+tık: sil. Pim yoksa kesim
-            yüzeyinin ortasına bir tane konur.
-          </p>
-        </Group>
-      )}
+        )}
+      </details>
     </Panel>
   );
 }

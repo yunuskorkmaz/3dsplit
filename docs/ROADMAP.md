@@ -40,6 +40,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X47 | Önizleme modu: açıkken modele tıklamak, pim eklemek/sürüklemek, ayar/slot/boyama değişikliği önizlemeyi kapatmaz, 300 ms sonra yeniler. Pim gövde payı (% gövdede; genel ve pim başına) | Kullanıcı istedi | [x] |
 | X48 | Seçimi temizle: aktif slotun seçili parçadaki boyasını siler (düğme + Delete) | Kullanıcı istedi | [x] |
 | X49 | Geçmiş zaman çizelgesi: adlandırılmış adımlar, tıklanan adıma gitme | Kullanıcı istedi | [x] |
+| X50 | Kesim paneli sadeleştirme: pim şekli düğmelerle, yerleşim tek satır (otomatik / elle yerleştir / otomatiğe dön), tolerans sadece hazır ayarlar; sayısal ince ayarlar "Gelişmiş ayarlar" altında | Kullanıcı: pim arayüzü kafa karıştırıyor | [x] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 

@@ -27,7 +27,7 @@ src/io        STL/OBJ/3MF içe aktarma, STL/3MF/ZIP dışa aktarma
 - Slot `0` taban (boyanmamış).
 - `Part`: store'daki parça; `mesh`, `visible`, `badge` (`source` / `new`), `colorSlot`.
 - Mesh'ler değiştirilemez kabul edilir; istisnalar: `labels` boyamada, `positions` yumuşatma fırçasında yerinde değişir (geri alma kaydı değişen öğeleri tutar). Undo boyamada değişen üçgenlerin önceki/sonraki etiketini, kesimde parça listesinin önceki halini saklar.
-- Etiketler boolean işlemlerden manifold `faceID` üzerinden geçer. Kesimle oluşan yeni yüzler geçici `CUT_FACE_ID` (0xfffe) alır, sonra parçanın slotuna veya tabana çevrilir. `0xffffffff` kullanılamaz: manifold onu "faceID yok" sayıyor.
+- Kesimde manifold `faceID` = orijinal üçgen numarası; sonuçtaki etiketler `labels[faceID]` ile eşlenir (`fromManifoldMapped`). Kesimle oluşan yeni yüzler `CUT_FACE_ID` (0x7ffffffe) alır ve parçanın slotuna veya tabana çevrilir. `0xffffffff` kullanılamaz: manifold onu "faceID yok" sayıyor. Manifold etiketlerden bağımsız olduğu için Worker parçanın manifold'unu geometri anahtarıyla (mesh kimliği + konum sürümü) önbellekler; boyama değişse de yeniden kurulmaz.
 
 ## Kesim algoritmaları (`src/core/cut.ts`)
 

@@ -1,7 +1,7 @@
 import type { Manifold } from 'manifold-3d';
 import { faceNormalsAndAreas } from './geometry';
 import { closeHoles } from './paint';
-import { CUT_FACE_ID, fromManifold, KernelError, kernel, Scope, toManifold } from './kernel';
+import { CUT_FACE_ID, fromManifoldMapped, KernelError, kernel, modelManifold, Scope, toManifold } from './kernel';
 import { boundaryLoops, buildAdjacency, connectedComponents, extractTriangles } from './topology';
 import { BASE_SLOT, type LabeledMesh, type MeshData, type Vec3 } from './types';
 import { add, cross, dot, normalize, orthoBasis, scale, sub, vertexAt } from './vec';
@@ -63,6 +63,28 @@ export interface CutPreview {
 }
 
 export class CutError extends Error {}
+
+/**
+ * Modelin manifold'u (yüz kimliği = üçgen numarası). Worker aynı geometri
+ * için önbellekten verir; verilmezse her çağrıda kurulur. Etiketlerden
+ * bağımsızdır, boyama değişse de geçerli kalır.
+ */
+export type ModelProvider = () => Manifold;
+let modelProvider: ModelProvider | null = null;
+
+function modelOf(mesh: LabeledMesh, scope: Scope): Manifold {
+  // sağlayıcının verdiği manifold önbellektedir: scope'a eklenmez (silinmesin)
+  return modelProvider ? modelProvider() : scope.keep(modelManifold(mesh));
+}
+
+function withModel<T>(provider: ModelProvider | undefined, fn: () => T): T {
+  modelProvider = provider ?? null;
+  try {
+    return fn();
+  } finally {
+    modelProvider = null;
+  }
+}
 
 interface Island {
   tris: number[];
@@ -330,51 +352,55 @@ type Projection = ((island: Island) => Vec3) | undefined;
  * `projection`: kapaklar halka düzlemi yerine bu yöne izdüşürülür (bölge
  * normali veya elle verilen yön). Kavisli halkalar kendi düzleminde katlanabiliyor.
  */
+/** Kapakla ayrılmış parça: `origin` her üçgenin orijinal üçgen numarası, kapakta CUT_FACE_ID. */
+interface SplitMesh extends MeshData {
+  origin: Uint32Array;
+}
+
 function capSplit(
   mesh: LabeledMesh,
   islands: Island[],
-  slot: number,
   projection?: Projection,
-): { body: LabeledMesh; parts: LabeledMesh[] } {
+): { body: SplitMesh; parts: SplitMesh[] } {
   const triCount = mesh.labels.length;
   const inIsland = new Uint8Array(triCount);
   const bodyIdx: number[] = [];
-  const bodyLabels: number[] = [];
-  const parts: LabeledMesh[] = [];
+  const bodyOrigin: number[] = [];
+  const parts: SplitMesh[] = [];
 
   for (const island of islands) {
     for (const t of island.tris) inIsland[t] = 1;
     const partIdx: number[] = [];
-    const partLabels: number[] = [];
+    const partOrigin: number[] = [];
     for (const t of island.tris) {
       partIdx.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
-      partLabels.push(mesh.labels[t]);
+      partOrigin.push(t);
     }
     for (const loop of island.loops) {
       const cap = triangulateLoop(mesh.positions, loop, projection?.(island));
       for (let i = 0; i < cap.length; i += 3) {
         partIdx.push(cap[i], cap[i + 1], cap[i + 2]);
-        partLabels.push(slot);
+        partOrigin.push(CUT_FACE_ID);
         bodyIdx.push(cap[i], cap[i + 2], cap[i + 1]);
-        bodyLabels.push(BASE_SLOT);
+        bodyOrigin.push(CUT_FACE_ID);
       }
     }
-    parts.push(compact(mesh.positions, partIdx, partLabels));
+    parts.push(compact(mesh.positions, partIdx, partOrigin));
   }
   for (let t = 0; t < triCount; t++) {
     if (inIsland[t]) continue;
     bodyIdx.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
-    bodyLabels.push(mesh.labels[t]);
+    bodyOrigin.push(t);
   }
-  return { body: compact(mesh.positions, bodyIdx, bodyLabels), parts };
+  return { body: compact(mesh.positions, bodyIdx, bodyOrigin), parts };
 }
 
-function compact(positions: Float32Array, idx: number[], labels: number[]): LabeledMesh {
+function compact(positions: Float32Array, idx: number[], origin: number[]): SplitMesh {
   const tmp: MeshData = { positions, indices: Uint32Array.from(idx) };
-  const all = new Uint32Array(labels.length);
+  const all = new Uint32Array(origin.length);
   for (let i = 0; i < all.length; i++) all[i] = i;
   const { mesh } = extractTriangles(tmp, all);
-  return { ...mesh, labels: Uint16Array.from(labels) };
+  return { ...mesh, origin: Uint32Array.from(origin) };
 }
 
 /**
@@ -642,7 +668,11 @@ function manifoldMesh(man: Manifold): MeshData {
 }
 
 /** Kesim yapmadan tapa hacimlerini, kapakları ve pimleri döndürür (C1 önizleme). */
-export function previewCut(mesh: LabeledMesh, opts: CutOptions): CutPreview {
+export function previewCut(mesh: LabeledMesh, opts: CutOptions, model?: ModelProvider): CutPreview {
+  return withModel(model, () => previewCutImpl(mesh, opts));
+}
+
+function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
   const scope = new Scope();
   const warnings: string[] = [];
   try {
@@ -659,7 +689,7 @@ export function previewCut(mesh: LabeledMesh, opts: CutOptions): CutPreview {
     };
     const minWall = opts.minWall ?? 0;
     let model: Manifold | null = null;
-    const modelM = () => (model ??= scope.keep(toManifold(mesh, mesh.labels)));
+    const modelM = () => (model ??= modelOf(mesh, scope));
 
     if (opts.mode === 'socket' && !useSweepSocket(mesh, islands, opts)) {
       // çıkıntı yöntemi: kesim kapakları ve gövdeye giren tapa prizmaları
@@ -705,10 +735,10 @@ export function previewCut(mesh: LabeledMesh, opts: CutOptions): CutPreview {
         let split: { body: Manifold; parts: Manifold[] } | null = null;
         const splitM = () => {
           if (!split) {
-            const sp = capSplit(mesh, islands, opts.slot);
+            const sp = capSplit(mesh, islands);
             split = {
-              body: scope.keep(toManifold(sp.body, sp.body.labels)),
-              parts: sp.parts.map((p) => scope.keep(toManifold(p, p.labels))),
+              body: scope.keep(toManifold(sp.body, sp.body.origin)),
+              parts: sp.parts.map((p) => scope.keep(toManifold(p, p.origin))),
             };
           }
           return split;
@@ -760,19 +790,23 @@ function range(n: number): Uint32Array {
 }
 
 /** Seçili slotun bölgelerini parçadan ayırır. */
-export function cutRegion(mesh: LabeledMesh, opts: CutOptions): CutResult {
+export function cutRegion(mesh: LabeledMesh, opts: CutOptions, model?: ModelProvider): CutResult {
+  return withModel(model, () => cutRegionImpl(mesh, opts));
+}
+
+function cutRegionImpl(mesh: LabeledMesh, opts: CutOptions): CutResult {
   const scope = new Scope();
   const warnings: string[] = [];
   try {
     const islands = findIslands(mesh, opts.slot, warnings);
     if (opts.mode === 'socket') return socketCut(mesh, islands, opts, scope, warnings);
 
-    const split = capSplit(mesh, islands, opts.slot);
+    const split = capSplit(mesh, islands);
     let body: Manifold;
     let parts: Manifold[];
     try {
-      body = scope.keep(toManifold(split.body, split.body.labels));
-      parts = split.parts.map((p) => scope.keep(toManifold(p, p.labels)));
+      body = scope.keep(toManifold(split.body, split.body.origin));
+      parts = split.parts.map((p) => scope.keep(toManifold(p, p.origin)));
     } catch (e) {
       if (e instanceof KernelError) {
         throw new CutError(
@@ -799,8 +833,8 @@ export function cutRegion(mesh: LabeledMesh, opts: CutOptions): CutResult {
       }
     }
     return {
-      body: fromManifold(body, BASE_SLOT),
-      parts: parts.map((p) => partFrom(p, opts.slot)),
+      body: fromManifoldMapped(body, mesh.labels, BASE_SLOT),
+      parts: parts.map((p) => partFrom(p, mesh.labels, opts.slot)),
       warnings,
     };
   } finally {
@@ -885,31 +919,31 @@ function capSocketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, sc
 
 function capSocketCutWith(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, projection: Projection): CutResult {
   const warnings: string[] = [];
-  const split = capSplit(mesh, islands, opts.slot, projection);
-  const bodyBase = scope.keep(toManifold(split.body, split.body.labels));
+  const split = capSplit(mesh, islands, projection);
+  const bodyBase = scope.keep(toManifold(split.body, split.body.origin));
   // gövdeye giren kısım orijinal modelden alınır: kapağın üstüne de biraz taşar,
   // çıkıntıyla çakışan yüzey yerine hacim olarak üst üste biner
-  const model = scope.keep(toManifold(mesh, mesh.labels));
+  const model = modelOf(mesh, scope);
   const eps = Math.max(1, 4 * opts.clearance);
   const parts: LabeledMesh[] = [];
   const holes: Manifold[] = [];
   islands.forEach((island, i) => {
-    let part = scope.keep(toManifold(split.parts[i], split.parts[i].labels));
+    let part = scope.keep(toManifold(split.parts[i], split.parts[i].origin));
     for (const { mesh: volMesh, dir } of capPlugVolumes(mesh.positions, island, opts.depth, eps, projection, opts.squeeze)) {
       const vol = scope.keep(toManifold(volMesh, CUT_FACE_ID));
       part = scope.keep(part.add(scope.keep(vol.intersect(model))));
       holes.push(growVolume(vol, dir, opts.clearance, scope));
     }
     if (part.volume() <= 0) throw new CutError('Tapa hacmi boş çıktı.');
-    parts.push(partFrom(part, opts.slot));
+    parts.push(partFrom(part, mesh.labels, opts.slot));
   });
   const allHoles = holes.length === 1 ? holes[0] : scope.keep(kernel().Manifold.union(holes));
   const body = scope.keep(bodyBase.subtract(allHoles));
-  return { body: fromManifold(body, BASE_SLOT), parts, warnings };
+  return { body: fromManifoldMapped(body, mesh.labels, BASE_SLOT), parts, warnings };
 }
 
 function sweepSocketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, warnings: string[]): CutResult {
-  const model = scope.keep(toManifold(mesh, mesh.labels));
+  const model = modelOf(mesh, scope);
   const eps = Math.max(0.5, 4 * opts.clearance);
   const parts: LabeledMesh[] = [];
   const holes: Manifold[] = [];
@@ -920,18 +954,18 @@ function sweepSocketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, 
       warnings.push('Bir bölge için tapa boş çıktı; atlandı.');
       continue;
     }
-    parts.push(partFrom(part, opts.slot));
+    parts.push(partFrom(part, mesh.labels, opts.slot));
     holes.push(growVolume(vol, socketDirection(island, opts), opts.clearance, scope));
   }
   if (!parts.length) throw new CutError('Hiç tapa üretilemedi.');
   const allHoles = holes.length === 1 ? holes[0] : scope.keep(kernel().Manifold.union(holes));
   const body = scope.keep(model.subtract(allHoles));
-  return { body: fromManifold(body, BASE_SLOT), parts, warnings };
+  return { body: fromManifoldMapped(body, mesh.labels, BASE_SLOT), parts, warnings };
 }
 
 /** Kesilen parçadaki taban etiketli yüzler parçanın slotunu alır; başka slotlar korunur. */
-function partFrom(man: Manifold, slot: number): LabeledMesh {
-  const m = fromManifold(man, slot);
+function partFrom(man: Manifold, labels: Uint16Array, slot: number): LabeledMesh {
+  const m = fromManifoldMapped(man, labels, slot);
   for (let t = 0; t < m.labels.length; t++) if (m.labels[t] === BASE_SLOT) m.labels[t] = slot;
   return m;
 }

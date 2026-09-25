@@ -22,10 +22,11 @@ export function kernel(): ManifoldToplevel {
 }
 
 /**
- * Kesim sırasında oluşan yeni yüzlerin geçici etiketi. 0xffffffff kullanılamaz:
- * manifold onu "faceID yok" sayıp kendi yüz numaralarını yazıyor.
+ * Kesim sırasında oluşan yeni yüzlerin faceID'si. 0xffffffff kullanılamaz:
+ * manifold onu "faceID yok" sayıp kendi yüz numaralarını yazıyor. Etiket
+ * (≤ 0xffff) ve üçgen numarasıyla çakışmayacak kadar büyük.
  */
-export const CUT_FACE_ID = 0xfffe;
+export const CUT_FACE_ID = 0x7ffffffe;
 
 export class KernelError extends Error {}
 
@@ -77,6 +78,33 @@ export function fromManifold(man: Manifold, cutLabel: number): LabeledMesh {
     labels[t] = id === CUT_FACE_ID || id > 0xffff ? cutLabel : id;
   }
   return { positions, indices, labels };
+}
+
+/**
+ * Manifold'dan etiketli mesh'e döner; faceID orijinal mesh'in üçgen numarasıdır,
+ * etiket `labels`'tan okunur. CUT_FACE_ID olan yüzler `cutLabel` alır.
+ * (Manifold etiketlerden bağımsız kurulduğu için boyama değişse de yeniden kullanılabilir.)
+ */
+export function fromManifoldMapped(man: Manifold, labels: Uint16Array, cutLabel: number): LabeledMesh {
+  const mesh = man.getMesh();
+  const positions =
+    mesh.numProp === 3 ? new Float32Array(mesh.vertProperties) : stripProps(mesh.vertProperties, mesh.numProp);
+  const indices = new Uint32Array(mesh.triVerts);
+  const triCount = indices.length / 3;
+  const out = new Uint16Array(triCount);
+  const faceID = mesh.faceID;
+  for (let t = 0; t < triCount; t++) {
+    const id = faceID && faceID.length === triCount ? faceID[t] : CUT_FACE_ID;
+    out[t] = id < labels.length ? labels[id] : cutLabel;
+  }
+  return { positions, indices, labels: out };
+}
+
+/** Yüz kimliği = üçgen numarası olan model manifold'u (etiketler sonra eşlenir). */
+export function modelManifold(mesh: MeshData): Manifold {
+  const ids = new Uint32Array(mesh.indices.length / 3);
+  for (let t = 0; t < ids.length; t++) ids[t] = t;
+  return toManifold(mesh, ids);
 }
 
 function stripProps(props: Float32Array, numProp: number): Float32Array {

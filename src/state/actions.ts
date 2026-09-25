@@ -485,6 +485,7 @@ export function endSmoothStroke(): void {
   for (let t = 0; t < lab0.length; t++) if (lab0[t] !== mesh.labels[t]) tris.push(t);
   refreshGeometry(mesh);
   onGeometryChanged?.(partId, null);
+  if (verts.length) bumpGeometry(mesh);
   if (!verts.length && !tris.length) return;
   const pick = (src: Float32Array) => {
     const out = new Float32Array(verts.length * 3);
@@ -544,6 +545,26 @@ function cutOptions(): CutOptions {
   };
 }
 
+/**
+ * Geometri anahtarı: mesh nesnesi + konum sürümü. Worker aynı anahtarda
+ * modelin manifold'unu yeniden kullanır. Konumlar yerinde değişince
+ * (yumuşatma fırçası, geri alma) sürüm artar.
+ */
+const meshIds = new WeakMap<LabeledMesh, number>();
+const geomVersions = new WeakMap<LabeledMesh, number>();
+let meshCounter = 0;
+function geomKey(mesh: LabeledMesh): string {
+  let id = meshIds.get(mesh);
+  if (id === undefined) {
+    id = ++meshCounter;
+    meshIds.set(mesh, id);
+  }
+  return `${id}:${geomVersions.get(mesh) ?? 0}`;
+}
+function bumpGeometry(mesh: LabeledMesh): void {
+  geomVersions.set(mesh, (geomVersions.get(mesh) ?? 0) + 1);
+}
+
 function cutTarget(): Part | null {
   const part = selectedPart();
   if (!part) {
@@ -562,7 +583,7 @@ export async function togglePreview(): Promise<void> {
   const part = cutTarget();
   if (!part) return;
   await busy('Önizleme hazırlanıyor…', async () => {
-    const p = await geometry.preview(part.mesh, cutOptions());
+    const p = await geometry.preview(part.mesh, cutOptions(), geomKey(part.mesh));
     for (const w of p.warnings) notify('warn', w);
     set({ preview: p });
   });
@@ -573,7 +594,7 @@ export async function runCut(): Promise<void> {
   if (!part) return;
   const opts = cutOptions();
   await busy('Kesiliyor…', async () => {
-    const r = await geometry.cut(part.mesh, opts);
+    const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh));
     for (const w of r.warnings) notify('warn', w);
     const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Slot ${opts.slot}`;
     const newParts: Part[] = [
@@ -687,6 +708,7 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
     const pos = reverse ? entry.posBefore : entry.posAfter;
     const lab = reverse ? entry.labelsBefore : entry.labelsAfter;
     entry.verts.forEach((v, i) => entry.mesh.positions.set(pos.subarray(3 * i, 3 * i + 3), 3 * v));
+    if (entry.verts.length) bumpGeometry(entry.mesh);
     entry.tris.forEach((t, i) => {
       entry.mesh.labels[t] = lab[i];
     });

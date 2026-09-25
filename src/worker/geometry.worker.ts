@@ -1,7 +1,8 @@
 import * as Comlink from 'comlink';
 import wasmUrl from 'manifold-3d/manifold.wasm?url';
 import { type CutOptions, cutRegion, previewCut, splitComponents } from '../core/cut';
-import { fromManifold, initKernel, KernelError, toManifold } from '../core/kernel';
+import type { Manifold } from 'manifold-3d';
+import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from '../core/kernel';
 import { refineMesh } from '../core/refine';
 import { type RepairReport, repairMesh } from '../core/repair';
 import { BASE_SLOT, type LabeledMesh } from '../core/types';
@@ -15,6 +16,25 @@ export interface PreparedMesh {
 }
 
 const ready = initKernel(wasmUrl);
+
+/**
+ * Son kullanılan parçanın manifold'u. Anahtar geometriyi (konumlar) tanımlar;
+ * etiketler manifold'da değil, sonuçta eşlendiği için boyama değişse de geçerli.
+ * 1-2M üçgende her önizleme/kesimde yeniden kurmak ~2 s sürüyordu.
+ */
+let cached: { key: string; man: Manifold } | null = null;
+
+function modelProvider(mesh: LabeledMesh, key?: string) {
+  if (!key) return undefined;
+  return () => {
+    if (cached?.key !== key) {
+      cached?.man.delete();
+      cached = null;
+      cached = { key, man: modelManifold(mesh) };
+    }
+    return cached.man;
+  };
+}
 
 function buffersOf(meshes: LabeledMesh[]): ArrayBuffer[] {
   return meshes.flatMap((m) => [m.positions.buffer, m.indices.buffer, m.labels.buffer] as ArrayBuffer[]);
@@ -44,15 +64,15 @@ const api = {
     return Comlink.transfer(result, buffersOf([result.mesh]));
   },
 
-  async cut(mesh: LabeledMesh, opts: CutOptions) {
+  async cut(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {
     await ready;
-    const r = cutRegion(mesh, opts);
+    const r = cutRegion(mesh, opts, modelProvider(mesh, geomKey));
     return Comlink.transfer(r, buffersOf([r.body, ...r.parts]));
   },
 
-  async preview(mesh: LabeledMesh, opts: CutOptions) {
+  async preview(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {
     await ready;
-    return previewCut(mesh, opts);
+    return previewCut(mesh, opts, modelProvider(mesh, geomKey));
   },
 
   async refine(mesh: LabeledMesh, edgeLength: number) {

@@ -15,7 +15,18 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 → Socket (göz, kaş) veya Keys (kol, kafa) → Kes → yeni parçada sonraki bölge → Dışa aktar
 ```
 
-## Şimdiki sprint — Sprint 1: ana akışın kalitesi
+## Sprint 2 — önerilen (sırayla)
+
+| # | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| X14 | Smart Fill ölçeğini tıklanan özelliğin boyutuna göre otomatik seçme (kulak 3 mm, göz 1.3 mm istedi) | Tek varsayılan her özellikte tutmuyor; kullanıcı ayarla uğraşmasın | [ ] |
+| A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da renkleriyle, ayrı filamentle açılsın | [ ] |
+| X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [ ] |
+| X6 | Pim/tapa duvar kalınlığı kontrolü, ince yeri önizlemede kırmızı gösterme | Baskıda kırılma riski | [ ] |
+| X7 | 1–2M üçgen performansı (yükleme, komşuluk, BVH) | testa.stl 275k'da yükleme ~1 s; 2M'de 7–8 s beklenir | [ ] |
+| X8 | Playwright smoke testi: yükle → Smart Fill → Socket → dışa aktar | Arayüz regresyonları elle yakalanıyor | [ ] |
+
+## Sprint 1 — ana akışın kalitesi (bitti)
 
 | # | İş | Durum |
 | --- | --- | --- |
@@ -98,7 +109,6 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X7 | 1–2M üçgen performansı: komşuluk ve kaynaştırma için Map yerine sıralama tabanlı yapı | Büyük modellerde yavaşlık |
 | X8 | Playwright smoke testi | Arayüz regresyonları |
 | X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği |
-| X14 | Smart Fill ölçeği/açısı için model başına otomatik ayar önerisi | Farklı yoğunluktaki modellerde tek varsayılan yetmeyebilir |
 
 ## Tamamlananlar günlüğü
 
@@ -114,3 +124,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | C5: Socket squeeze | `77b165f` |
 | 2026-09-25 | X3: pim düzenleme | `7d8acdc` |
 | 2026-09-25 | A4: proje kaydetme / açma | `1aad440` |
+| 2026-09-25 | C4: Socket yönü | `29d25ba` |

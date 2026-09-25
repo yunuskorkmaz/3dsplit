@@ -79,6 +79,8 @@ type HistoryData =
   // boyama kaydı parça kimliğine değil mesh nesnesine bağlı: inceltme/kesim mesh'i değiştirse de kayıt kendi mesh'ine yazar
   | { kind: 'paint'; mesh: LabeledMesh; tris: Uint32Array; before: Uint16Array; after: Uint16Array }
   | { kind: 'parts'; before: Part[]; after: Part[] }
+  // Keys pimleri (ekleme, silme, taşıma, döndürme, boyut)
+  | { kind: 'pins'; before: PinPlacement[]; after: PinPlacement[] }
   // X34/X30: üçgen bölme mesh üzerinde yerinde; sadece fark saklanır (tam kopya belleği doldururdu)
   | { kind: 'split'; mesh: LabeledMesh; diff: SplitDiff }
   // yumuşatma fırçası: mesh yerinde değişir, sadece değişen köşe ve üçgenler saklanır
@@ -93,7 +95,8 @@ type HistoryData =
       labelsAfter: Uint16Array;
     };
 
-export type HistoryEntry = HistoryData & { label?: string };
+/** `time`: kaydın son güncellendiği an (art arda gelen aynı adlı pim değişiklikleri birleşir). */
+export type HistoryEntry = HistoryData & { label?: string; time?: number };
 
 const DEFAULT_COLORS = [
   '#b0b0b0',
@@ -309,5 +312,6 @@ export function historyLabel(e: HistoryEntry): string {
   if (e.kind === 'paint') return 'Boyama';
   if (e.kind === 'geometry') return 'Yumuşatma';
   if (e.kind === 'split') return 'Üçgen bölme';
+  if (e.kind === 'pins') return 'Pim';
   return 'Parça değişikliği';
 }

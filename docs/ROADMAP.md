@@ -42,6 +42,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X49 | Geçmiş zaman çizelgesi: adlandırılmış adımlar, tıklanan adıma gitme | Kullanıcı istedi | [x] |
 | X50 | Kesim paneli sadeleştirme: pim şekli düğmelerle, yerleşim tek satır (otomatik / elle yerleştir / otomatiğe dön), tolerans sadece hazır ayarlar; sayısal ince ayarlar "Gelişmiş ayarlar" altında | Kullanıcı: pim arayüzü kafa karıştırıyor | [x] |
 | X51 | Pim düzenleme (Fusion 360 benzeri): pimler gerçek boyutta yarı saydam; seçili pimde taşı (W, kesim düzleminde) / döndür (R) tutamağı, sürüklerken anlık; pime ekranda tıklayarak seçme, seçiliyken boşluğa tıklama seçimi bırakır; otomatik pime tıklayınca elle düzenlemeye geçer | Kullanıcı: yön/konum ayarı zor, tıklayınca yeni pim ekleniyor | [x] |
+| X52 | Pim değişiklikleri geçmişte: ekle, sil, taşı, döndür, boyut, gövde payı, otomatiğe dön ayrı adımlar; sürükleme ve sayı kaydırma art arda (1 s içinde) tek adımda birleşir; Ctrl+Z ile geri alınır | Kullanıcı istedi | [x] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 

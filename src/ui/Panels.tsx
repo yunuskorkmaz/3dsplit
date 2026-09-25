@@ -5,6 +5,7 @@ import {
   addSlot,
   autoSuggestFeatures,
   clearActiveSlot,
+  clearPins,
   deletePart,
   makeToleranceCoupon,
   refineSelected,
@@ -480,7 +481,7 @@ export function CutPanel() {
                 {tool === 'pin' ? 'Yerleştirmeyi bitir' : 'Elle yerleştir'}
               </button>
               {pinCount > 0 && (
-                <button type="button" onClick={() => set({ pins: [], selectedPin: -1 })}>
+                <button type="button" onClick={clearPins}>
                   Otomatiğe dön
                 </button>
               )}

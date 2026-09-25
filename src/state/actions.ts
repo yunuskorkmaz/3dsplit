@@ -951,9 +951,17 @@ export function pinClick(index: number, point: Vec3, shift: boolean): number {
   if (index >= 0) {
     if (!pins.length) {
       // otomatik pimler: yerlerinde elle pime dönüşür (boyut otomatik kalır)
-      set({ pins: layout.map((l) => ({ point: l.surface })), selectedPin: index });
-      if (shift) removePin(index);
-      return shift ? -1 : index;
+      const manual = layout.map((l) => ({ point: l.surface }));
+      if (shift) {
+        commitPins(
+          manual.filter((_, i) => i !== index),
+          'Pim sil',
+          -1,
+        );
+        return -1;
+      }
+      commitPins(manual, 'Pimleri elle düzenle', index);
+      return index;
     }
     if (shift) {
       removePin(index);
@@ -967,7 +975,7 @@ export function pinClick(index: number, point: Vec3, shift: boolean): number {
     set({ selectedPin: -1 });
     return -1;
   }
-  set({ pins: [...pins, { point }], selectedPin: pins.length });
+  commitPins([...pins, { point }], 'Pim ekle', pins.length);
   return -1;
 }
 
@@ -976,17 +984,55 @@ export function commitPinHandle(point: Vec3, axis: Vec3): void {
   const i = get().selectedPin;
   if (i < 0) return;
   const mode = get().pinGizmo;
-  updatePin(i, mode === 'translate' ? { point } : { axis });
+  updatePin(
+    i,
+    mode === 'translate' ? { point } : { axis },
+    mode === 'translate' ? 'Pim taşı' : 'Pim döndür',
+  );
 }
 
-export function updatePin(index: number, patch: Partial<PinPlacement>): void {
-  set((s) => ({
-    pins: s.pins.map((p, i) => (i === index ? { ...p, ...patch } : p)),
-  }));
+/**
+ * Pim listesini değiştirir ve geçmişe yazar. Aynı adlı değişiklikler art
+ * arda (1 s içinde) gelirse tek adımda birleşir: sürükleme ya da sayı
+ * alanında kaydırma geçmişi yüzlerce adımla doldurmaz.
+ */
+export function commitPins(next: PinPlacement[], label: string, selected?: number): void {
+  const { pins: before, undoStack, redoStack } = get();
+  if (next === before) return;
+  set(selected === undefined ? { pins: next } : { pins: next, selectedPin: selected });
+  const last = undoStack[undoStack.length - 1];
+  const now = Date.now();
+  if (
+    last?.kind === 'pins' &&
+    last.label === label &&
+    !redoStack.length &&
+    now - (last.time ?? 0) < 1000
+  ) {
+    const merged = { ...last, after: next, time: now };
+    set({ undoStack: [...undoStack.slice(0, -1), merged] });
+    return;
+  }
+  pushHistory({ kind: 'pins', before, after: next, time: now }, label);
+}
+
+export function updatePin(index: number, patch: Partial<PinPlacement>, label = 'Pim ayarı'): void {
+  commitPins(
+    get().pins.map((p, i) => (i === index ? { ...p, ...patch } : p)),
+    label,
+  );
 }
 
 export function removePin(index: number): void {
-  set((s) => ({ pins: s.pins.filter((_, i) => i !== index), selectedPin: -1 }));
+  commitPins(
+    get().pins.filter((_, i) => i !== index),
+    'Pim sil',
+    -1,
+  );
+}
+
+/** Elle konan pimleri siler, otomatik yerleşime döner. */
+export function clearPins(): void {
+  if (get().pins.length) commitPins([], 'Otomatiğe dön', -1);
 }
 
 // ---------- otomatik öneri (B9) ----------
@@ -1623,6 +1669,8 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
     const part = get().parts.find((p) => p.mesh === entry.mesh);
     if (part) onLabelsChanged?.(part.id, entry.tris);
     set((s) => ({ paintVersion: s.paintVersion + 1 }));
+  } else if (entry.kind === 'pins') {
+    set({ pins: reverse ? entry.before : entry.after, selectedPin: -1 });
   } else if (entry.kind === 'split') {
     if (reverse) replaceMeshArrays(entry.mesh, revertSplit(entry.mesh, entry.diff));
     else replaceMeshArrays(entry.mesh, applySplit(entry.mesh, entry.diff), entry.diff);

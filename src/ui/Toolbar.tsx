@@ -292,7 +292,13 @@ export function ToolOptions() {
             cut.pinAuto && (
               <button
                 type="button"
-                onClick={() => updatePin(selectedPin, { radius: undefined, length: undefined })}
+                onClick={() =>
+                  updatePin(
+                    selectedPin,
+                    { radius: undefined, length: undefined },
+                    'Pim boyutu otomatik',
+                  )
+                }
                 title="Bu pimin boyutu yeniden kesitten hesaplansın"
               >
                 Otomatiğe dön
@@ -307,7 +313,7 @@ export function ToolOptions() {
             step={0.1}
             unit="mm"
             log
-            onChange={(v) => updatePin(selectedPin, { radius: v })}
+            onChange={(v) => updatePin(selectedPin, { radius: v }, 'Pim yarıçapı')}
           />
           <NumberField
             label="Boy"
@@ -317,7 +323,7 @@ export function ToolOptions() {
             step={0.5}
             unit="mm"
             log
-            onChange={(v) => updatePin(selectedPin, { length: v })}
+            onChange={(v) => updatePin(selectedPin, { length: v }, 'Pim boyu')}
           />
           <NumberField
             label="Gövdede"
@@ -327,12 +333,12 @@ export function ToolOptions() {
             step={5}
             unit="%"
             title="Bu pimin gövde tarafında kalan payı (önizleme açıksa hemen görünür)"
-            onChange={(v) => updatePin(selectedPin, { bodyRatio: v / 100 })}
+            onChange={(v) => updatePin(selectedPin, { bodyRatio: v / 100 }, 'Pim gövde payı')}
           />
           <button
             type="button"
             disabled={!pin.axis}
-            onClick={() => updatePin(selectedPin, { axis: undefined })}
+            onClick={() => updatePin(selectedPin, { axis: undefined }, 'Pim eksenini sıfırla')}
             title="Ekseni kesim yüzeyine dik yap"
           >
             Ekseni sıfırla

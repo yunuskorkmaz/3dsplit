@@ -118,7 +118,7 @@ export function ViewportHost() {
         cursor(hit);
         if (drag === 'pin' && hit) {
           const i = draggingPin;
-          updatePin(i, { point: hit.point });
+          updatePin(i, { point: hit.point }, 'Pim taşı');
           return;
         }
         // darbe başladığı parçada kalır

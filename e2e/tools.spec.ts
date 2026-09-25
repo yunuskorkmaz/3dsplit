@@ -81,6 +81,13 @@ test('X36 çizgi aracı, X35 deneme parçası, X27 ayrık görünüm', async ({ 
   expect((await state(page)).selectedPin).toBe(-1);
   await page.mouse.click(empty.x, empty.y);
   expect((await state(page)).pins.length).toBe(2);
+  // pim değişiklikleri geçmişte: son adım "Pim ekle", geri alınca tek pim kalır, yineleyince geri gelir
+  const labels = (await state(page)).undoStack.map((e: { label?: string }) => e.label);
+  expect(labels.slice(-2)).toEqual(['Pimleri elle düzenle', 'Pim ekle']);
+  await page.keyboard.press('ControlOrMeta+z');
+  expect((await state(page)).pins.length).toBe(1);
+  await page.keyboard.press('ControlOrMeta+Shift+z');
+  expect((await state(page)).pins.length).toBe(2);
   await page.keyboard.press('r');
   expect((await state(page)).pinGizmo).toBe('rotate');
   await page.keyboard.press('w');

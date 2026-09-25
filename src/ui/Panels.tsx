@@ -14,6 +14,7 @@ import {
   renamePart,
   runCut,
   saveProject,
+  smoothActiveRegion,
   setSocketDirection,
   selectPart,
   setSmartAngle,
@@ -160,6 +161,8 @@ export function ToolPanel() {
   const smartAngle = useStore((s) => s.smartAngle);
   const smartScale = useStore((s) => s.smartScale);
   const smartConcave = useStore((s) => s.smartConcave);
+  const smartValley = useStore((s) => s.smartValley);
+  const smoothRadius = useStore((s) => s.smoothRadius);
   useStore((s) => s.selectedPartId);
   const auto = autoSmartScale();
   const gapArea = useStore((s) => s.gapArea);
@@ -190,6 +193,10 @@ export function ToolPanel() {
               <input type="checkbox" checked={smartConcave} onChange={(e) => setSmartOptions({ smartConcave: e.target.checked })} />
               <span>Sadece çukur kenarda dur</span>
             </label>
+            <label className="field">
+              <input type="checkbox" checked={smartValley} onChange={(e) => setSmartOptions({ smartValley: e.target.checked })} />
+              <span>Vadiye oturt (çıkıntının dibine kadar)</span>
+            </label>
             {smartScale > 0 && (
               <button type="button" onClick={() => setSmartOptions({ smartScale: 0 })}>
                 Oto ölçek
@@ -202,7 +209,21 @@ export function ToolPanel() {
       {tool === 'brush' && (
         <NumberField label="Yarıçap" value={brushRadius} min={0.2} max={50} step={0.1} unit="mm" onChange={(v) => set({ brushRadius: v })} />
       )}
-      <p className="hint">Shift: sil · Shift+sağ sürükle: eşik · Alt+sol: döndür · [ ]: fırça boyu</p>
+      <p className="hint">Shift: sil · Sağ sürükle: döndür · Orta / Ctrl+sağ: kaydır · Shift+sağ sürükle: eşik · [ ]: fırça boyu</p>
+      <div className="row">
+        <NumberField
+          label={smoothRadius > 0 ? 'Yumuşatma' : 'Yumuşatma (oto)'}
+          value={smoothRadius > 0 ? smoothRadius : auto / 2}
+          min={0.1}
+          max={10}
+          step={0.1}
+          unit="mm"
+          onChange={(v) => set({ smoothRadius: v })}
+        />
+      </div>
+      <button type="button" onClick={smoothActiveRegion} title="Aktif slotun sınırındaki tırtıkları düzeltir (S)">
+        Sınırı yumuşat
+      </button>
       <div className="row">
         <NumberField label="Gap alanı" value={gapArea} min={0.1} max={200} step={0.1} unit="mm²" onChange={(v) => set({ gapArea: v })} />
       </div>

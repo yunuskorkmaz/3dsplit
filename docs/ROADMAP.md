@@ -15,10 +15,13 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 → Socket (göz, kaş) veya Keys (kol, kafa) → Kes → yeni parçada sonraki bölge → Dışa aktar
 ```
 
-## Sprint 2 — önerilen (sırayla)
+## Sprint 2 — seçim kalitesi ve sonrası (sırayla)
 
 | # | İş | Neden | Durum |
 | --- | --- | --- | --- |
+| X17 | Kamera: sağ sürükle her araçta döndürür, orta / Ctrl+sağ kaydırır | Fırça elindeyken model döndürülemiyordu | [x] |
+| X18 | Vadiye oturtma: Smart Fill sonucu içbükeylik haritası üzerinde işaretleyicili havza ile çıkıntının dibine oturur; eksik seçim genişler, taşan seçim geri çekilir | Kaş gibi çıkıntılarda seçim dibe inmiyordu, kesim alanı garip çıkıyordu | [x] |
+| B6 | Sınırı yumuşat (S): küçük yarıçaplı alan oylaması + sınır köşelerini yüzey boyunca kaydırma; kırıntı ve delik temizliği | Üçgen kenarlarından geçen sınır zikzak yapıyordu | [~] |
 | X14 | Smart Fill ölçeğini tıklanan özelliğin boyutuna göre otomatik seçme (kulak 3 mm, göz 1.3 mm istedi) | Tek varsayılan her özellikte tutmuyor; kullanıcı ayarla uğraşmasın | [ ] |
 | A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da renkleriyle, ayrı filamentle açılsın | [ ] |
 | X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [ ] |
@@ -60,7 +63,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | B3 | Brush | 1 | [x] | Yüzey boyunca yayılır, Shift ile siler, darbe aralıkları doldurulur (X1) |
 | B4 | Bucket Fill | 1 | [x] | |
 | B5 | Gap Fill | 1 | [x] | |
-| B6 | Smooth sınır | 2 | [ ] | Önce X2 (inceltme) + çoğunluk oylaması |
+| B6 | Smooth sınır | 2 | [~] | Oylama + sınır köşesi kaydırma (şekil korunur). Üçgenleri yeni eğri boyunca kesme (tam sürüm) yok |
 | B7 | Arka yüz / X-ray boyama | 3 | [ ] | |
 | B8 | Mirror boyama | 3 | [ ] | |
 | B9 | Auto-paint | 3 | [ ] | |
@@ -96,7 +99,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 
 | # | Özellik | Faz | Durum | Not |
 | --- | --- | --- | --- | --- |
-| E1 | Kamera modları | 1 | [~] | Orbit, Alt ile döndürme var. Blender tarzı / ters zoom yok |
+| E1 | Kamera modları | 1 | [~] | Sağ sürükle döndür, orta/Ctrl+sağ kaydır, Alt+sol döndür (X17). Blender tarzı / ters zoom yok |
 | E2 | Özelleştirilebilir kısayollar | 3 | [~] | Sabit kısayollar var (F, B, G, 0–9, Space, [ ]) |
 
 ## Sonraki sprintler için bekleyen ek işler
@@ -125,3 +128,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X3: pim düzenleme | `7d8acdc` |
 | 2026-09-25 | A4: proje kaydetme / açma | `1aad440` |
 | 2026-09-25 | C4: Socket yönü | `29d25ba` |
+| 2026-09-25 | Sprint 1 kapanışı | `eeea091` |

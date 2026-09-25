@@ -51,6 +51,10 @@ Büyütme (clearance): `V`'nin yana 8 yönde ve `−d` yönünde clearance kadar
 
 Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan atasının normaliyle karşılaştırılır; komşu üçgen karşılaştırması yoğun mesh'te kıvrım birçok üçgene yayıldığı için eşiği hiç aşmıyor. "Sadece çukur kenarda dur" modunda eşiği aşan kıvrım, yerel kenar içbükeyse durdurur; tümsek tepelerinden geçilir (göz, kaş, burun gibi çıkıntılar tek tıkla seçilir). Ölçek varsayılanı ortalama kenar × 3. Sonuçtaki küçük, aynı etiketli delikler kapatılır.
 
+**Vadiye oturtma.** Üçgen başına içbükeylik (köşe Laplace vektörünün normal bileşeni, ölçek kadar difüzyonla yumuşatılmış; pozitif = çukur) hesaplanır. Smart Fill sonucunun sınırından `2 × ölçek` içindeki üçgenler belirsiz sayılır; seçimin derini ve dışarının uzağı işaretleyicidir. İki havza içbükeylik değerine göre düşükten yükseğe taşar ve vadi çizgisinde (içbükeyliğin en yüksek olduğu yerde) buluşur. Sonra sadece tıklanan noktanın bağlı olduğu parça tutulur.
+
+**Sınırı yumuşat (B6).** Önce küçük yarıçaplı (ortalama kenar × 1.5) alan oylaması tek üçgenlik diken/çentikleri alır, kırıntılar ve delikler temizlenir. Sonra bölge sınırındaki köşeler, sınırdaki iki komşusunun ortasına doğru teğet düzlemde kaydırılır (6 adım; üçgeni ters çeviren hareket geri alınır, üç bölgenin buluştuğu köşeler sabit). Mesh konumları değiştiği için parça yeni mesh ile değiştirilir.
+
 ## Onarım (`src/core/repair.ts`)
 
 Köşe kaynaştırma → dejenere ve tekrarlı üçgen silme → yönelimi BFS ile eşitleme, bileşeni dışa baktırma → açık halkaları merkezden yelpazeyle kapama → manifold doğrulaması. Doğrulamadan geçmeyen parça `!` rozetiyle işaretlenir; boyanabilir ama kesim başarısız olabilir.

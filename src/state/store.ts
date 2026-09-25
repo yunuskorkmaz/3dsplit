@@ -63,6 +63,10 @@ export interface AppState {
   smartScale: number;
   /** Smart Fill sadece içbükey kıvrımlarda dursun (göz, burun gibi çıkıntılar için). */
   smartConcave: boolean;
+  /** Smart Fill sonucu çıkıntının dibindeki vadi çizgisine oturtulsun. */
+  smartValley: boolean;
+  /** Sınır yumuşatma yarıçapı, mm. 0: otomatik (Smart Fill ölçeği). */
+  smoothRadius: number;
   gapArea: number;
   /** İnceltme hedef kenar uzunluğu, mm. */
   refineEdge: number;
@@ -89,6 +93,8 @@ export const useStore = create<AppState>(() => ({
   smartAngle: 20,
   smartScale: 0,
   smartConcave: true,
+  smartValley: true,
+  smoothRadius: 0,
   gapArea: 5,
   refineEdge: 1,
   cut: {

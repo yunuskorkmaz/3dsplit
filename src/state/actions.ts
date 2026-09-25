@@ -1,5 +1,16 @@
 import type { CutOptions } from '../core/cut';
-import { brushSelect, bucketFill, closeHoles, gapFill, type SmartFillOptions, smartFill } from '../core/paint';
+import {
+  brushSelect,
+  bucketFill,
+  cleanSelection,
+  closeHoles,
+  gapFill,
+  refineToValley,
+  type SmartFillOptions,
+  smartFill,
+  smoothBoundaryVertices,
+  smoothSelection,
+} from '../core/paint';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { downloadBytes, type ExportObject, write3mf, writeStl, writeStlZip } from '../io/exportFile';
 import { importFile } from '../io/importFile';
@@ -17,7 +28,7 @@ import {
   selectedPart,
   set,
 } from './store';
-import { type Topology, topologyOf } from './topologyCache';
+import { concavityOf, type Topology, topologyOf } from './topologyCache';
 
 // ---------- dosya ----------
 
@@ -222,16 +233,30 @@ function smartOptions(topo: Topology): SmartFillOptions {
 }
 
 /**
- * Smart Fill + seçimin içinde kalan küçük deliklerin kapatılması. Sadece
- * seçimin %5'inden küçük ve tohumla aynı etiketli delikler kapanır; başka
- * slota boyanmış yerlerin üzerine yazılmaz.
+ * Smart Fill + vadiye oturtma + seçimin içinde kalan küçük deliklerin
+ * kapatılması. Sadece tohumla aynı etiketli üçgenler eklenir; başka slota
+ * boyanmış yerlerin üzerine yazılmaz.
  */
-function smartSelect(topo: Topology, labels: Uint16Array, seed: number): Uint32Array {
-  const raw = smartFill(topo.adj, topo.normals, topo.centroids, seed, smartOptions(topo));
+function smartSelect(topo: Topology, mesh: LabeledMesh, seed: number): Uint32Array {
+  const labels = mesh.labels;
+  const opts = smartOptions(topo);
   const seedLabel = labels[seed];
-  return Uint32Array.from(
-    closeHoles(topo.adj, topo.areas, raw, { maxHoleFraction: 0.05, accept: (t) => labels[t] === seedLabel }).tris,
-  );
+  const same = (t: number) => labels[t] === seedLabel;
+  let tris: ArrayLike<number> = smartFill(topo.adj, topo.normals, topo.centroids, seed, opts);
+  if (get().smartValley) {
+    const mask = new Uint8Array(labels.length);
+    for (let i = 0; i < tris.length; i++) mask[tris[i]] = 1;
+    const refined = refineToValley(topo.adj, topo.centroids, concavityOf(mesh, opts.scale), mask, opts.scale * 2);
+    for (let t = 0; t < refined.length; t++) if (refined[t] && !same(t)) refined[t] = 0;
+    // vadi seçimi tohumu dışarıda bırakırsa (ör. düz alana tıklama) ham sonuç kalır
+    if (refined[seed]) {
+      const clean = cleanSelection(topo.adj, topo.areas, refined, { keepSeed: seed, accept: same });
+      const out: number[] = [];
+      for (let t = 0; t < clean.length; t++) if (clean[t]) out.push(t);
+      tris = out;
+    }
+  }
+  return Uint32Array.from(closeHoles(topo.adj, topo.areas, tris, { maxHoleFraction: 0.05, accept: same }).tris);
 }
 
 /** Otomatik ölçekte seçili parçanın kullanacağı değer (arayüzde göstermek için). */
@@ -245,7 +270,7 @@ export function smartFillAt(partId: string, tri: number, erase: boolean): void {
   if (!part) return;
   const topo = topologyOf(part.mesh);
   beginStroke(partId);
-  const tris = smartSelect(topo, part.mesh.labels, tri);
+  const tris = smartSelect(topo, part.mesh, tri);
   applyLabels(part, tris, paintLabel(erase));
   const entry = endStroke();
   lastSmart = entry ? { partId, seed: tri, entry } : null;
@@ -264,7 +289,12 @@ export function setSmartAngle(angle: number): void {
 }
 
 /** Smart Fill ayarı değişti: son Smart Fill yeni ayarla canlı tekrarlanır. */
-export function setSmartOptions(patch: { smartAngle?: number; smartScale?: number; smartConcave?: boolean }): void {
+export function setSmartOptions(patch: {
+  smartAngle?: number;
+  smartScale?: number;
+  smartConcave?: boolean;
+  smartValley?: boolean;
+}): void {
   set(patch);
   const undo = get().undoStack;
   if (!lastSmart || undo[undo.length - 1] !== lastSmart.entry) return;
@@ -276,7 +306,7 @@ export function setSmartOptions(patch: { smartAngle?: number; smartScale?: numbe
   onLabelsChanged?.(part.id, entry.tris);
   const label = entry.after[0];
   const topo = topologyOf(part.mesh);
-  const tris = smartSelect(topo, labels, lastSmart.seed);
+  const tris = smartSelect(topo, part.mesh, lastSmart.seed);
   entry.tris = tris;
   entry.before = Uint16Array.from(tris, (t) => labels[t]);
   for (let i = 0; i < tris.length; i++) labels[tris[i]] = label;
@@ -301,6 +331,63 @@ export function gapFillSelected(): void {
   for (const [label, list] of byLabel) applyLabels(part, list, label);
   endStroke();
   notify('info', `${tris.length} üçgen komşu renge çevrildi.`);
+}
+
+/**
+ * B6: aktif slotun seçili parçadaki sınırını yumuşatır.
+ * 1) Küçük yarıçapla alan oylaması: tek üçgenlik diken ve çentikler gider.
+ * 2) Sınır köşeleri yüzey boyunca kaydırılır: zikzak düz bir çizgiye döner.
+ * Bölgeden çıkan üçgenler komşularındaki en sık diğer etiketi alır; başka
+ * slota boyanmış üçgenler bölgeye katılmaz. Mesh değiştiği için parça yeni
+ * mesh'le değiştirilir (geri alınabilir).
+ */
+export function smoothActiveRegion(): void {
+  const part = selectedPart();
+  if (!part) return notify('warn', 'Önce bir parça seçin.');
+  const slot = get().activeSlot;
+  if (slot === BASE_SLOT) return notify('warn', 'Yumuşatmak için boyalı bir slot seçin.');
+  const topo = topologyOf(part.mesh);
+  const labels = Uint16Array.from(part.mesh.labels);
+  const mask = Uint8Array.from(labels, (l) => (l === slot ? 1 : 0));
+  if (!mask.some((x) => x)) return notify('warn', 'Bu slotta boyalı üçgen yok.');
+  const { smoothRadius } = get();
+  const radius = smoothRadius > 0 ? smoothRadius : topo.meanEdge * 1.5;
+  const accept = (t: number) => labels[t] === BASE_SLOT || labels[t] === slot;
+  // oylama kırıntı ve delik bırakabilir: 1 mm² altı parçalar atılır, küçük delikler kapanır
+  const voted = cleanSelection(topo.adj, topo.areas, smoothSelection(topo.adj, topo.centroids, topo.areas, mask, radius, 1), {
+    minArea: 1,
+    accept,
+  });
+  for (let t = 0; t < labels.length; t++) {
+    if (voted[t] && !mask[t] && labels[t] === BASE_SLOT) labels[t] = slot;
+    else if (!voted[t] && mask[t]) labels[t] = neighborLabel(topo.adj, part.mesh.labels, t, slot);
+  }
+  const positions = smoothBoundaryVertices({ ...part.mesh, labels }, topo.adj, slot);
+  const mesh = { positions, indices: part.mesh.indices, labels };
+  const before = get().parts;
+  const after = before.map((p) => (p.id === part.id ? { ...p, mesh } : p));
+  lastSmart = null;
+  set({ parts: after, preview: null });
+  pushHistory({ kind: 'parts', before, after });
+}
+
+/** `t`'nin komşularında `exclude` dışındaki en sık etiket; yoksa taban. */
+function neighborLabel(adj: Int32Array, labels: Uint16Array, t: number, exclude: number): number {
+  const counts = new Map<number, number>();
+  for (let e = 0; e < 3; e++) {
+    const n = adj[3 * t + e];
+    if (n < 0 || labels[n] === exclude) continue;
+    counts.set(labels[n], (counts.get(labels[n]) ?? 0) + 1);
+  }
+  let best = BASE_SLOT;
+  let bestCount = 0;
+  for (const [l, c] of counts) {
+    if (c > bestCount) {
+      best = l;
+      bestCount = c;
+    }
+  }
+  return best;
 }
 
 // ---------- slotlar ----------

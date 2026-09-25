@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { importFiles, redo, togglePreview, undo } from '../state/actions';
+import { importFiles, redo, smoothActiveRegion, togglePreview, undo } from '../state/actions';
 import { get, set } from '../state/store';
 import { CutPanel, FilePanel, PartsPanel, SlotPanel, StatusBar, ToolPanel } from './Panels';
 import { ViewportHost } from './ViewportHost';
@@ -24,6 +24,7 @@ function useShortcuts() {
       } else if (e.key === 'b' || e.key === 'B') set({ tool: 'brush' });
       else if (e.key === 'f' || e.key === 'F') set({ tool: 'smart' });
       else if (e.key === 'g' || e.key === 'G') set({ tool: 'bucket' });
+      else if (e.key === 's' || e.key === 'S') smoothActiveRegion();
       else if (e.key === '[') set({ brushRadius: Math.max(0.2, get().brushRadius / 1.2) });
       else if (e.key === ']') set({ brushRadius: Math.min(50, get().brushRadius * 1.2) });
       else if (/^[0-9]$/.test(e.key)) {

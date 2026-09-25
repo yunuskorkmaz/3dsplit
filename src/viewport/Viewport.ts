@@ -84,7 +84,9 @@ export class Viewport {
     this.camera.up.set(0, 0, 1);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = false;
-    this.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+    // sol: boşlukta döndür (model üstünde araç), sağ: her yerde döndür,
+    // orta veya Ctrl/Cmd+sağ: kaydır, tekerlek: yakınlaştır
+    this.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
     this.controls.addEventListener('change', () => this.requestRender());
 
     const el = this.renderer.domElement;

@@ -1,5 +1,5 @@
 import { faceCentroids, faceNormalsAndAreas } from '../core/geometry';
-import { meanEdgeLength } from '../core/paint';
+import { meanEdgeLength, triangleConcavity } from '../core/paint';
 import { buildAdjacency } from '../core/topology';
 import type { LabeledMesh } from '../core/types';
 
@@ -22,4 +22,23 @@ export function topologyOf(mesh: LabeledMesh): Topology {
     cache.set(mesh, t);
   }
   return t;
+}
+
+const concavityCache = new WeakMap<LabeledMesh, Map<number, Float32Array>>();
+
+/** Mesh ve ölçek başına içbükeylik haritası (Smart Fill vadiye oturtma için). */
+export function concavityOf(mesh: LabeledMesh, scale: number): Float32Array {
+  let byScale = concavityCache.get(mesh);
+  if (!byScale) {
+    byScale = new Map();
+    concavityCache.set(mesh, byScale);
+  }
+  const key = Math.round(scale * 100) / 100;
+  let c = byScale.get(key);
+  if (!c) {
+    const topo = topologyOf(mesh);
+    c = triangleConcavity(mesh, topo.normals, topo.areas, key);
+    byScale.set(key, c);
+  }
+  return c;
 }

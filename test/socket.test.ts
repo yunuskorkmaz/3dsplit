@@ -53,6 +53,29 @@ describe('çıkıntı socket', () => {
     expect(deep.thin.length).toBe(1);
   });
 
+  it('Link all kapalı: her ada kendi derinliğiyle', async () => {
+    const { Manifold } = kernel();
+    // iki çıkıntı: x=-6 ve x=+6
+    const base = Manifold.cube([30, 20, 20], true);
+    const b1 = Manifold.cube([4, 4, 3], true).translate([-6, 0, 11.5]);
+    const b2 = Manifold.cube([4, 4, 3], true).translate([6, 0, 11.5]);
+    const two = fromManifold(Manifold.union([base, b1, b2]).refineToLength(1), 0);
+    two.labels.fill(0);
+    const c = faceCentroids(two);
+    let leftKey = -1;
+    for (let t = 0; t < two.labels.length; t++) {
+      if (c[3 * t + 2] > 10.001) {
+        two.labels[t] = 1;
+        if (c[3 * t] < 0 && leftKey < 0) leftKey = t; // soldaki adanın en küçük üçgeni
+      }
+    }
+    const r = cutRegion(two, { ...opts, depth: 2, depthByIsland: { [leftKey]: 5 } });
+    const vols = r.parts.map((p) => signedVolume(p)).sort((a, b) => a - b);
+    // çıkıntı 4x4x3=48; tapa 16*2=32 ve 16*5=80
+    expect(vols[0]).toBeCloseTo(48 + 32, 0);
+    expect(vols[1]).toBeCloseTo(48 + 80, 0);
+  });
+
   it('önizleme tapa prizmasını döndürür', () => {
     const p = previewCut(boss, opts);
     expect(p.volumes.length).toBe(1);

@@ -13,6 +13,7 @@ import {
   refineSelected,
   renamePart,
   runCut,
+  activeIslands,
   saveProject,
   setSocketDirection,
   selectPart,
@@ -149,6 +150,8 @@ export function CutPanel() {
   const pinCount = useStore((s) => s.pins.length);
   const directionGizmo = useStore((s) => s.directionGizmo);
   const suggestion = useStore((s) => s.suggestion);
+  useStore((s) => s.paintVersion);
+  const islands = cut.mode === 'socket' ? activeIslands() : [];
   const previewOn = useStore((s) => s.preview !== null);
   const activeSlot = useStore((s) => s.activeSlot);
   const slotName = useStore((s) => s.slots.find((x) => x.id === s.activeSlot)?.name);
@@ -178,6 +181,27 @@ export function CutPanel() {
       {cut.mode === 'socket' && (
         <>
           <NumberField label="Derinlik" value={cut.depth} min={0.4} max={30} step={0.1} unit="mm" onChange={(v) => update({ depth: v })} />
+          {islands.length > 1 && (
+            <label className="field">
+              <input type="checkbox" checked={cut.linkAll} onChange={(e) => update({ linkAll: e.target.checked })} />
+              <span>Link all ({islands.length} bölge aynı ayarla)</span>
+            </label>
+          )}
+          {islands.length > 1 &&
+            !cut.linkAll &&
+            islands.map((isl, i) => (
+              <NumberField
+                key={isl.key}
+                label={`Bölge ${i + 1}`}
+                value={cut.islandDepths[isl.key] ?? cut.depth}
+                min={0.4}
+                max={30}
+                step={0.1}
+                unit="mm"
+                title={`~${isl.area.toFixed(0)} mm² — derinlik`}
+                onChange={(v) => update({ islandDepths: { ...cut.islandDepths, [isl.key]: v } })}
+              />
+            ))}
           <div className="row">
             <span className="label">Yön: {cut.direction ? 'elle' : 'otomatik'}</span>
             <button type="button" className={directionGizmo ? 'active' : ''} onClick={() => set({ directionGizmo: !directionGizmo })} title="Ok üzerindeki gizmo ile döndür">

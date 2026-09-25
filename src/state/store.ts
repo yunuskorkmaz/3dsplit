@@ -31,6 +31,10 @@ export interface CutSettings {
   squeeze: number;
   /** Önizlemede kontrol edilen en az duvar kalınlığı, mm. */
   minWall: number;
+  /** C12: açıkken tüm bölgeler aynı derinlikte; kapalıyken `islandDepths`. */
+  linkAll: boolean;
+  /** Ada anahtarı (en küçük üçgen numarası) -> derinlik. */
+  islandDepths: Record<number, number>;
   /** Socket uzama yönü (dışa doğru); null: otomatik. */
   direction: Vec3 | null;
   pinShape: PinShape;
@@ -131,6 +135,8 @@ export const useStore = create<AppState>(() => ({
     clearance: 0.2,
     squeeze: 0,
     minWall: 0.8,
+    linkAll: true,
+    islandDepths: {},
     direction: null,
     pinShape: 'cylinder',
     pinRadius: 2,

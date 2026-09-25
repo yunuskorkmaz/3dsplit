@@ -30,6 +30,7 @@ import {
 } from './store';
 import { smoothBoundaryAt, smoothRegionBoundary } from '../core/smooth';
 import { boundingBox } from '../core/geometry';
+import { connectedComponents } from '../core/topology';
 import { mirrorPoint } from '../core/spatial';
 import { concavityOf, gridOf, refreshGeometry, type Topology, topologyOf } from './topologyCache';
 
@@ -566,6 +567,46 @@ export function endSmoothStroke(): void {
   set((s) => ({ paintVersion: s.paintVersion + 1 }));
 }
 
+// ---------- bölgeler (C12) ----------
+
+export interface IslandInfo {
+  /** Çekirdekteki ada anahtarıyla aynı: bileşenin en küçük üçgen numarası. */
+  key: number;
+  area: number;
+  center: Vec3;
+}
+
+let islandCache: { mesh: LabeledMesh; slot: number; version: number; list: IslandInfo[] } | null = null;
+
+/** Seçili parçada aktif slotun bölgeleri (1 mm² altı kırıntılar hariç, çekirdekteki gibi). */
+export function activeIslands(): IslandInfo[] {
+  const part = selectedPart();
+  const { activeSlot: slot, paintVersion } = get();
+  if (!part || slot === BASE_SLOT) return [];
+  if (islandCache && islandCache.mesh === part.mesh && islandCache.slot === slot && islandCache.version === paintVersion) {
+    return islandCache.list;
+  }
+  const topo = topologyOf(part.mesh);
+  const mask = Uint8Array.from(part.mesh.labels, (l) => (l === slot ? 1 : 0));
+  const { component, count } = connectedComponents(mask.length, topo.adj, mask);
+  const info = Array.from({ length: count }, () => ({ key: -1, area: 0, c: [0, 0, 0] as Vec3 }));
+  for (let t = 0; t < mask.length; t++) {
+    const k = component[t];
+    if (k < 0) continue;
+    const g = info[k];
+    if (g.key < 0) g.key = t;
+    const a = topo.areas[t];
+    g.area += a;
+    for (let j = 0; j < 3; j++) g.c[j] += topo.centroids[3 * t + j] * a;
+  }
+  const largest = Math.max(0, ...info.map((g) => g.area));
+  const list = info
+    .filter((g) => !(g.area < 1 && g.area < largest * 0.01))
+    .map((g) => ({ key: g.key, area: g.area, center: g.c.map((x) => x / g.area) as Vec3 }));
+  islandCache = { mesh: part.mesh, slot, version: paintVersion, list };
+  return list;
+}
+
 // ---------- pimler ----------
 
 export function updatePin(index: number, patch: Partial<PinPlacement>): void {
@@ -597,6 +638,7 @@ function cutOptions(): CutOptions {
     mode: cut.mode,
     slot: activeSlot,
     depth: cut.mode === 'socket' ? cut.depth : 0,
+    depthByIsland: cut.mode === 'socket' && !cut.linkAll ? cut.islandDepths : undefined,
     clearance: cut.clearance,
     squeeze: cut.mode === 'socket' ? cut.squeeze : 0,
     minWall: cut.minWall,
@@ -720,7 +762,7 @@ export async function runCut(): Promise<void> {
       pins: [],
       selectedPin: -1,
       directionGizmo: false,
-      cut: { ...s.cut, direction: null },
+      cut: { ...s.cut, direction: null, islandDepths: {} },
     }));
     pushHistory({ kind: 'parts', before, after });
     notify('info', `Kesildi: ${newParts.length} yeni parça. Kaynak parça gizlendi (sarı rozet).`);

@@ -1,28 +1,52 @@
 import {
+  autoSmartScale,
+  gapFillSelected,
   lineCancel,
   lineClose,
   lineUndo,
-  autoSmartScale,
-  gapFillSelected,
   mirrorOffset,
   removePin,
-  updatePin,
   setSmartAngle,
   setSmartOptions,
   smoothActiveRegion,
+  updatePin,
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
 import { set, type Tool, useStore } from '../state/store';
 import { NumberField, Toggle } from './fields';
 
 export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: string }[] = [
-  { id: 'smart', icon: '✦', label: 'Smart Fill', key: 'F', hint: 'Tıkla: çıkıntıyı seç. Shift+tık: sil.' },
+  {
+    id: 'smart',
+    icon: '✦',
+    label: 'Smart Fill',
+    key: 'F',
+    hint: 'Tıkla: çıkıntıyı seç. Shift+tık: sil.',
+  },
   { id: 'brush', icon: '●', label: 'Fırça', key: 'B', hint: 'Sürükle: boya. Shift: sil.' },
   { id: 'erase', icon: '◌', label: 'Silgi', key: 'E', hint: 'Sürükle: seçimi sil. Shift: boya.' },
-  { id: 'smooth', icon: '≈', label: 'Yumuşat', key: 'S', hint: 'Sınırın üstünde gezdir: girinti/çıkıntıyı düzeltir.' },
+  {
+    id: 'smooth',
+    icon: '≈',
+    label: 'Yumuşat',
+    key: 'S',
+    hint: 'Sınırın üstünde gezdir: girinti/çıkıntıyı düzeltir.',
+  },
   { id: 'bucket', icon: '▣', label: 'Kova', key: 'G', hint: 'Tıkla: aynı renkli bölgeyi doldur.' },
-  { id: 'line', icon: '✎', label: 'Çizgi', key: 'L', hint: 'Tıkla: nokta ekle. İlk noktaya tıkla ya da Enter: kapat ve boya. Backspace: son nokta, Esc: iptal.' },
-  { id: 'pin', icon: '⊕', label: 'Pim', key: 'P', hint: 'Tıkla: pim ekle/seç. Sürükle: taşı. Gizmo: ekseni döndür. Shift+tık: sil.' },
+  {
+    id: 'line',
+    icon: '✎',
+    label: 'Çizgi',
+    key: 'L',
+    hint: 'Tıkla: nokta ekle. İlk noktaya tıkla ya da Enter: kapat ve boya. Backspace: son nokta, Esc: iptal.',
+  },
+  {
+    id: 'pin',
+    icon: '⊕',
+    label: 'Pim',
+    key: 'P',
+    hint: 'Tıkla: pim ekle/seç. Sürükle: taşı. Gizmo: ekseni döndür. Shift+tık: sil.',
+  },
 ];
 
 /** Viewport'un solundaki dikey araç çubuğu. */
@@ -43,7 +67,12 @@ export function ToolBar({ onFit }: { onFit: () => void }) {
           <span className="key">{keys[`tool.${t.id}`]}</span>
         </button>
       ))}
-      <button type="button" className="fit" onClick={onFit} title={`Görünümü sığdır (${keys.fit} veya boşluğa çift tık) — model kaybolursa geri getirir`}>
+      <button
+        type="button"
+        className="fit"
+        onClick={onFit}
+        title={`Görünümü sığdır (${keys.fit} veya boşluğa çift tık) — model kaybolursa geri getirir`}
+      >
         <span className="icon">⤢</span>
         <span className="key">{keys.fit}</span>
       </button>
@@ -70,7 +99,12 @@ export function ToolOptions() {
   const mirror = useStore((s) => s.mirror);
   const xray = useStore((s) => s.xray);
   useStore((s) => s.parts);
-  const paintTool = tool === 'smart' || tool === 'brush' || tool === 'erase' || tool === 'smooth' || tool === 'bucket';
+  const paintTool =
+    tool === 'smart' ||
+    tool === 'brush' ||
+    tool === 'erase' ||
+    tool === 'smooth' ||
+    tool === 'bucket';
   const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
   useStore((s) => s.selectedPartId);
   const info = TOOLS.find((t) => t.id === tool);
@@ -99,7 +133,16 @@ export function ToolOptions() {
       </span>
       {tool === 'smart' && (
         <>
-          <NumberField label="Açı" value={smartAngle} min={1} max={90} step={1} unit="°" title="Shift+sağ sürükle ile de değişir" onChange={setSmartAngle} />
+          <NumberField
+            label="Açı"
+            value={smartAngle}
+            min={1}
+            max={90}
+            step={1}
+            unit="°"
+            title="Shift+sağ sürükle ile de değişir"
+            onChange={setSmartAngle}
+          />
           <NumberField
             label={smartScale > 0 ? 'Ölçek' : 'Ölçek (oto)'}
             value={smartScale > 0 ? smartScale : autoSmartScale()}
@@ -153,7 +196,11 @@ export function ToolOptions() {
             unit="%"
             onChange={(v) => set({ smoothStrength: v / 100 })}
           />
-          <button type="button" onClick={smoothActiveRegion} title="Aktif slotun tüm sınırını tek seferde düzgün bir eğriye oturtur; alanı korur">
+          <button
+            type="button"
+            onClick={smoothActiveRegion}
+            title="Aktif slotun tüm sınırını tek seferde düzgün bir eğriye oturtur; alanı korur"
+          >
             Tüm sınırı yumuşat
           </button>
           <Toggle
@@ -166,15 +213,30 @@ export function ToolOptions() {
       )}
       {tool === 'bucket' && (
         <>
-          <NumberField label="Boşluk" value={gapArea} min={0.1} max={200} step={0.1} unit="mm²" log onChange={(v) => set({ gapArea: v })} />
-          <button type="button" onClick={gapFillSelected} title="Bu alandan küçük renk adalarını komşu renge çevir">
+          <NumberField
+            label="Boşluk"
+            value={gapArea}
+            min={0.1}
+            max={200}
+            step={0.1}
+            unit="mm²"
+            log
+            onChange={(v) => set({ gapArea: v })}
+          />
+          <button
+            type="button"
+            onClick={gapFillSelected}
+            title="Bu alandan küçük renk adalarını komşu renge çevir"
+          >
             Gap Fill
           </button>
         </>
       )}
       {tool === 'line' && (
         <>
-          <span className="label">{lineCount ? `${lineCount} nokta` : 'Yüzeye tıklayarak başla'}</span>
+          <span className="label">
+            {lineCount ? `${lineCount} nokta` : 'Yüzeye tıklayarak başla'}
+          </span>
           <button type="button" disabled={lineCount < 3} onClick={lineClose} title="Enter">
             Kapat ve boya
           </button>
@@ -186,17 +248,26 @@ export function ToolOptions() {
           </button>
         </>
       )}
-      {tool === 'pin' && cut.mode !== 'keys' && <span className="tool-hint">Pimler Keys kesiminde kullanılır; sağ panelde Keys'i seç.</span>}
+      {tool === 'pin' && cut.mode !== 'keys' && (
+        <span className="tool-hint">Pimler Keys kesiminde kullanılır; sağ panelde Keys'i seç.</span>
+      )}
       {tool === 'pin' && cut.mode === 'keys' && pin && (
         <>
           <span className="tool-name">Pim {selectedPin + 1}</span>
           {cut.pinAuto && pin.radius === undefined && pin.length === undefined ? (
-            <span className="label" title="Boyut kesitten hesaplanır; önizlemede (Space) görünür. Değer girince bu pim elle boyutlanır">
+            <span
+              className="label"
+              title="Boyut kesitten hesaplanır; önizlemede (Space) görünür. Değer girince bu pim elle boyutlanır"
+            >
               Boyut: otomatik
             </span>
           ) : (
             cut.pinAuto && (
-              <button type="button" onClick={() => updatePin(selectedPin, { radius: undefined, length: undefined })} title="Bu pimin boyutu yeniden kesitten hesaplansın">
+              <button
+                type="button"
+                onClick={() => updatePin(selectedPin, { radius: undefined, length: undefined })}
+                title="Bu pimin boyutu yeniden kesitten hesaplansın"
+              >
                 Otomatiğe dön
               </button>
             )
@@ -221,7 +292,12 @@ export function ToolOptions() {
             log
             onChange={(v) => updatePin(selectedPin, { length: v })}
           />
-          <button type="button" disabled={!pin.axis} onClick={() => updatePin(selectedPin, { axis: undefined })} title="Ekseni kesim yüzeyine dik yap">
+          <button
+            type="button"
+            disabled={!pin.axis}
+            onClick={() => updatePin(selectedPin, { axis: undefined })}
+            title="Ekseni kesim yüzeyine dik yap"
+          >
             Ekseni sıfırla
           </button>
           <button type="button" onClick={() => removePin(selectedPin)}>
@@ -244,7 +320,9 @@ export function ToolOptions() {
                   key={name}
                   type="button"
                   className={mirror.axis === axis ? 'active' : ''}
-                  onClick={() => set((s) => ({ mirror: { ...s.mirror, axis: axis as 0 | 1 | 2, offset: null } }))}
+                  onClick={() =>
+                    set((s) => ({ mirror: { ...s.mirror, axis: axis as 0 | 1 | 2, offset: null } }))
+                  }
                 >
                   {name}
                 </button>
@@ -260,7 +338,10 @@ export function ToolOptions() {
                 onChange={(v) => set((s) => ({ mirror: { ...s.mirror, offset: v } }))}
               />
               {mirror.offset !== null && (
-                <button type="button" onClick={() => set((s) => ({ mirror: { ...s.mirror, offset: null } }))}>
+                <button
+                  type="button"
+                  onClick={() => set((s) => ({ mirror: { ...s.mirror, offset: null } }))}
+                >
                   Ortala
                 </button>
               )}

@@ -68,7 +68,10 @@ export function keyName(e: { key: string; shiftKey?: boolean }): string {
 
 /** Atanamayan tuşlar: sabit kısayollar ve değiştirici tuşlar. */
 export function isReservedKey(key: string): boolean {
-  return /^[0-9]$/.test(key) || ['Shift', 'Control', 'Alt', 'Meta', 'Escape', 'Tab', 'CapsLock'].includes(key);
+  return (
+    /^[0-9]$/.test(key) ||
+    ['Shift', 'Control', 'Alt', 'Meta', 'Escape', 'Tab', 'CapsLock'].includes(key)
+  );
 }
 
 /** Kısayol yakalama sırasında (Kısayollar panelinde "Değiştir") genel kısayollar susar. */
@@ -100,7 +103,8 @@ function save(map: Record<Command, string>): void {
 /** Komuta tuş atar; tuş başka komuttaysa ikisi yer değiştirir. Değişen diğer komutu döndürür. */
 export function assignKey(command: Command, key: string): Command | null {
   const map = { ...useKeymap.getState().map };
-  const other = (Object.keys(map) as Command[]).find((c) => c !== command && map[c] === key) ?? null;
+  const other =
+    (Object.keys(map) as Command[]).find((c) => c !== command && map[c] === key) ?? null;
   if (other) map[other] = map[command];
   map[command] = key;
   save(map);

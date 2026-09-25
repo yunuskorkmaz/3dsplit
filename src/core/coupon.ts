@@ -16,7 +16,11 @@ export interface Coupon {
  * sağa artan). Delik derinliği pim boyunun yarısı + boy boşluğu; plaka
  * altında 1.2 mm taban kalır. Plaka z=0'da, x ekseni boyunca uzanır.
  */
-export function toleranceCoupon(pin: PinOptions, clearances: number[], depthClearance: number): Coupon {
+export function toleranceCoupon(
+  pin: PinOptions,
+  clearances: number[],
+  depthClearance: number,
+): Coupon {
   const { Manifold } = kernel();
   const scope = new Scope();
   try {
@@ -36,7 +40,9 @@ export function toleranceCoupon(pin: PinOptions, clearances: number[], depthClea
       plate = scope.keep(plate.subtract(hole));
       // çentikler: plakanın önünde (i+1) tane yarım küre çukur
       for (let k = 0; k <= i; k++) {
-        const dot = scope.keep(Manifold.sphere(mark, 16).translate([x + (k - i / 2) * mark * 2.5, 2.5, height]));
+        const dot = scope.keep(
+          Manifold.sphere(mark, 16).translate([x + (k - i / 2) * mark * 2.5, 2.5, height]),
+        );
         plate = scope.keep(plate.subtract(dot));
       }
     });

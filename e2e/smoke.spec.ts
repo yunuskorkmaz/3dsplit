@@ -1,7 +1,10 @@
 import { expect, type Page, test } from '@playwright/test';
 
 /** Dünya koordinatındaki noktanın ekrandaki yeri (geliştirme kancası üzerinden). */
-async function screenOf(page: Page, p: [number, number, number]): Promise<{ x: number; y: number }> {
+async function screenOf(
+  page: Page,
+  p: [number, number, number],
+): Promise<{ x: number; y: number }> {
   return page.evaluate((pt) => {
     // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
     const vp = (window as any).viewport;
@@ -47,7 +50,11 @@ test('yükle → Smart Fill → Socket kes → 3MF', async ({ page }) => {
   await expect(page.locator('ul.parts li')).toHaveCount(3);
   await expect(page.locator('.badge.source')).toHaveCount(1);
   // yalnız yeni parçayı göster, sonra hepsini geri getir
-  await page.locator('ul.parts li').nth(2).locator('button.eye').click({ modifiers: ['Alt'] });
+  await page
+    .locator('ul.parts li')
+    .nth(2)
+    .locator('button.eye')
+    .click({ modifiers: ['Alt'] });
   await expect(page.locator('ul.parts li.hidden-part')).toHaveCount(2);
   await page.getByRole('button', { name: 'Tümünü göster' }).click();
   await expect(page.locator('ul.parts li.hidden-part')).toHaveCount(1);

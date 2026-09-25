@@ -47,7 +47,10 @@ export function smartFill(
     for (let e = 0; e < 3; e++) {
       const n = adj[3 * t + e];
       if (n < 0 || visited[n]) continue;
-      const d = normals[3 * a] * normals[3 * n] + normals[3 * a + 1] * normals[3 * n + 1] + normals[3 * a + 2] * normals[3 * n + 2];
+      const d =
+        normals[3 * a] * normals[3 * n] +
+        normals[3 * a + 1] * normals[3 * n + 1] +
+        normals[3 * a + 2] * normals[3 * n + 2];
       if (d < cosLimit) {
         if (!opts.concaveOnly) continue;
         // kıvrımın yönü yerel kenardan okunur: aday, t'nin teğet düzleminin üstündeyse içbükey.
@@ -94,7 +97,12 @@ export function chooseSmartScale(
     if (!results[i]) {
       const scale = meanEdge * AUTO_SCALE_MULTIPLES[i];
       // taşan denemeler tüm modeli dolaşmasın: sınır aşılınca tarama bırakılır
-      const tris = smartFill(adj, normals, centroids, seed, { ...opts, scale, areas, maxArea: limit });
+      const tris = smartFill(adj, normals, centroids, seed, {
+        ...opts,
+        scale,
+        areas,
+        maxArea: limit,
+      });
       let area = 0;
       for (let k = 0; k < tris.length; k++) area += areas[tris[k]];
       results[i] = { scale, tris, area };
@@ -108,13 +116,18 @@ export function chooseSmartScale(
     if (firstOk < 0) firstOk = i;
     for (let j = i + 1; j <= i + 2 && j < AUTO_SCALE_MULTIPLES.length; j++) {
       const n = run(j);
-      if (Math.abs(n.area - r.area) <= r.area * 0.25) return { scale: r.scale, tris: r.tris, leaked: false };
+      if (Math.abs(n.area - r.area) <= r.area * 0.25)
+        return { scale: r.scale, tris: r.tris, leaked: false };
     }
   }
   if (firstOk >= 0) return { ...results[firstOk], leaked: false };
   // hiçbiri tutmadı: en küçük ölçekle tam (sınırsız) doldurma
   const scale = meanEdge * AUTO_SCALE_MULTIPLES[0];
-  return { scale, tris: smartFill(adj, normals, centroids, seed, { ...opts, scale }), leaked: true };
+  return {
+    scale,
+    tris: smartFill(adj, normals, centroids, seed, { ...opts, scale }),
+    leaked: true,
+  };
 }
 
 function dist2(c: Float32Array, a: number, b: number): number {
@@ -173,9 +186,11 @@ export function closeHoles(
   for (const c of touching) if (c !== outside && compArea[c] < maxArea) holeSet.add(c);
   if (opts.accept) {
     // kabul edilmeyen üçgen içeren delik (ör. başka slota boyanmış) açık kalır
-    for (let t = 0; t < triCount; t++) if (holeSet.has(component[t]) && !opts.accept(t)) holeSet.delete(component[t]);
+    for (let t = 0; t < triCount; t++)
+      if (holeSet.has(component[t]) && !opts.accept(t)) holeSet.delete(component[t]);
   }
-  for (let t = 0; t < triCount; t++) if (component[t] >= 0 && holeSet.has(component[t])) out.push(t);
+  for (let t = 0; t < triCount; t++)
+    if (component[t] >= 0 && holeSet.has(component[t])) out.push(t);
   return { tris: out, holes: holeSet.size };
 }
 
@@ -266,7 +281,11 @@ export function gapFill(
       if (n < 0 || component[n] === c) continue;
       const a = idx[3 * t + e];
       const b = idx[3 * t + ((e + 1) % 3)];
-      const len = Math.hypot(p[3 * a] - p[3 * b], p[3 * a + 1] - p[3 * b + 1], p[3 * a + 2] - p[3 * b + 2]);
+      const len = Math.hypot(
+        p[3 * a] - p[3 * b],
+        p[3 * a + 1] - p[3 * b + 1],
+        p[3 * a + 2] - p[3 * b + 2],
+      );
       let m = borders.get(c);
       if (!m) {
         m = new Map();
@@ -324,7 +343,12 @@ export function vertexNeighbors(mesh: MeshData): { start: Uint32Array; list: Uin
  * Köşede Laplace vektörünün normal bileşeni, `scale` mm'ye kadar yayılarak
  * yumuşatılır (gürültü değil biçim okunur).
  */
-export function triangleConcavity(mesh: MeshData, normals: Float32Array, areas: Float32Array, scale: number): Float32Array {
+export function triangleConcavity(
+  mesh: MeshData,
+  normals: Float32Array,
+  areas: Float32Array,
+  scale: number,
+): Float32Array {
   const p = mesh.positions;
   const idx = mesh.indices;
   const vCount = p.length / 3;
@@ -355,7 +379,11 @@ export function triangleConcavity(mesh: MeshData, normals: Float32Array, areas: 
       mx += p[3 * u];
       my += p[3 * u + 1];
       mz += p[3 * u + 2];
-      edgeSum += Math.hypot(p[3 * u] - p[3 * v], p[3 * u + 1] - p[3 * v + 1], p[3 * u + 2] - p[3 * v + 2]);
+      edgeSum += Math.hypot(
+        p[3 * u] - p[3 * v],
+        p[3 * u + 1] - p[3 * v + 1],
+        p[3 * u + 2] - p[3 * v + 2],
+      );
       edgeCount++;
     }
     const cnt = Math.max(1, e - s);
@@ -380,7 +408,8 @@ export function triangleConcavity(mesh: MeshData, normals: Float32Array, areas: 
     [h, next] = [next, h];
   }
   const out = new Float32Array(idx.length / 3);
-  for (let t = 0; t < out.length; t++) out[t] = (h[idx[3 * t]] + h[idx[3 * t + 1]] + h[idx[3 * t + 2]]) / 3;
+  for (let t = 0; t < out.length; t++)
+    out[t] = (h[idx[3 * t]] + h[idx[3 * t + 1]] + h[idx[3 * t + 2]]) / 3;
   return out;
 }
 
@@ -461,7 +490,11 @@ export function refineToValley(
     }
   }
   const step = (a: number, b: number) =>
-    Math.hypot(centroids[3 * a] - centroids[3 * b], centroids[3 * a + 1] - centroids[3 * b + 1], centroids[3 * a + 2] - centroids[3 * b + 2]);
+    Math.hypot(
+      centroids[3 * a] - centroids[3 * b],
+      centroids[3 * a + 1] - centroids[3 * b + 1],
+      centroids[3 * a + 2] - centroids[3 * b + 2],
+    );
   while (heap.size) {
     const [d, t] = heap.pop();
     if (d > dist[t] || d > band * 1.5) continue;
@@ -478,7 +511,8 @@ export function refineToValley(
   // iç işaretleyici: seçimin sınırdan en az band uzağı; seçim ince ise en derin yarısı
   let innerDepth = band;
   let maxInner = 0;
-  for (let t = 0; t < triCount; t++) if (selected[t] && Number.isFinite(dist[t])) maxInner = Math.max(maxInner, dist[t]);
+  for (let t = 0; t < triCount; t++)
+    if (selected[t] && Number.isFinite(dist[t])) maxInner = Math.max(maxInner, dist[t]);
   let anyDeep = false;
   for (let t = 0; t < triCount; t++) if (selected[t] && !(dist[t] < band)) anyDeep = true;
   if (!anyDeep) innerDepth = maxInner * 0.5;
@@ -514,7 +548,8 @@ export function refineToValley(
     }
   }
   const out = new Uint8Array(triCount);
-  for (let t = 0; t < triCount; t++) out[t] = label[t] === 1 || (label[t] === 0 && selected[t]) ? 1 : 0;
+  for (let t = 0; t < triCount; t++)
+    out[t] = label[t] === 1 || (label[t] === 0 && selected[t]) ? 1 : 0;
   return out;
 }
 
@@ -539,7 +574,8 @@ export function cleanSelection(
   } else {
     const largest = Math.max(0, ...compArea);
     const minArea = opts.minArea ?? 1;
-    for (let c = 0; c < count; c++) if (compArea[c] >= minArea || compArea[c] >= largest * 0.5) keep[c] = 1;
+    for (let c = 0; c < count; c++)
+      if (compArea[c] >= minArea || compArea[c] >= largest * 0.5) keep[c] = 1;
   }
   const tris: number[] = [];
   for (let t = 0; t < triCount; t++) if (component[t] >= 0 && keep[component[t]]) tris.push(t);
@@ -580,7 +616,9 @@ export function suggestFeatures(
   let total = 0;
   for (let t = 0; t < triCount; t++) total += areas[t];
   // en tümsekten başlayarak birbirinden uzak tohumlar
-  const order = Array.from({ length: triCount }, (_, t) => t).sort((a, b) => concavity[a] - concavity[b]);
+  const order = Array.from({ length: triCount }, (_, t) => t).sort(
+    (a, b) => concavity[a] - concavity[b],
+  );
   const seeds: number[] = [];
   const sp2 = opts.spacing * opts.spacing;
   for (const t of order) {
@@ -598,7 +636,10 @@ export function suggestFeatures(
   const out: { tris: Uint32Array; area: number }[] = [];
   for (const seed of seeds) {
     if (taken[seed]) continue;
-    const r = chooseSmartScale(adj, normals, centroids, areas, seed, opts.meanEdge, { maxAngleDeg: 20, concaveOnly: true });
+    const r = chooseSmartScale(adj, normals, centroids, areas, seed, opts.meanEdge, {
+      maxAngleDeg: 20,
+      concaveOnly: true,
+    });
     if (r.leaked) continue;
     const mask = new Uint8Array(triCount);
     for (const t of r.tris) mask[t] = 1;
@@ -614,7 +655,13 @@ export function suggestFeatures(
       if (taken[t]) overlap += areas[t];
     }
     const frac = area / total;
-    if (!tris.length || frac < opts.areaRange[0] || frac > opts.areaRange[1] || overlap > area * 0.3) continue;
+    if (
+      !tris.length ||
+      frac < opts.areaRange[0] ||
+      frac > opts.areaRange[1] ||
+      overlap > area * 0.3
+    )
+      continue;
     for (const t of tris) taken[t] = 1;
     out.push({ tris: Uint32Array.from(tris), area });
   }

@@ -11,7 +11,11 @@ describe('X36 çizgi aracı', () => {
     let best = 0;
     let bd = Infinity;
     for (let v = 0; v < m.positions.length / 3; v++) {
-      const d = Math.hypot(m.positions[3 * v] - x, m.positions[3 * v + 1] - y, m.positions[3 * v + 2] - z);
+      const d = Math.hypot(
+        m.positions[3 * v] - x,
+        m.positions[3 * v + 1] - y,
+        m.positions[3 * v + 2] - z,
+      );
       if (d < bd) {
         bd = d;
         best = v;
@@ -30,7 +34,8 @@ describe('X36 çizgi aracı', () => {
   it('kapalı halkanın içi en küçük bileşen', () => {
     const corners = [vAt(-4, -4, 10), vAt(4, -4, 10), vAt(4, 4, 10), vAt(-4, 4, 10)];
     const loop: number[] = [];
-    for (let i = 0; i < 4; i++) loop.push(...surfacePath(m, nbr, corners[i], corners[(i + 1) % 4]).slice(0, -1));
+    for (let i = 0; i < 4; i++)
+      loop.push(...surfacePath(m, nbr, corners[i], corners[(i + 1) % 4]).slice(0, -1));
     const adj = buildAdjacency(m);
     const { areas } = faceNormalsAndAreas(m);
     const inside = regionInsideLoop(m, adj, areas, loop);

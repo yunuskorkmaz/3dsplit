@@ -31,6 +31,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X38 | Büyük modelde (1.9M üçgen) yumuşatma darbesi sonunda ~2.9 s donma: bölmeden sonra ekran geometrisi, seçim ağacı ve komşuluk baştan kuruluyordu. Eklenen üçgenler ayrı yama mesh'te, ana geometri yerinde; seçim ağacında sadece değişen bölge; komşuluk ve yüz bilgisi yerinde güncelleniyor; renkler etiket başına önbellekli | Performans ölçümü | [x] |
 | X39 | Türkçe Mac klavyesinde `[` `]` Option ile yazıldığı için fırça küçült/büyüt kısayolu çalışmıyordu (Alt'lı tuşlar yok sayılıyordu); harf/rakam olmayan Alt karakterleri artık kısayol | Türkçe klavye | [x] |
 | X40 | Otomatik pim boyutunda pim işaretçisi ve pim ayarı elle girilen yarıçapı gösteriyordu; artık "Boyut: otomatik", tek pim için elle boyut ve "Otomatiğe dön" | X33 eksiği | [x] |
+| X41 | Lint temizliği: `npm run lint` 70 hatayla kırmızıydı. Biçimlendirme uygulandı, gerçek bulgular düzeltildi (virgül operatörü, forEach dönüşü, yanlış "hook" adı `useSweepSocket`), projeye uymayan kurallar (`noVoidTypeReturn`, liste satırı a11y, CSS özgüllük sırası) `biome.json`da kapatıldı | Kod sağlığı | [x] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 
@@ -206,5 +207,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | X36: çizgi aracı: yüzeyde kapalı halka çizip boyama | `583bb53` |
 | 2026-09-25 | X38: büyük modelde darbe sonu donması: yama mesh, kısmi seçim ağacı, yerinde komşuluk | `7be452e` |
 | 2026-09-25 | X39: Türkçe Mac klavyesinde Option ile yazılan [ ] kısayolları | `7011f14` |
+| 2026-09-25 | X40: otomatik pim boyutunda işaretçi ve pim ayarı | `42da70e` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

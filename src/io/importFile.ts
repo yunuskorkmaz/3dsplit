@@ -61,7 +61,11 @@ export async function importFile(file: File): Promise<ImportedObject[]> {
   throw new Error(`Desteklenmeyen dosya türü: .${ext}`);
 }
 
-function fromGeometry(name: string, geom: THREE.BufferGeometry, matrix?: THREE.Matrix4): ImportedObject {
+function fromGeometry(
+  name: string,
+  geom: THREE.BufferGeometry,
+  matrix?: THREE.Matrix4,
+): ImportedObject {
   const g = matrix ? geom.clone().applyMatrix4(matrix) : geom;
   const pos = g.getAttribute('position');
   const positions = new Float32Array(pos.count * 3);

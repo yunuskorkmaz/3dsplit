@@ -1,6 +1,6 @@
-import type { SplitDiff } from '../core/smooth';
 import { create } from 'zustand';
 import type { CutMode, CutPreview, CutSuggestion, PinPlacement, PinShape } from '../core/cut';
+import type { SplitDiff } from '../core/smooth';
 import type { LabeledMesh, Vec3 } from '../core/types';
 
 export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin' | 'line';
@@ -81,7 +81,18 @@ export type HistoryEntry =
       labelsAfter: Uint16Array;
     };
 
-const DEFAULT_COLORS = ['#b0b0b0', '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c', '#34495e', '#ff66cc'];
+const DEFAULT_COLORS = [
+  '#b0b0b0',
+  '#e74c3c',
+  '#3498db',
+  '#2ecc71',
+  '#f1c40f',
+  '#9b59b6',
+  '#e67e22',
+  '#1abc9c',
+  '#34495e',
+  '#ff66cc',
+];
 
 export interface AppState {
   parts: Part[];
@@ -143,7 +154,11 @@ export interface AppState {
 export const useStore = create<AppState>(() => ({
   parts: [],
   selectedPartId: null,
-  slots: DEFAULT_COLORS.slice(0, 4).map((color, id) => ({ id, name: id === 0 ? 'Taban' : `Slot ${id}`, color })),
+  slots: DEFAULT_COLORS.slice(0, 4).map((color, id) => ({
+    id,
+    name: id === 0 ? 'Taban' : `Slot ${id}`,
+    color,
+  })),
   activeSlot: 1,
   tool: 'smart',
   brushRadius: 3,

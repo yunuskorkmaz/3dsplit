@@ -8,7 +8,15 @@ describe('proje dosyası', () => {
     const data = {
       parts: [
         { id: 'p1', name: 'kafa', visible: true, badge: null, colorSlot: 0, manifold: true, mesh },
-        { id: 'p2', name: 'eski', visible: false, badge: 'source' as const, colorSlot: 2, manifold: true, mesh },
+        {
+          id: 'p2',
+          name: 'eski',
+          visible: false,
+          badge: 'source' as const,
+          colorSlot: 2,
+          manifold: true,
+          mesh,
+        },
       ],
       slots: [
         { id: 0, name: 'Taban', color: '#b0b0b0' },

@@ -49,7 +49,9 @@ describe('3MF okuma', () => {
     const file = parse3mf(
       zipSync({
         '3D/3dmodel.model': strToU8(model),
-        'Metadata/project_settings.config': strToU8(JSON.stringify({ filament_colour: ['#111111', '#222222', '#333333'] })),
+        'Metadata/project_settings.config': strToU8(
+          JSON.stringify({ filament_colour: ['#111111', '#222222', '#333333'] }),
+        ),
       }),
     );
     expect(Array.from(file.objects[0].paint ?? [])).toEqual([2, 0, 1, 3]);

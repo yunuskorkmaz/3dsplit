@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { assignKey, COMMANDS, type Command, isReservedKey, keyName, resetKeymap, shortcutCapture, useKeymap } from '../state/keymap';
+import {
+  assignKey,
+  COMMANDS,
+  type Command,
+  isReservedKey,
+  keyName,
+  resetKeymap,
+  shortcutCapture,
+  useKeymap,
+} from '../state/keymap';
 import { notify } from '../state/store';
 
 /** E2: kısayolları değiştirme. "Değiştir"e basıp yeni tuşa basılır; çakışan kısayolla yer değiştirir. */
@@ -26,7 +35,11 @@ export function KeymapEditor() {
         return;
       }
       const swapped = assignKey(cmd, key);
-      if (swapped) notify('info', `${key} önceden "${COMMANDS.find((c) => c.id === swapped)?.label}" komutundaydı; yer değiştirdiler.`);
+      if (swapped)
+        notify(
+          'info',
+          `${key} önceden "${COMMANDS.find((c) => c.id === swapped)?.label}" komutundaydı; yer değiştirdiler.`,
+        );
     };
     window.addEventListener('keydown', onKey, true);
   };

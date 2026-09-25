@@ -33,17 +33,23 @@ describe('Bambu 3MF', () => {
 
   it('aynı renk aynı filament', () => {
     const cfg = text('Metadata/model_settings.config');
-    const extruders = [...cfg.matchAll(/<object id="\d+">[\s\S]*?key="extruder" value="(\d+)"/g)].map((m) => Number(m[1]));
+    const extruders = [
+      ...cfg.matchAll(/<object id="\d+">[\s\S]*?key="extruder" value="(\d+)"/g),
+    ].map((m) => Number(m[1]));
     expect(extruders).toEqual([1, 2, 2]);
   });
 
   it('alt dosyalardaki nesne kimlikleri benzersiz (Bambu aynı kimliği tek mesh sanıyor)', () => {
-    const ids = [1, 2, 3].map((n) => text(`3D/Objects/object_${n}.model`).match(/<object id="(\d+)"/)?.[1]);
+    const ids = [1, 2, 3].map(
+      (n) => text(`3D/Objects/object_${n}.model`).match(/<object id="(\d+)"/)?.[1],
+    );
     expect(new Set(ids).size).toBe(3);
   });
 
   it('parçaları plakaya taban z=0 olacak şekilde, üst üste binmeden dizer', () => {
-    const items = [...text('3D/3dmodel.model').matchAll(/<item [^>]*transform="([^"]+)"/g)].map((m) => m[1].split(' ').map(Number));
+    const items = [...text('3D/3dmodel.model').matchAll(/<item [^>]*transform="([^"]+)"/g)].map(
+      (m) => m[1].split(' ').map(Number),
+    );
     expect(items.length).toBe(3);
     const xs = items.map((t) => t[9]);
     for (const t of items) expect(t[11]).toBeCloseTo(10, 5); // küp -10..10: taban 0'a

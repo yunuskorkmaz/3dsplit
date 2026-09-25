@@ -4,7 +4,11 @@ import { useRef } from 'react';
  * C6: tapa alt halkasının 8 yönlü profili. Tutamaçlar sürüklenerek o yönde
  * ayak genişletilir (+) veya daraltılır (−), mm. 1 numara önizlemedeki kırmızı işarete denk gelir.
  */
-export function RingEditor(props: { value: number[]; onChange: (v: number[]) => void; range?: number }) {
+export function RingEditor(props: {
+  value: number[];
+  onChange: (v: number[]) => void;
+  range?: number;
+}) {
   const range = props.range ?? 3;
   const size = 150;
   const c = size / 2;
@@ -40,6 +44,7 @@ export function RingEditor(props: { value: number[]; onChange: (v: number[]) => 
           dragging.current = -1;
         }}
       >
+        <title>Tapa ayağı kesit şekli</title>
         <circle cx={c} cy={c} r={base} className="ring-base" />
         <polygon points={pts.map((p) => `${p.x},${p.y}`).join(' ')} className="ring-shape" />
         {pts.map((p, i) => (
@@ -54,13 +59,20 @@ export function RingEditor(props: { value: number[]; onChange: (v: number[]) => 
                 dragging.current = i;
               }}
             />
-            <text x={c + Math.cos(p.a) * (base + range * perMm + 8)} y={c - Math.sin(p.a) * (base + range * perMm + 8) + 3}>
+            <text
+              x={c + Math.cos(p.a) * (base + range * perMm + 8)}
+              y={c - Math.sin(p.a) * (base + range * perMm + 8) + 3}
+            >
               {props.value[i] ? props.value[i].toFixed(1) : i + 1}
             </text>
           </g>
         ))}
       </svg>
-      <button type="button" disabled={props.value.every((v) => v === 0)} onClick={() => props.onChange(props.value.map(() => 0))}>
+      <button
+        type="button"
+        disabled={props.value.every((v) => v === 0)}
+        onClick={() => props.onChange(props.value.map(() => 0))}
+      >
         Sıfırla
       </button>
     </div>

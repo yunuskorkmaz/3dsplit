@@ -10,7 +10,10 @@ beforeAll(async () => {
   await initKernel();
   const { Manifold } = kernel();
   // 20 mm küpün üstünde 6x6x4 mm çıkıntı (burun/göz benzeri)
-  const m = Manifold.union(Manifold.cube([20, 20, 20], true), Manifold.cube([6, 6, 4], true).translate([0, 0, 12])).refineToLength(1);
+  const m = Manifold.union(
+    Manifold.cube([20, 20, 20], true),
+    Manifold.cube([6, 6, 4], true).translate([0, 0, 12]),
+  ).refineToLength(1);
   boss = fromManifold(m, 0);
   boss.labels.fill(0); // manifold'un kendi faceID'leri etiket değil
   const c = faceCentroids(boss);
@@ -98,7 +101,9 @@ describe('çıkıntı socket', () => {
     const vOne = signedVolume(one.parts[0]);
     expect(vOne).toBeGreaterThan(signedVolume(base.parts[0]) + 1);
     expect(vOne).toBeLessThan(signedVolume(all.parts[0]));
-    expect(previewCut(boss, { ...opts, ringProfile: [2, 0, 0, 0, 0, 0, 0, 0] }).ringMarkers.length).toBe(8);
+    expect(
+      previewCut(boss, { ...opts, ringProfile: [2, 0, 0, 0, 0, 0, 0, 0] }).ringMarkers.length,
+    ).toBe(8);
   });
 
   it('önizleme tapa prizmasını döndürür', () => {

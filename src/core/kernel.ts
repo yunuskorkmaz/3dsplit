@@ -68,7 +68,9 @@ export function toManifold(mesh: MeshData, faceIds?: Uint32Array | Uint16Array |
 export function fromManifold(man: Manifold, cutLabel: number): LabeledMesh {
   const mesh = man.getMesh();
   const positions =
-    mesh.numProp === 3 ? new Float32Array(mesh.vertProperties) : stripProps(mesh.vertProperties, mesh.numProp);
+    mesh.numProp === 3
+      ? new Float32Array(mesh.vertProperties)
+      : stripProps(mesh.vertProperties, mesh.numProp);
   const indices = new Uint32Array(mesh.triVerts);
   const triCount = indices.length / 3;
   const labels = new Uint16Array(triCount);
@@ -85,10 +87,16 @@ export function fromManifold(man: Manifold, cutLabel: number): LabeledMesh {
  * etiket `labels`'tan okunur. CUT_FACE_ID olan yüzler `cutLabel` alır.
  * (Manifold etiketlerden bağımsız kurulduğu için boyama değişse de yeniden kullanılabilir.)
  */
-export function fromManifoldMapped(man: Manifold, labels: Uint16Array, cutLabel: number): LabeledMesh {
+export function fromManifoldMapped(
+  man: Manifold,
+  labels: Uint16Array,
+  cutLabel: number,
+): LabeledMesh {
   const mesh = man.getMesh();
   const positions =
-    mesh.numProp === 3 ? new Float32Array(mesh.vertProperties) : stripProps(mesh.vertProperties, mesh.numProp);
+    mesh.numProp === 3
+      ? new Float32Array(mesh.vertProperties)
+      : stripProps(mesh.vertProperties, mesh.numProp);
   const indices = new Uint32Array(mesh.triVerts);
   const triCount = indices.length / 3;
   const out = new Uint16Array(triCount);

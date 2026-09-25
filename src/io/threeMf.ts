@@ -77,7 +77,8 @@ export function parse3mf(bytes: Uint8Array): ThreeMfFile {
       if (!obj || depth > 16) return;
       if (!name && obj.name) name = obj.name;
       if (obj.mesh) appendMesh(collected, obj.mesh, transform);
-      for (const c of obj.components) visit(c.path ?? path, c.objectId, compose(c.transform, transform), depth + 1);
+      for (const c of obj.components)
+        visit(c.path ?? path, c.objectId, compose(c.transform, transform), depth + 1);
     };
     visit(rootPath, id, parseTransform(attr(item, 'transform')), 0);
     name = settingsNames.get(id) ?? name;
@@ -122,7 +123,12 @@ function parseObjects(xml: string): Map<string, RawObject> {
     if (body.includes('<mesh')) obj.mesh = parseMesh(body);
     for (const c of tags(body, 'component')) {
       const oid = attr(c, 'objectid');
-      if (oid) obj.components.push({ path: attr(c, 'p:path'), objectId: oid, transform: parseTransform(attr(c, 'transform')) });
+      if (oid)
+        obj.components.push({
+          path: attr(c, 'p:path'),
+          objectId: oid,
+          transform: parseTransform(attr(c, 'transform')),
+        });
     }
     result.set(id, obj);
   }
@@ -158,7 +164,11 @@ function appendMesh(into: RawMesh, mesh: RawMesh, m: number[]): void {
     const y = p[i + 1];
     const z = p[i + 2];
     // 3MF dönüşümü: satır vektörü × 3x4 (son satır öteleme)
-    into.positions.push(x * m[0] + y * m[3] + z * m[6] + m[9], x * m[1] + y * m[4] + z * m[7] + m[10], x * m[2] + y * m[5] + z * m[8] + m[11]);
+    into.positions.push(
+      x * m[0] + y * m[3] + z * m[6] + m[9],
+      x * m[1] + y * m[4] + z * m[7] + m[10],
+      x * m[2] + y * m[5] + z * m[8] + m[11],
+    );
   }
   for (const i of mesh.indices) into.indices.push(i + base);
   for (const s of mesh.paint) into.paint.push(s);
@@ -176,10 +186,12 @@ function compose(a: number[], b: number[]): number[] {
   const r = new Array(12);
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
-      r[row * 3 + col] = a[row * 3] * b[col] + a[row * 3 + 1] * b[3 + col] + a[row * 3 + 2] * b[6 + col];
+      r[row * 3 + col] =
+        a[row * 3] * b[col] + a[row * 3 + 1] * b[3 + col] + a[row * 3 + 2] * b[6 + col];
     }
   }
-  for (let col = 0; col < 3; col++) r[9 + col] = a[9] * b[col] + a[10] * b[3 + col] + a[11] * b[6 + col] + b[9 + col];
+  for (let col = 0; col < 3; col++)
+    r[9 + col] = a[9] * b[col] + a[10] * b[3 + col] + a[11] * b[6 + col] + b[9 + col];
   return r;
 }
 

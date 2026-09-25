@@ -54,7 +54,8 @@ export function writeStl(mesh: MeshData, name = 'part'): Uint8Array {
 export function writeStlZip(objects: ExportObject[]): Uint8Array {
   const files: Record<string, Uint8Array> = {};
   const used = new Set<string>();
-  for (const o of objects) files[`${uniqueName(safeName(o.name), used)}.stl`] = writeStl(o.mesh, o.name);
+  for (const o of objects)
+    files[`${uniqueName(safeName(o.name), used)}.stl`] = writeStl(o.mesh, o.name);
   return zipSync(files);
 }
 
@@ -73,10 +74,12 @@ export function write3mf(objects: ExportObject[]): Uint8Array {
     const id = i + 2;
     const p = o.mesh.positions;
     const verts: string[] = [];
-    for (let v = 0; v < p.length; v += 3) verts.push(`<vertex x="${fmt(p[v])}" y="${fmt(p[v + 1])}" z="${fmt(p[v + 2])}"/>`);
+    for (let v = 0; v < p.length; v += 3)
+      verts.push(`<vertex x="${fmt(p[v])}" y="${fmt(p[v + 1])}" z="${fmt(p[v + 2])}"/>`);
     const tris: string[] = [];
     const idx = o.mesh.indices;
-    for (let t = 0; t < idx.length; t += 3) tris.push(`<triangle v1="${idx[t]}" v2="${idx[t + 1]}" v3="${idx[t + 2]}"/>`);
+    for (let t = 0; t < idx.length; t += 3)
+      tris.push(`<triangle v1="${idx[t]}" v2="${idx[t + 1]}" v3="${idx[t + 2]}"/>`);
     objectXml.push(
       `    <object id="${id}" name="${esc(o.name)}" type="model" pid="1" pindex="${i}">\n` +
         `      <mesh>\n        <vertices>${verts.join('')}</vertices>\n        <triangles>${tris.join('')}</triangles>\n      </mesh>\n    </object>`,
@@ -130,7 +133,11 @@ function uniqueName(name: string, used: Set<string>): string {
   return n;
 }
 
-export function downloadBytes(bytes: Uint8Array, filename: string, mime = 'application/octet-stream'): void {
+export function downloadBytes(
+  bytes: Uint8Array,
+  filename: string,
+  mime = 'application/octet-stream',
+): void {
   const blob = new Blob([bytes as BlobPart], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

@@ -150,7 +150,12 @@ export function extractTriangles(
  * bunların kenarları kendi aralarında yeniden eşlenir, küme dışına bakan
  * kenarlar (bölme orada kenar değiştirmediği için) eski değerini korur.
  */
-export function patchAdjacency(adj: Int32Array, mesh: MeshData, changed: ArrayLike<number>, firstAdded: number): Int32Array {
+export function patchAdjacency(
+  adj: Int32Array,
+  mesh: MeshData,
+  changed: ArrayLike<number>,
+  firstAdded: number,
+): Int32Array {
   const idx = mesh.indices;
   const triCount = idx.length / 3;
   const out = new Int32Array(3 * triCount).fill(NO_NEIGHBOR);

@@ -72,7 +72,15 @@ export function smoothRegionBoundary(
   const signed: number[] = [];
   for (let t = 0; t < triCount; t++) {
     const c: V3 = [centroids[3 * t], centroids[3 * t + 1], centroids[3 * t + 2]];
-    if (c[0] < lo[0] || c[1] < lo[1] || c[2] < lo[2] || c[0] > hi[0] || c[1] > hi[1] || c[2] > hi[2]) continue;
+    if (
+      c[0] < lo[0] ||
+      c[1] < lo[1] ||
+      c[2] < lo[2] ||
+      c[0] > hi[0] ||
+      c[1] > hi[1] ||
+      c[2] > hi[2]
+    )
+      continue;
     const hit = index.closest(c, band);
     if (!hit) continue;
     const n: V3 = [normals[3 * t], normals[3 * t + 1], normals[3 * t + 2]];
@@ -95,7 +103,8 @@ export function smoothRegionBoundary(
     return a;
   };
   let offset = 0;
-  for (let it = 0; it < 3; it++) offset += (areaBefore - areaWith(offset)) / Math.max(perimeter, 1e-6);
+  for (let it = 0; it < 3; it++)
+    offset += (areaBefore - areaWith(offset)) / Math.max(perimeter, 1e-6);
   offset = Math.max(-radius, Math.min(radius, offset));
   for (let i = 0; i < bandTris.length; i++) {
     const t = bandTris[i];
@@ -107,7 +116,10 @@ export function smoothRegionBoundary(
   }
   // kırıntı ve delik temizliği
   const newMask = Uint8Array.from(labels, (l) => (l === slot ? 1 : 0));
-  const cleaned = cleanSelection(adj, areas, newMask, { minArea: 1, accept: (t) => labels[t] === slot || accept(t) });
+  const cleaned = cleanSelection(adj, areas, newMask, {
+    minArea: 1,
+    accept: (t) => labels[t] === slot || accept(t),
+  });
   for (let t = 0; t < triCount; t++) {
     if (cleaned[t] && labels[t] !== slot) labels[t] = slot;
     else if (!cleaned[t] && labels[t] === slot) labels[t] = outsideLabel(t);
@@ -132,7 +144,14 @@ export function smoothRegionBoundary(
   }
 
   // 3. yeni sınır köşelerini eğriye çek
-  snapBoundaryToCurves({ positions, indices: mesh.indices, labels }, adj, slot, index, band, offset);
+  snapBoundaryToCurves(
+    { positions, indices: mesh.indices, labels },
+    adj,
+    slot,
+    index,
+    band,
+    offset,
+  );
   return { labels, positions, indices: mesh.indices };
 }
 
@@ -160,8 +179,16 @@ function cutAlongCurves(
     const a = idx[3 * t];
     const b = idx[3 * t + 1];
     const c = idx[3 * t + 2];
-    const u: V3 = [pos[3 * b] - pos[3 * a], pos[3 * b + 1] - pos[3 * a + 1], pos[3 * b + 2] - pos[3 * a + 2]];
-    const w: V3 = [pos[3 * c] - pos[3 * a], pos[3 * c + 1] - pos[3 * a + 1], pos[3 * c + 2] - pos[3 * a + 2]];
+    const u: V3 = [
+      pos[3 * b] - pos[3 * a],
+      pos[3 * b + 1] - pos[3 * a + 1],
+      pos[3 * b + 2] - pos[3 * a + 2],
+    ];
+    const w: V3 = [
+      pos[3 * c] - pos[3 * a],
+      pos[3 * c + 1] - pos[3 * a + 1],
+      pos[3 * c + 2] - pos[3 * a + 2],
+    ];
     const n = cross(u, w);
     for (const v of [a, b, c]) for (let k = 0; k < 3; k++) vn[3 * v + k] += n[k];
   }
@@ -262,7 +289,8 @@ export function splitAlongField(
   // büyüklük: etkin köşelerdeki en büyük |phi| (kenar kesişimi makul yerde kalsın)
   let big = 1e-6;
   for (let v = 0; v < vCount; v++) if (active[v]) big = Math.max(big, Math.abs(phi[v]));
-  for (let v = 0; v < vCount; v++) if (!active[v]) phi[v] = inCount[v] && outCount[v] ? 0 : inCount[v] ? big : -big;
+  for (let v = 0; v < vCount; v++)
+    if (!active[v]) phi[v] = inCount[v] && outCount[v] ? 0 : inCount[v] ? big : -big;
 
   // sıfır çizgisi bir köşeye çok yakın geçiyorsa köşeden geçsin: ince şerit üçgen oluşmaz
   const EPS = 0.12;
@@ -279,14 +307,16 @@ export function splitAlongField(
 
   const addedPos: number[] = [];
   const crossing = new Map<number, number>();
-  const P = (v: number, k: number) => (v < vCount ? pos[3 * v + k] : addedPos[3 * (v - vCount) + k]);
+  const P = (v: number, k: number) =>
+    v < vCount ? pos[3 * v + k] : addedPos[3 * (v - vCount) + k];
   const crossAt = (a: number, b: number): number => {
     const key = a < b ? a * vCount + b : b * vCount + a;
     let v = crossing.get(key);
     if (v === undefined) {
       const s = phi[a] / (phi[a] - phi[b]);
       v = vCount + addedPos.length / 3;
-      for (let k = 0; k < 3; k++) addedPos.push(pos[3 * a + k] + (pos[3 * b + k] - pos[3 * a + k]) * s);
+      for (let k = 0; k < 3; k++)
+        addedPos.push(pos[3 * a + k] + (pos[3 * b + k] - pos[3 * a + k]) * s);
       crossing.set(key, v);
     }
     return v;
@@ -306,7 +336,11 @@ export function splitAlongField(
     if (poly.length === 4) {
       // dörtgen: kısa köşegenden böl
       const d = (i: number, j: number) =>
-        Math.hypot(P(poly[i], 0) - P(poly[j], 0), P(poly[i], 1) - P(poly[j], 1), P(poly[i], 2) - P(poly[j], 2));
+        Math.hypot(
+          P(poly[i], 0) - P(poly[j], 0),
+          P(poly[i], 1) - P(poly[j], 1),
+          P(poly[i], 2) - P(poly[j], 2),
+        );
       if (d(1, 3) < d(0, 2)) poly = [poly[1], poly[2], poly[3], poly[0]];
     }
     const out: number[][] = [];
@@ -366,7 +400,9 @@ export function splitAlongField(
   }
   const changedTris = Uint32Array.from(changed);
   const oldIndices = new Uint32Array(changed.length * 3);
-  changed.forEach((t, i) => oldIndices.set(idx.subarray(3 * t, 3 * t + 3), 3 * i));
+  changed.forEach((t, i) => {
+    oldIndices.set(idx.subarray(3 * t, 3 * t + 3), 3 * i);
+  });
   return {
     baseVerts: vCount,
     baseTris: triCount,
@@ -386,7 +422,13 @@ export function splitAlongField(
  * `radius` içindeki bölge sınırına işaretli uzaklık, 2G − G∘G ile
  * yumuşatılmış hali (`phiN`) ve yerel komşuluk. Sınır yoksa null.
  */
-function smoothField(mesh: LabeledMesh, slot: number, dist2: (v: number) => number, radius: number, strength: number) {
+function smoothField(
+  mesh: LabeledMesh,
+  slot: number,
+  dist2: (v: number) => number,
+  radius: number,
+  strength: number,
+) {
   const { labels, positions: pos, indices: idx } = mesh;
   const triCount = labels.length;
   const vCount = pos.length / 3;
@@ -415,7 +457,7 @@ function smoothField(mesh: LabeledMesh, slot: number, dist2: (v: number) => numb
     const v = verts[i];
     let inS = 0;
     let out = 0;
-    for (let j = start[v]; j < start[v + 1]; j++) (labels[list[j]] === slot ? inS++ : out++);
+    for (let j = start[v]; j < start[v + 1]; j++) labels[list[j]] === slot ? inS++ : out++;
     side[i] = inS && out ? 0 : inS ? 1 : -1;
     if (side[i] === 0 && dist2(v) <= radius * radius) anyBoundary = true;
   }
@@ -516,7 +558,10 @@ export function smoothBoundaryAt(
   outsideLabel: (t: number) => number,
 ): number[] {
   const { labels, positions: pos, indices: idx } = mesh;
-  const dist2 = (v: number) => (pos[3 * v] - center[0]) ** 2 + (pos[3 * v + 1] - center[1]) ** 2 + (pos[3 * v + 2] - center[2]) ** 2;
+  const dist2 = (v: number) =>
+    (pos[3 * v] - center[0]) ** 2 +
+    (pos[3 * v + 1] - center[1]) ** 2 +
+    (pos[3 * v + 2] - center[2]) ** 2;
   const field = smoothField(mesh, slot, dist2, radius, strength);
   if (!field) return [];
   const { verts, local, nbr, near, phiN, w, start, list, P, n } = field;
@@ -542,7 +587,10 @@ export function smoothBoundaryAt(
     const a = 3 * idx[3 * t];
     const b = 3 * idx[3 * t + 1];
     const c = 3 * idx[3 * t + 2];
-    return cross([pos[b] - pos[a], pos[b + 1] - pos[a + 1], pos[b + 2] - pos[a + 2]], [pos[c] - pos[a], pos[c + 1] - pos[a + 1], pos[c + 2] - pos[a + 2]]);
+    return cross(
+      [pos[b] - pos[a], pos[b + 1] - pos[a + 1], pos[b + 2] - pos[a + 2]],
+      [pos[c] - pos[a], pos[c + 1] - pos[a + 1], pos[c + 2] - pos[a + 2]],
+    );
   };
   for (let i = 0; i < n; i++) {
     if (w(i) === 0) continue;
@@ -764,7 +812,10 @@ class SegmentIndex {
 const vertexTriCache = new WeakMap<Uint32Array, { start: Uint32Array; list: Uint32Array }>();
 
 /** Köşe -> üçgenler (CSR). İndeks dizisi başına önbellekli (fırça darbeleri boyunca değişmez). */
-function vertexTriangles(idx: Uint32Array, vCount: number): { start: Uint32Array; list: Uint32Array } {
+function vertexTriangles(
+  idx: Uint32Array,
+  vCount: number,
+): { start: Uint32Array; list: Uint32Array } {
   let c = vertexTriCache.get(idx);
   if (!c || c.start.length !== vCount + 1) {
     const start = new Uint32Array(vCount + 1);
@@ -840,14 +891,22 @@ function snapBoundaryToCurves(
         n = [n[0] + tn[0], n[1] + tn[1], n[2] + tn[2]];
         for (let k = 0; k < 3; k++) {
           const w = idx[3 * t + k];
-          if (w !== v) minEdge = Math.min(minEdge, Math.hypot(pos[3 * w] - p[0], pos[3 * w + 1] - p[1], pos[3 * w + 2] - p[2]));
+          if (w !== v)
+            minEdge = Math.min(
+              minEdge,
+              Math.hypot(pos[3 * w] - p[0], pos[3 * w + 1] - p[1], pos[3 * w + 2] - p[2]),
+            );
         }
       }
       const nl = Math.hypot(...n) || 1;
       n = [n[0] / nl, n[1] / nl, n[2] / nl];
       // hedef: eğrinin offset kadar dışı (bölge solda: dış = -sol)
       const left = cross(n, hit.tangent);
-      const target: V3 = [hit.point[0] - offset * left[0], hit.point[1] - offset * left[1], hit.point[2] - offset * left[2]];
+      const target: V3 = [
+        hit.point[0] - offset * left[0],
+        hit.point[1] - offset * left[1],
+        hit.point[2] - offset * left[2],
+      ];
       let d = sub(target, p);
       const dn = dot(d, n);
       d = [d[0] - dn * n[0], d[1] - dn * n[1], d[2] - dn * n[2]];
@@ -920,7 +979,8 @@ export function smoothStrokeSplit(
     const z = pos[3 * v + 2];
     if (x < lo[0] || y < lo[1] || z < lo[2] || x > hi[0] || y > hi[1] || z > hi[2]) return far;
     let best = far;
-    for (const c of centers) best = Math.min(best, (x - c[0]) ** 2 + (y - c[1]) ** 2 + (z - c[2]) ** 2);
+    for (const c of centers)
+      best = Math.min(best, (x - c[0]) ** 2 + (y - c[1]) ** 2 + (z - c[2]) ** 2);
     return best;
   };
   const field = smoothField(mesh, slot, dist2, radius, strength);

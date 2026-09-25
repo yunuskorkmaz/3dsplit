@@ -11,7 +11,14 @@ function loadState(): Record<string, boolean> {
 }
 
 /** Katlanır panel; açık/kapalı durumu tarayıcıda hatırlanır. */
-export function Panel(props: { id: string; title: ReactNode; extra?: ReactNode; grow?: boolean; defaultOpen?: boolean; children: ReactNode }) {
+export function Panel(props: {
+  id: string;
+  title: ReactNode;
+  extra?: ReactNode;
+  grow?: boolean;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(() => loadState()[props.id] ?? props.defaultOpen ?? true);
   const toggle = () => {
     const next = !open;

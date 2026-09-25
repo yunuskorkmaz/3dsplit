@@ -1,6 +1,16 @@
 import { useRef } from 'react';
 import { ACCEPTED_EXTENSIONS } from '../io/importFile';
-import { export3mf, export3mfGeneric, exportPartStl, exportStlZip, importFiles, redo, saveProject, toggleExplode, undo } from '../state/actions';
+import {
+  export3mf,
+  export3mfGeneric,
+  exportPartStl,
+  exportStlZip,
+  importFiles,
+  redo,
+  saveProject,
+  toggleExplode,
+  undo,
+} from '../state/actions';
 import { useKeymap } from '../state/keymap';
 import { get, set, useStore } from '../state/store';
 
@@ -21,7 +31,11 @@ export function Header() {
   return (
     <header className="topbar">
       <span className="brand">3dsplit</span>
-      <button type="button" onClick={() => input.current?.click()} title="STL, OBJ, 3MF veya .3dsplit (sürükleyip bırakmak da olur)">
+      <button
+        type="button"
+        onClick={() => input.current?.click()}
+        title="STL, OBJ, 3MF veya .3dsplit (sürükleyip bırakmak da olur)"
+      >
         Aç
       </button>
       <input
@@ -35,21 +49,44 @@ export function Header() {
           e.target.value = '';
         }}
       />
-      <button type="button" disabled={!hasParts} onClick={saveProject} title="Boyama ve parçalarla birlikte kaydet (.3dsplit)">
+      <button
+        type="button"
+        disabled={!hasParts}
+        onClick={saveProject}
+        title="Boyama ve parçalarla birlikte kaydet (.3dsplit)"
+      >
         Kaydet
       </button>
       <details className="menu">
         <summary className={hasParts ? '' : 'disabled'}>Dışa aktar ▾</summary>
         <div className="menu-list">
-          <button type="button" onClick={(e) => (closeMenu(e), export3mf())}>
+          <button
+            type="button"
+            onClick={(e) => {
+              closeMenu(e);
+              export3mf();
+            }}
+          >
             3MF — Bambu Studio / OrcaSlicer
             <small>Renk başına filament, parçalar plakada dizili</small>
           </button>
-          <button type="button" onClick={(e) => (closeMenu(e), export3mfGeneric())}>
+          <button
+            type="button"
+            onClick={(e) => {
+              closeMenu(e);
+              export3mfGeneric();
+            }}
+          >
             3MF — genel
             <small>Her slicer'da açılır, filament ataması yok</small>
           </button>
-          <button type="button" onClick={(e) => (closeMenu(e), exportStlZip())}>
+          <button
+            type="button"
+            onClick={(e) => {
+              closeMenu(e);
+              exportStlZip();
+            }}
+          >
             STL (ZIP)
             <small>Görünür parçalar, her biri ayrı STL</small>
           </button>
@@ -73,14 +110,29 @@ export function Header() {
         ↷
       </button>
       <span className="sep" />
-      <button type="button" className={explode > 0 ? 'active' : ''} onClick={toggleExplode} title={`Ayrık görünüm: parçaları birbirinden uzaklaştırır, sadece görüntü (${keys['view.explode']})`}>
+      <button
+        type="button"
+        className={explode > 0 ? 'active' : ''}
+        onClick={toggleExplode}
+        title={`Ayrık görünüm: parçaları birbirinden uzaklaştırır, sadece görüntü (${keys['view.explode']})`}
+      >
         Ayrık
       </button>
-      <button type="button" className={xray ? 'active' : ''} onClick={() => set({ xray: !xray })} title="X-ray: model yarı saydam, fırça arka yüzleri de boyar">
+      <button
+        type="button"
+        className={xray ? 'active' : ''}
+        onClick={() => set({ xray: !xray })}
+        title="X-ray: model yarı saydam, fırça arka yüzleri de boyar"
+      >
         X-ray
       </button>
       <span className="spacer" />
-      <button type="button" className="help-btn" onClick={() => set({ helpOpen: true })} title={`Yardım: iş akışı, araçlar, fare, kısayollar (${keys.help})`}>
+      <button
+        type="button"
+        className="help-btn"
+        onClick={() => set({ helpOpen: true })}
+        title={`Yardım: iş akışı, araçlar, fare, kısayollar (${keys.help})`}
+      >
         ? Yardım
       </button>
     </header>

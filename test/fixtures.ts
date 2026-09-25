@@ -18,18 +18,46 @@ export function subdividedCube(size: number, n: number): MeshData {
   const h = size / 2;
   // her yüz: merkez, u, v (u x v dışa bakar)
   const faces: [number[], number[], number[]][] = [
-    [[h, 0, 0], [0, 1, 0], [0, 0, 1]],
-    [[-h, 0, 0], [0, 0, 1], [0, 1, 0]],
-    [[0, h, 0], [0, 0, 1], [1, 0, 0]],
-    [[0, -h, 0], [1, 0, 0], [0, 0, 1]],
-    [[0, 0, h], [1, 0, 0], [0, 1, 0]],
-    [[0, 0, -h], [0, 1, 0], [1, 0, 0]],
+    [
+      [h, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ],
+    [
+      [-h, 0, 0],
+      [0, 0, 1],
+      [0, 1, 0],
+    ],
+    [
+      [0, h, 0],
+      [0, 0, 1],
+      [1, 0, 0],
+    ],
+    [
+      [0, -h, 0],
+      [1, 0, 0],
+      [0, 0, 1],
+    ],
+    [
+      [0, 0, h],
+      [1, 0, 0],
+      [0, 1, 0],
+    ],
+    [
+      [0, 0, -h],
+      [0, 1, 0],
+      [1, 0, 0],
+    ],
   ];
   for (const [c, u, v] of faces) {
     const p = (i: number, j: number) => {
       const s = -h + (size * i) / n;
       const t = -h + (size * j) / n;
-      return vert(c[0] + u[0] * s + v[0] * t, c[1] + u[1] * s + v[1] * t, c[2] + u[2] * s + v[2] * t);
+      return vert(
+        c[0] + u[0] * s + v[0] * t,
+        c[1] + u[1] * s + v[1] * t,
+        c[2] + u[2] * s + v[2] * t,
+      );
     };
     for (let i = 0; i < n; i++) {
       for (let j = 0; j < n; j++) {
@@ -45,7 +73,11 @@ export function subdividedCube(size: number, n: number): MeshData {
 }
 
 /** Merkezi, dış normali verilen düzlemin üstündeki (z > limit) üst yüz üçgenlerini `slot` ile etiketler. */
-export function labelWhere(mesh: MeshData, slot: number, pred: (cx: number, cy: number, cz: number) => boolean): LabeledMesh {
+export function labelWhere(
+  mesh: MeshData,
+  slot: number,
+  pred: (cx: number, cy: number, cz: number) => boolean,
+): LabeledMesh {
   const labels = new Uint16Array(mesh.indices.length / 3);
   const p = mesh.positions;
   for (let t = 0; t < labels.length; t++) {

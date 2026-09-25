@@ -19,7 +19,13 @@ export function topologyOf(mesh: LabeledMesh): Topology {
   let t = cache.get(mesh);
   if (!t) {
     const { normals, areas } = faceNormalsAndAreas(mesh);
-    t = { adj: buildAdjacency(mesh), normals, areas, centroids: faceCentroids(mesh), meanEdge: meanEdgeLength(mesh) };
+    t = {
+      adj: buildAdjacency(mesh),
+      normals,
+      areas,
+      centroids: faceCentroids(mesh),
+      meanEdge: meanEdgeLength(mesh),
+    };
     cache.set(mesh, t);
   }
   return t;
@@ -48,7 +54,11 @@ export function concavityOf(mesh: LabeledMesh, scale: number): Float32Array {
  * Konumları değişen ama bağlantısı aynı kalan mesh için: komşuluk eski
  * mesh'ten alınır, yüz bilgileri yeniden hesaplanır (yumuşatma fırçası).
  */
-export function refreshGeometry(mesh: LabeledMesh, from?: LabeledMesh, tris?: ArrayLike<number>): void {
+export function refreshGeometry(
+  mesh: LabeledMesh,
+  from?: LabeledMesh,
+  tris?: ArrayLike<number>,
+): void {
   const prev = cache.get(from ?? mesh);
   if (prev && tris && !from) {
     // X38: sadece konumu değişen üçgenlerin yüz bilgisi
@@ -59,7 +69,13 @@ export function refreshGeometry(mesh: LabeledMesh, from?: LabeledMesh, tris?: Ar
   }
   const adj = prev ? prev.adj : buildAdjacency(mesh);
   const { normals, areas } = faceNormalsAndAreas(mesh);
-  cache.set(mesh, { adj, normals, areas, centroids: faceCentroids(mesh), meanEdge: meanEdgeLength(mesh) });
+  cache.set(mesh, {
+    adj,
+    normals,
+    areas,
+    centroids: faceCentroids(mesh),
+    meanEdge: meanEdgeLength(mesh),
+  });
   concavityCache.delete(mesh);
   gridCache.delete(mesh);
 }
@@ -69,7 +85,11 @@ export function refreshGeometry(mesh: LabeledMesh, from?: LabeledMesh, tris?: Ar
  * değişen ve eklenen üçgenler için güncellenir (1.9M üçgende baştan kurmak
  * her darbede ~0.5 s sürüyordu). Önbellek yoksa bir şey yapılmaz.
  */
-export function patchTopology(mesh: LabeledMesh, changed: ArrayLike<number>, firstAdded: number): void {
+export function patchTopology(
+  mesh: LabeledMesh,
+  changed: ArrayLike<number>,
+  firstAdded: number,
+): void {
   const prev = cache.get(mesh);
   concavityCache.delete(mesh);
   gridCache.delete(mesh);
@@ -86,7 +106,13 @@ export function patchTopology(mesh: LabeledMesh, changed: ArrayLike<number>, fir
   const tris: number[] = Array.from(changed);
   for (let t = firstAdded; t < triCount; t++) tris.push(t);
   writeFaceData(mesh, tris, normals, areas, centroids);
-  cache.set(mesh, { adj: patchAdjacency(prev.adj, mesh, changed, firstAdded), normals, areas, centroids, meanEdge: prev.meanEdge });
+  cache.set(mesh, {
+    adj: patchAdjacency(prev.adj, mesh, changed, firstAdded),
+    normals,
+    areas,
+    centroids,
+    meanEdge: prev.meanEdge,
+  });
 }
 
 /** Mesh'in bağlantısı yerinde değişti (üçgen bölme): tüm önbellekler atılır. */

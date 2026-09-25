@@ -1,8 +1,8 @@
 import { signedVolume } from './geometry';
+import { IntTripleTable } from './hashTable';
 import { boundaryLoops, buildAdjacency, connectedComponents, NON_MANIFOLD } from './topology';
 import type { MeshData } from './types';
 import { weldVertices } from './weld';
-import { IntTripleTable } from './hashTable';
 
 export interface RepairReport {
   inputTriangles: number;
@@ -55,7 +55,12 @@ export function repairMesh(
   };
 }
 
-function removeBadTriangles(mesh: MeshData): { mesh: MeshData; degenerate: number; duplicate: number; source: Int32Array } {
+function removeBadTriangles(mesh: MeshData): {
+  mesh: MeshData;
+  degenerate: number;
+  duplicate: number;
+  source: Int32Array;
+} {
   const { positions: p, indices: idx } = mesh;
   const triCount = idx.length / 3;
   const keep = new Uint32Array(idx.length);
@@ -99,7 +104,12 @@ function removeBadTriangles(mesh: MeshData): { mesh: MeshData; degenerate: numbe
     keep[kept++] = b;
     keep[kept++] = c;
   }
-  return { mesh: { positions: p, indices: keep.slice(0, kept) }, degenerate, duplicate, source: source.slice(0, kept / 3) };
+  return {
+    mesh: { positions: p, indices: keep.slice(0, kept) },
+    degenerate,
+    duplicate,
+    source: source.slice(0, kept / 3),
+  };
 }
 
 function edgeDirection(idx: Uint32Array, t: number, a: number, b: number): number {

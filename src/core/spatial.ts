@@ -29,7 +29,11 @@ export class TriangleGrid {
     const extent = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2], 1e-6);
     this.cell = Math.max(cellSize, extent / 256);
     this.min = min;
-    this.dims = [0, 1, 2].map((k) => Math.max(1, Math.ceil((max[k] - min[k]) / this.cell) + 1)) as [number, number, number];
+    this.dims = [0, 1, 2].map((k) => Math.max(1, Math.ceil((max[k] - min[k]) / this.cell) + 1)) as [
+      number,
+      number,
+      number,
+    ];
     const cellOf = new Uint32Array(n);
     const count = new Uint32Array(this.dims[0] * this.dims[1] * this.dims[2] + 1);
     for (let t = 0; t < n; t++) {

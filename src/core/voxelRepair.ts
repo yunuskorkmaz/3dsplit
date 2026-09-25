@@ -31,7 +31,11 @@ export function voxelRepair(mesh: LabeledMesh, resolution = 160): VoxelRepairRes
   const h = size / resolution;
   const pad = maxClose + 3;
   const o: Vec3 = [min[0] - pad * h, min[1] - pad * h, min[2] - pad * h];
-  const dims = [0, 1, 2].map((k) => Math.ceil((max[k] - min[k]) / h) + 2 * pad + 1) as [number, number, number];
+  const dims = [0, 1, 2].map((k) => Math.ceil((max[k] - min[k]) / h) + 2 * pad + 1) as [
+    number,
+    number,
+    number,
+  ];
   const [nx, ny, nz] = dims;
   const idx = (x: number, y: number, z: number) => x + nx * (y + ny * z);
   const cells = nx * ny * nz;
@@ -44,7 +48,8 @@ export function voxelRepair(mesh: LabeledMesh, resolution = 160): VoxelRepairRes
     const ix = Math.floor((x - o[0]) / h);
     const iy = Math.floor((y - o[1]) / h);
     const iz = Math.floor((z - o[2]) / h);
-    if (ix >= 0 && iy >= 0 && iz >= 0 && ix < nx && iy < ny && iz < nz) surface[idx(ix, iy, iz)] = 1;
+    if (ix >= 0 && iy >= 0 && iz >= 0 && ix < nx && iy < ny && iz < nz)
+      surface[idx(ix, iy, iz)] = 1;
   };
   for (let t = 0; t < tris.length; t += 3) {
     const a = 3 * tris[t];
@@ -59,7 +64,11 @@ export function voxelRepair(mesh: LabeledMesh, resolution = 160): VoxelRepairRes
         const u = i / steps;
         const v = j / steps;
         const w = 1 - u - v;
-        mark(w * p[a] + u * p[b] + v * p[c], w * p[a + 1] + u * p[b + 1] + v * p[c + 1], w * p[a + 2] + u * p[b + 2] + v * p[c + 2]);
+        mark(
+          w * p[a] + u * p[b] + v * p[c],
+          w * p[a + 1] + u * p[b + 1] + v * p[c + 1],
+          w * p[a + 2] + u * p[b + 2] + v * p[c + 2],
+        );
       }
     }
   }
@@ -126,9 +135,15 @@ export function voxelRepair(mesh: LabeledMesh, resolution = 160): VoxelRepairRes
         const a = 3 * ix[3 * t];
         const b = 3 * ix[3 * t + 1];
         const e = 3 * ix[3 * t + 2];
-        const ux = pp[b] - pp[a], uy = pp[b + 1] - pp[a + 1], uz = pp[b + 2] - pp[a + 2];
-        const wx = pp[e] - pp[a], wy = pp[e + 1] - pp[a + 1], wz = pp[e + 2] - pp[a + 2];
-        const nx2 = uy * wz - uz * wy, ny2 = uz * wx - ux * wz, nz2 = ux * wy - uy * wx;
+        const ux = pp[b] - pp[a],
+          uy = pp[b + 1] - pp[a + 1],
+          uz = pp[b + 2] - pp[a + 2];
+        const wx = pp[e] - pp[a],
+          wy = pp[e + 1] - pp[a + 1],
+          wz = pp[e + 2] - pp[a + 2];
+        const nx2 = uy * wz - uz * wy,
+          ny2 = uz * wx - ux * wz,
+          nz2 = ux * wy - uy * wx;
         const side = nx2 * (q[0] - c[0]) + ny2 * (q[1] - c[1]) + nz2 * (q[2] - c[2]);
         sign = side > 0 ? -1 : side < 0 ? 1 : Math.sign(v || 1);
       }
@@ -154,7 +169,11 @@ export function voxelRepair(mesh: LabeledMesh, resolution = 160): VoxelRepairRes
       positions[3 * i + 2] = m.vertProperties[m.numProp * i + 2];
     }
     const out: MeshData = { positions, indices: new Uint32Array(m.triVerts) };
-    return { mesh: { ...out, labels: transferLabels(mesh, out, h) }, voxelSize: h, closedGap: 2 * closeRadius * h };
+    return {
+      mesh: { ...out, labels: transferLabels(mesh, out, h) },
+      voxelSize: h,
+      closedGap: 2 * closeRadius * h,
+    };
   } finally {
     man.delete();
   }
@@ -165,14 +184,22 @@ function closestOnTriangle(q: Vec3, p: Float32Array, idx: Uint32Array, t: number
   const a = 3 * idx[3 * t];
   const b = 3 * idx[3 * t + 1];
   const c = 3 * idx[3 * t + 2];
-  const abx = p[b] - p[a], aby = p[b + 1] - p[a + 1], abz = p[b + 2] - p[a + 2];
-  const acx = p[c] - p[a], acy = p[c + 1] - p[a + 1], acz = p[c + 2] - p[a + 2];
-  const apx = q[0] - p[a], apy = q[1] - p[a + 1], apz = q[2] - p[a + 2];
+  const abx = p[b] - p[a],
+    aby = p[b + 1] - p[a + 1],
+    abz = p[b + 2] - p[a + 2];
+  const acx = p[c] - p[a],
+    acy = p[c + 1] - p[a + 1],
+    acz = p[c + 2] - p[a + 2];
+  const apx = q[0] - p[a],
+    apy = q[1] - p[a + 1],
+    apz = q[2] - p[a + 2];
   const d1 = abx * apx + aby * apy + abz * apz;
   const d2 = acx * apx + acy * apy + acz * apz;
   const dist = (x: number, y: number, z: number): Vec3 => [x, y, z];
   if (d1 <= 0 && d2 <= 0) return dist(p[a], p[a + 1], p[a + 2]);
-  const bpx = q[0] - p[b], bpy = q[1] - p[b + 1], bpz = q[2] - p[b + 2];
+  const bpx = q[0] - p[b],
+    bpy = q[1] - p[b + 1],
+    bpz = q[2] - p[b + 2];
   const d3 = abx * bpx + aby * bpy + abz * bpz;
   const d4 = acx * bpx + acy * bpy + acz * bpz;
   if (d3 >= 0 && d4 <= d3) return dist(p[b], p[b + 1], p[b + 2]);
@@ -181,7 +208,9 @@ function closestOnTriangle(q: Vec3, p: Float32Array, idx: Uint32Array, t: number
     const v = d1 / (d1 - d3);
     return dist(p[a] + v * abx, p[a + 1] + v * aby, p[a + 2] + v * abz);
   }
-  const cpx = q[0] - p[c], cpy = q[1] - p[c + 1], cpz = q[2] - p[c + 2];
+  const cpx = q[0] - p[c],
+    cpy = q[1] - p[c + 1],
+    cpz = q[2] - p[c + 2];
   const d5 = abx * cpx + aby * cpy + abz * cpz;
   const d6 = acx * cpx + acy * cpy + acz * cpz;
   if (d6 >= 0 && d5 <= d6) return dist(p[c], p[c + 1], p[c + 2]);
@@ -193,7 +222,11 @@ function closestOnTriangle(q: Vec3, p: Float32Array, idx: Uint32Array, t: number
   const va = d3 * d6 - d5 * d4;
   if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) {
     const w = (d4 - d3) / (d4 - d3 + (d5 - d6));
-    return dist(p[b] + w * (p[c] - p[b]), p[b + 1] + w * (p[c + 1] - p[b + 1]), p[b + 2] + w * (p[c + 2] - p[b + 2]));
+    return dist(
+      p[b] + w * (p[c] - p[b]),
+      p[b + 1] + w * (p[c + 1] - p[b + 1]),
+      p[b + 2] + w * (p[c + 2] - p[b + 2]),
+    );
   }
   const denom = 1 / (va + vb + vc);
   const v = vb * denom;

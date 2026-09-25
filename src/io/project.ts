@@ -41,7 +41,10 @@ interface ProjectJson {
 function packMesh(m: LabeledMesh): Uint8Array {
   const out = new Uint8Array(m.positions.byteLength + m.indices.byteLength + m.labels.byteLength);
   out.set(new Uint8Array(m.positions.buffer, m.positions.byteOffset, m.positions.byteLength), 0);
-  out.set(new Uint8Array(m.indices.buffer, m.indices.byteOffset, m.indices.byteLength), m.positions.byteLength);
+  out.set(
+    new Uint8Array(m.indices.buffer, m.indices.byteOffset, m.indices.byteLength),
+    m.positions.byteLength,
+  );
   out.set(
     new Uint8Array(m.labels.buffer, m.labels.byteOffset, m.labels.byteLength),
     m.positions.byteLength + m.indices.byteLength,
@@ -54,7 +57,8 @@ function unpackMesh(bytes: Uint8Array, vertices: number, triangles: number): Lab
   const posBytes = vertices * 12;
   const idxBytes = triangles * 12;
   const labBytes = triangles * 2;
-  if (bytes.byteLength !== posBytes + idxBytes + labBytes) throw new Error('Proje dosyasında parça verisi bozuk.');
+  if (bytes.byteLength !== posBytes + idxBytes + labBytes)
+    throw new Error('Proje dosyasında parça verisi bozuk.');
   const positions = new Float32Array(bytes.slice(0, posBytes).buffer);
   const indices = new Uint32Array(bytes.slice(posBytes, posBytes + idxBytes).buffer);
   const labels = new Uint16Array(bytes.slice(posBytes + idxBytes).buffer);
@@ -86,7 +90,8 @@ export function readProject(bytes: Uint8Array): ProjectData {
   if (!raw) throw new Error('Geçerli bir 3dsplit proje dosyası değil (project.json yok).');
   const json = JSON.parse(strFromU8(raw)) as ProjectJson;
   if (json.format !== '3dsplit') throw new Error('Geçerli bir 3dsplit proje dosyası değil.');
-  if (json.version > FORMAT_VERSION) throw new Error(`Proje daha yeni bir sürümle kaydedilmiş (v${json.version}).`);
+  if (json.version > FORMAT_VERSION)
+    throw new Error(`Proje daha yeni bir sürümle kaydedilmiş (v${json.version}).`);
   return {
     slots: json.slots,
     activeSlot: json.activeSlot,

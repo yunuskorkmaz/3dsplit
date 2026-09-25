@@ -1,7 +1,10 @@
 import type { MeshData } from './types';
 
 /** Üçgen başına birim normal (3 float) ve alan. */
-export function faceNormalsAndAreas(mesh: MeshData): { normals: Float32Array; areas: Float32Array } {
+export function faceNormalsAndAreas(mesh: MeshData): {
+  normals: Float32Array;
+  areas: Float32Array;
+} {
   const { positions: p, indices: idx } = mesh;
   const triCount = idx.length / 3;
   const normals = new Float32Array(triCount * 3);
@@ -61,7 +64,10 @@ export function signedVolume(mesh: MeshData, tris?: ArrayLike<number>): number {
   return vol / 6;
 }
 
-export function boundingBox(positions: Float32Array): { min: [number, number, number]; max: [number, number, number] } {
+export function boundingBox(positions: Float32Array): {
+  min: [number, number, number];
+  max: [number, number, number];
+} {
   const min: [number, number, number] = [Infinity, Infinity, Infinity];
   const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
   for (let i = 0; i < positions.length; i += 3) {
@@ -75,7 +81,13 @@ export function boundingBox(positions: Float32Array): { min: [number, number, nu
 }
 
 /** Verilen üçgenlerin normal, alan ve ağırlık merkezini hazır dizilere yazar (yerinde güncelleme). */
-export function writeFaceData(mesh: MeshData, tris: ArrayLike<number>, normals: Float32Array, areas: Float32Array, centroids: Float32Array): void {
+export function writeFaceData(
+  mesh: MeshData,
+  tris: ArrayLike<number>,
+  normals: Float32Array,
+  areas: Float32Array,
+  centroids: Float32Array,
+): void {
   const { positions: p, indices: idx } = mesh;
   for (let i = 0; i < tris.length; i++) {
     const t = tris[i];

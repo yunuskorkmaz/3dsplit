@@ -49,7 +49,11 @@ export function CameraPanel() {
         </button>
       </div>
       <label className="field">
-        <input type="checkbox" checked={camera.invertZoom} onChange={(e) => setCameraPrefs({ ...camera, invertZoom: e.target.checked })} />
+        <input
+          type="checkbox"
+          checked={camera.invertZoom}
+          onChange={(e) => setCameraPrefs({ ...camera, invertZoom: e.target.checked })}
+        />
         <span>Ters yakınlaştırma</span>
       </label>
     </Panel>
@@ -62,7 +66,9 @@ export function PartsPanel() {
   const explode = useStore((s) => s.explode);
   const keys = useKeymap((s) => s.map);
   // kaynak parçalar kesimden sonra bilerek gizli: sayılmaz
-  const hidden = parts.filter((p) => !p.visible && (p.badge !== 'source' || parts.every((q) => q.badge === 'source'))).length;
+  const hidden = parts.filter(
+    (p) => !p.visible && (p.badge !== 'source' || parts.every((q) => q.badge === 'source')),
+  ).length;
   return (
     <Panel
       id="parts"
@@ -70,16 +76,27 @@ export function PartsPanel() {
       title={`Parçalar${parts.length ? ` (${parts.length})` : ''}`}
       extra={
         parts.length > 1 && (
-          <button type="button" disabled={!hidden} onClick={showAllParts} title={`Kaynaklar hariç hepsini göster (${keys['part.showAll']})`}>
+          <button
+            type="button"
+            disabled={!hidden}
+            onClick={showAllParts}
+            title={`Kaynaklar hariç hepsini göster (${keys['part.showAll']})`}
+          >
             Tümünü göster
           </button>
         )
       }
     >
-      {parts.length === 0 && <p className="hint">STL, OBJ veya 3MF dosyasını sürükleyip bırakın ya da üstte "Aç".</p>}
+      {parts.length === 0 && (
+        <p className="hint">STL, OBJ veya 3MF dosyasını sürükleyip bırakın ya da üstte "Aç".</p>
+      )}
       <ul className="parts">
         {parts.map((p) => (
-          <li key={p.id} className={`${p.id === selected ? 'selected' : ''}${p.visible ? '' : ' hidden-part'}`} onClick={() => selectPart(p.id)}>
+          <li
+            key={p.id}
+            className={`${p.id === selected ? 'selected' : ''}${p.visible ? '' : ' hidden-part'}`}
+            onClick={() => selectPart(p.id)}
+          >
             <button
               type="button"
               className="eye"
@@ -92,9 +109,16 @@ export function PartsPanel() {
             >
               {p.visible ? '👁' : '–'}
             </button>
-            <input className="name" value={p.name} onChange={(e) => renamePart(p.id, e.target.value)} />
+            <input
+              className="name"
+              value={p.name}
+              onChange={(e) => renamePart(p.id, e.target.value)}
+            />
             {p.badge === 'source' && (
-              <span className="badge source" title="Kesimden önceki hali; gizli tutulur, dışa aktarılmaz">
+              <span
+                className="badge source"
+                title="Kesimden önceki hali; gizli tutulur, dışa aktarılmaz"
+              >
                 kaynak
               </span>
             )}
@@ -105,10 +129,26 @@ export function PartsPanel() {
               </span>
             )}
             <span className="tris">{(p.mesh.labels.length / 1000).toFixed(1)}k</span>
-            <button type="button" className="icon-btn" title="Yalnız bunu göster / hepsini geri getir" onClick={(e) => (e.stopPropagation(), soloPart(p.id))}>
+            <button
+              type="button"
+              className="icon-btn"
+              title="Yalnız bunu göster / hepsini geri getir"
+              onClick={(e) => {
+                e.stopPropagation();
+                soloPart(p.id);
+              }}
+            >
               ◎
             </button>
-            <button type="button" className="icon-btn" title="Sil" onClick={(e) => (e.stopPropagation(), deletePart(p.id))}>
+            <button
+              type="button"
+              className="icon-btn"
+              title="Sil"
+              onClick={(e) => {
+                e.stopPropagation();
+                deletePart(p.id);
+              }}
+            >
               ×
             </button>
           </li>
@@ -146,8 +186,20 @@ export function MeshToolsPanel() {
           Voxel onar
         </button>
       </div>
-      <NumberField label="Kenar" value={refineEdge} min={0.1} max={5} step={0.05} unit="mm" onChange={(v) => set({ refineEdge: v })} />
-      <button type="button" onClick={refineSelected} title="Seçili parçayı küçük üçgenlere böler; ince sınırlar için">
+      <NumberField
+        label="Kenar"
+        value={refineEdge}
+        min={0.1}
+        max={5}
+        step={0.05}
+        unit="mm"
+        onChange={(v) => set({ refineEdge: v })}
+      />
+      <button
+        type="button"
+        onClick={refineSelected}
+        title="Seçili parçayı küçük üçgenlere böler; ince sınırlar için"
+      >
         İncelt
       </button>
       <p className="hint">Sınır tırtıklıysa önce inceltin; etiketler korunur.</p>
@@ -162,9 +214,22 @@ export function SlotPanel() {
     <Panel id="slots" title="Slotlar (renkler)">
       <ul className="slots">
         {slots.map((s) => (
-          <li key={s.id} className={s.id === active ? 'selected' : ''} onClick={() => set({ activeSlot: s.id })}>
-            <input type="color" value={s.color} onChange={(e) => updateSlot(s.id, { color: e.target.value })} onClick={(e) => e.stopPropagation()} />
-            <input className="name" value={s.name} onChange={(e) => updateSlot(s.id, { name: e.target.value })} />
+          <li
+            key={s.id}
+            className={s.id === active ? 'selected' : ''}
+            onClick={() => set({ activeSlot: s.id })}
+          >
+            <input
+              type="color"
+              value={s.color}
+              onChange={(e) => updateSlot(s.id, { color: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <input
+              className="name"
+              value={s.name}
+              onChange={(e) => updateSlot(s.id, { name: e.target.value })}
+            />
             <span className="key">{s.id <= 9 ? s.id : ''}</span>
           </li>
         ))}
@@ -173,7 +238,11 @@ export function SlotPanel() {
         <button type="button" onClick={addSlot}>
           + Slot
         </button>
-        <button type="button" onClick={autoSuggestFeatures} title="Göz, burun, kaş, kulak gibi çıkıntıları bulup her birini yeni slota boyar (tek Ctrl+Z ile geri alınır)">
+        <button
+          type="button"
+          onClick={autoSuggestFeatures}
+          title="Göz, burun, kaş, kulak gibi çıkıntıları bulup her birini yeni slota boyar (tek Ctrl+Z ile geri alınır)"
+        >
           Çıkıntıları öner
         </button>
       </div>
@@ -182,7 +251,11 @@ export function SlotPanel() {
 }
 
 const TOLERANCE_PRESETS = [
-  { label: 'Sıkı', value: 0.1, hint: 'Sıkı geçme; yapıştırıcı gerekmeyebilir, iyi kalibre yazıcı ister' },
+  {
+    label: 'Sıkı',
+    value: 0.1,
+    hint: 'Sıkı geçme; yapıştırıcı gerekmeyebilir, iyi kalibre yazıcı ister',
+  },
   { label: 'Normal', value: 0.2, hint: 'FDM için güvenli varsayılan: elle takılır' },
   { label: 'Gevşek', value: 0.3, hint: 'Yazıcı fazla akıtıyorsa veya yapıştırılacaksa' },
 ];
@@ -196,7 +269,13 @@ export function CutActions() {
   const disabled = !hasParts || activeSlot === 0;
   return (
     <div className="cut-actions">
-      <button type="button" disabled={disabled} className={previewOn ? 'active' : ''} onClick={togglePreview} title={`Kesimi uygulamadan göster (${keys.preview})`}>
+      <button
+        type="button"
+        disabled={disabled}
+        className={previewOn ? 'active' : ''}
+        onClick={togglePreview}
+        title={`Kesimi uygulamadan göster (${keys.preview})`}
+      >
         Önizleme
       </button>
       <button type="button" disabled={disabled} className="primary" onClick={runCut}>
@@ -208,7 +287,11 @@ export function CutActions() {
 
 const MODES: { id: CutMode; label: string; hint: string }[] = [
   { id: 'fast', label: 'Fast', hint: 'Düz kapakla keser; yapıştırmalık.' },
-  { id: 'socket', label: 'Socket', hint: 'Bölge içeri doğru tapa olur, gövdede yuva açılır. İnce, yüzeysel bölgeler için.' },
+  {
+    id: 'socket',
+    label: 'Socket',
+    hint: 'Bölge içeri doğru tapa olur, gövdede yuva açılır. İnce, yüzeysel bölgeler için.',
+  },
   { id: 'keys', label: 'Keys', hint: 'Düz kesim + pim/yuva. Kalın bölgeler (kol, kafa) için.' },
 ];
 
@@ -223,12 +306,19 @@ export function CutPanel() {
   const islands = cut.mode === 'socket' ? activeIslands() : [];
   const activeSlot = useStore((s) => s.activeSlot);
   const slotName = useStore((s) => s.slots.find((x) => x.id === s.activeSlot)?.name);
-  const update = (patch: Partial<CutSettings>) => set((s) => ({ cut: { ...s.cut, ...patch }, preview: null }));
+  const update = (patch: Partial<CutSettings>) =>
+    set((s) => ({ cut: { ...s.cut, ...patch }, preview: null }));
   return (
     <Panel id="cut" grow title={`Kesim — ${activeSlot === 0 ? 'slot seçin' : slotName}`}>
       <div className="row segmented">
         {MODES.map((m) => (
-          <button key={m.id} type="button" className={cut.mode === m.id ? 'active' : ''} onClick={() => update({ mode: m.id })} title={m.hint}>
+          <button
+            key={m.id}
+            type="button"
+            className={cut.mode === m.id ? 'active' : ''}
+            onClick={() => update({ mode: m.id })}
+            title={m.hint}
+          >
             {m.label}
           </button>
         ))}
@@ -247,10 +337,22 @@ export function CutPanel() {
       )}
       {cut.mode === 'socket' && (
         <Group title="Tapa">
-          <NumberField label="Derinlik" value={cut.depth} min={0.4} max={30} step={0.1} unit="mm" onChange={(v) => update({ depth: v })} />
+          <NumberField
+            label="Derinlik"
+            value={cut.depth}
+            min={0.4}
+            max={30}
+            step={0.1}
+            unit="mm"
+            onChange={(v) => update({ depth: v })}
+          />
           {islands.length > 1 && (
             <label className="field">
-              <input type="checkbox" checked={cut.linkAll} onChange={(e) => update({ linkAll: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={cut.linkAll}
+                onChange={(e) => update({ linkAll: e.target.checked })}
+              />
               <span>Link all ({islands.length} bölge aynı ayarla)</span>
             </label>
           )}
@@ -271,13 +373,26 @@ export function CutPanel() {
             ))}
           <div className="row">
             <span className="label">Yön: {cut.direction ? 'elle' : 'otomatik'}</span>
-            <button type="button" className={directionGizmo ? 'active' : ''} onClick={() => set({ directionGizmo: !directionGizmo })} title="Ok üzerindeki gizmo ile döndür">
+            <button
+              type="button"
+              className={directionGizmo ? 'active' : ''}
+              onClick={() => set({ directionGizmo: !directionGizmo })}
+              title="Ok üzerindeki gizmo ile döndür"
+            >
               Döndür
             </button>
-            <button type="button" onClick={() => setSocketDirection(cameraDirection())} title="Tapa yönü = şu anki bakış yönü">
+            <button
+              type="button"
+              onClick={() => setSocketDirection(cameraDirection())}
+              title="Tapa yönü = şu anki bakış yönü"
+            >
               Kameradan
             </button>
-            <button type="button" disabled={!cut.direction} onClick={() => setSocketDirection(null)}>
+            <button
+              type="button"
+              disabled={!cut.direction}
+              onClick={() => setSocketDirection(null)}
+            >
               Oto
             </button>
           </div>
@@ -292,11 +407,18 @@ export function CutPanel() {
             onChange={(v) => update({ inset: v })}
           />
           <div className="row">
-            <button type="button" className={ringOpen ? 'active' : ''} onClick={() => setRingOpen(!ringOpen)} title="Tapa ayağının kesitini yönlere göre şekillendir (önizlemede 1 numara kırmızı)">
+            <button
+              type="button"
+              className={ringOpen ? 'active' : ''}
+              onClick={() => setRingOpen(!ringOpen)}
+              title="Tapa ayağının kesitini yönlere göre şekillendir (önizlemede 1 numara kırmızı)"
+            >
               Kesit şekli {cut.ringProfile.some((v) => v !== 0) ? '•' : ''}
             </button>
           </div>
-          {ringOpen && <RingEditor value={cut.ringProfile} onChange={(v) => update({ ringProfile: v })} />}
+          {ringOpen && (
+            <RingEditor value={cut.ringProfile} onChange={(v) => update({ ringProfile: v })} />
+          )}
           <NumberField
             label="Squeeze"
             value={Math.round(cut.squeeze * 100)}
@@ -309,8 +431,15 @@ export function CutPanel() {
         </Group>
       )}
       {cut.mode !== 'socket' && (
-        <label className="field" title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)">
-          <input type="checkbox" checked={cut.planar} onChange={(e) => update({ planar: e.target.checked })} />
+        <label
+          className="field"
+          title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)"
+        >
+          <input
+            type="checkbox"
+            checked={cut.planar}
+            onChange={(e) => update({ planar: e.target.checked })}
+          />
           <span>Düzlemle kes</span>
         </label>
       )}
@@ -352,16 +481,26 @@ export function CutPanel() {
           )}
           <div className="row segmented">
             {TOLERANCE_PRESETS.map((t) => (
-              <button key={t.label} type="button" className={Math.abs(cut.clearance - t.value) < 1e-6 ? 'active' : ''} onClick={() => update({ clearance: t.value })} title={t.hint}>
+              <button
+                key={t.label}
+                type="button"
+                className={Math.abs(cut.clearance - t.value) < 1e-6 ? 'active' : ''}
+                onClick={() => update({ clearance: t.value })}
+                title={t.hint}
+              >
                 {t.label} {t.value}
               </button>
             ))}
           </div>
           <p className="hint">
-            {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arasındaki boşluk. FDM'de 0.2 elle takılır; sıkı geçme için 0.1, yazıcı fazla akıtıyorsa
-            0.3. Reçinede 0.05–0.1.
+            {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arasındaki boşluk. FDM'de
+            0.2 elle takılır; sıkı geçme için 0.1, yazıcı fazla akıtıyorsa 0.3. Reçinede 0.05–0.1.
           </p>
-          <button type="button" onClick={makeToleranceCoupon} title="Seçili pim/tapa ile boşluğun −0.1, kendisi ve +0.1 mm'si için delikli küçük plaka ve pimler üretir; önce bunu basıp en iyi oturanı seçin">
+          <button
+            type="button"
+            onClick={makeToleranceCoupon}
+            title="Seçili pim/tapa ile boşluğun −0.1, kendisi ve +0.1 mm'si için delikli küçük plaka ve pimler üretir; önce bunu basıp en iyi oturanı seçin"
+          >
             Deneme parçası üret
           </button>
         </Group>
@@ -370,21 +509,47 @@ export function CutPanel() {
         <Group title="Pim">
           <label className="field">
             <span>Pim şekli</span>
-            <select value={cut.pinShape} onChange={(e) => update({ pinShape: e.target.value as PinShape })}>
+            <select
+              value={cut.pinShape}
+              onChange={(e) => update({ pinShape: e.target.value as PinShape })}
+            >
               <option value="cylinder">Silindir</option>
               <option value="octagon">Sekizgen</option>
               <option value="cube">Küp</option>
               <option value="snap">Snap (yapıştırıcısız)</option>
             </select>
           </label>
-          <label className="field" title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Pim aracında tek tek boyut verilen pimler hariç">
-            <input type="checkbox" checked={cut.pinAuto} onChange={(e) => update({ pinAuto: e.target.checked })} />
+          <label
+            className="field"
+            title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Pim aracında tek tek boyut verilen pimler hariç"
+          >
+            <input
+              type="checkbox"
+              checked={cut.pinAuto}
+              onChange={(e) => update({ pinAuto: e.target.checked })}
+            />
             <span>Boyut kesitten (otomatik)</span>
           </label>
           {!cut.pinAuto && (
             <>
-              <NumberField label="Pim yarıçapı" value={cut.pinRadius} min={0.5} max={20} step={0.1} unit="mm" onChange={(v) => update({ pinRadius: v })} />
-              <NumberField label="Pim boyu" value={cut.pinLength} min={1} max={60} step={0.5} unit="mm" onChange={(v) => update({ pinLength: v })} />
+              <NumberField
+                label="Pim yarıçapı"
+                value={cut.pinRadius}
+                min={0.5}
+                max={20}
+                step={0.1}
+                unit="mm"
+                onChange={(v) => update({ pinRadius: v })}
+              />
+              <NumberField
+                label="Pim boyu"
+                value={cut.pinLength}
+                min={1}
+                max={60}
+                step={0.5}
+                unit="mm"
+                onChange={(v) => update({ pinLength: v })}
+              />
             </>
           )}
           {cut.pinShape !== 'snap' && (
@@ -400,18 +565,33 @@ export function CutPanel() {
             />
           )}
           <label className="field">
-            <input type="checkbox" checked={cut.pinOnPart} onChange={(e) => update({ pinOnPart: e.target.checked })} />
+            <input
+              type="checkbox"
+              checked={cut.pinOnPart}
+              onChange={(e) => update({ pinOnPart: e.target.checked })}
+            />
             <span>Pim kesilen parçada</span>
           </label>
           <div className="row">
-            <button type="button" className={tool === 'pin' ? 'active' : ''} onClick={() => set({ tool: tool === 'pin' ? 'smart' : 'pin' })}>
+            <button
+              type="button"
+              className={tool === 'pin' ? 'active' : ''}
+              onClick={() => set({ tool: tool === 'pin' ? 'smart' : 'pin' })}
+            >
               Pim yerleştir
             </button>
-            <button type="button" disabled={!pinCount} onClick={() => set({ pins: [], selectedPin: -1, preview: null })}>
+            <button
+              type="button"
+              disabled={!pinCount}
+              onClick={() => set({ pins: [], selectedPin: -1, preview: null })}
+            >
               Temizle ({pinCount})
             </button>
           </div>
-          <p className="hint">Bölgeye tıkla: pim ekle. Pime tıklayıp sürükle: taşı. Shift+tık: sil. Pim yoksa kesim yüzeyinin ortasına bir tane konur.</p>
+          <p className="hint">
+            Bölgeye tıkla: pim ekle. Pime tıklayıp sürükle: taşı. Shift+tık: sil. Pim yoksa kesim
+            yüzeyinin ortasına bir tane konur.
+          </p>
         </Group>
       )}
     </Panel>

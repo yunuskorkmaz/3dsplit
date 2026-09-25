@@ -17,7 +17,10 @@ import type { ExportObject } from './exportFile';
  * parça adlarını ve filament numaralarını korur, ayarlar Bambu'da seçili
  * ön ayarlardan gelir. Filament renkleri Bambu'da atanır.
  */
-export function write3mfBambu(objects: ExportObject[], opts: { title?: string; bedSize?: number; gap?: number } = {}): Uint8Array {
+export function write3mfBambu(
+  objects: ExportObject[],
+  opts: { title?: string; bedSize?: number; gap?: number } = {},
+): Uint8Array {
   const esc = (s: string) => s.replace(/[<>&"']/g, (c) => `&#${c.charCodeAt(0)};`);
   const bed = opts.bedSize ?? 256;
   const gap = opts.gap ?? 5;
@@ -72,13 +75,17 @@ export function write3mfBambu(objects: ExportObject[], opts: { title?: string; b
     const p = o.mesh.positions;
     const idx = o.mesh.indices;
     const verts: string[] = [];
-    for (let v = 0; v < p.length; v += 3) verts.push(`<vertex x="${fmt(p[v])}" y="${fmt(p[v + 1])}" z="${fmt(p[v + 2])}"/>`);
+    for (let v = 0; v < p.length; v += 3)
+      verts.push(`<vertex x="${fmt(p[v])}" y="${fmt(p[v + 1])}" z="${fmt(p[v + 2])}"/>`);
     const tris: string[] = [];
-    for (let t = 0; t < idx.length; t += 3) tris.push(`<triangle v1="${idx[t]}" v2="${idx[t + 1]}" v3="${idx[t + 2]}"/>`);
+    for (let t = 0; t < idx.length; t += 3)
+      tris.push(`<triangle v1="${idx[t]}" v2="${idx[t + 1]}" v3="${idx[t + 2]}"/>`);
     files[path.slice(1)] = strToU8(
       `${header()} <resources>\n  <object id="${innerId}" p:UUID="${uuid(n, 1)}" type="model">\n   <mesh>\n    <vertices>${verts.join('')}</vertices>\n    <triangles>${tris.join('')}</triangles>\n   </mesh>\n  </object>\n </resources>\n <build/>\n</model>\n`,
     );
-    rels.push(` <Relationship Target="${path}" Id="rel-${n}" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>`);
+    rels.push(
+      ` <Relationship Target="${path}" Id="rel-${n}" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>`,
+    );
     objectXml.push(
       `  <object id="${outerId}" name="${esc(o.name)}" p:UUID="${uuid(n, 2)}" type="model">\n   <components>\n    <component p:path="${path}" objectid="${innerId}" p:UUID="${uuid(n, 3)}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n   </components>\n  </object>`,
     );

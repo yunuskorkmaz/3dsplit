@@ -108,7 +108,12 @@ export class Viewport {
 
     this.brushCursor = new THREE.Mesh(
       new THREE.RingGeometry(0.95, 1, 48),
-      new THREE.MeshBasicMaterial({ color: '#ffffff', side: THREE.DoubleSide, depthTest: false, transparent: true }),
+      new THREE.MeshBasicMaterial({
+        color: '#ffffff',
+        side: THREE.DoubleSide,
+        depthTest: false,
+        transparent: true,
+      }),
     );
     this.brushCursor.visible = false;
     this.brushCursor.renderOrder = 10;
@@ -120,7 +125,11 @@ export class Viewport {
     this.controls.enableDamping = false;
     // sol: boşlukta döndür (model üstünde araç), sağ: her yerde döndür,
     // orta veya Ctrl/Cmd+sağ: kaydır, tekerlek: yakınlaştır
-    this.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
+    this.controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.PAN,
+      RIGHT: THREE.MOUSE.ROTATE,
+    };
     this.controls.addEventListener('change', () => {
       this.updateClipping();
       this.requestRender();
@@ -142,7 +151,7 @@ export class Viewport {
     });
     el.addEventListener('webglcontextrestored', () => {
       // GPU kaynakları gitti: parçalar bir sonraki sync'te baştan kurulur
-      this.parts.forEach((p) => this.scene.remove(p.mesh));
+      for (const p of this.parts.values()) this.scene.remove(p.mesh);
       this.parts.clear();
       this.handlers.onContextRestored();
     });
@@ -158,7 +167,12 @@ export class Viewport {
       { capture: true, passive: false },
     );
 
-    this.dirArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 10, 0xff9900);
+    this.dirArrow = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(),
+      10,
+      0xff9900,
+    );
     this.dirHandle.add(this.dirArrow);
     this.dirHandle.visible = false;
     this.anchor.add(this.dirHandle);
@@ -202,14 +216,22 @@ export class Viewport {
     }
     for (const v of views) {
       let obj = this.parts.get(v.id);
-      const inPlace = obj && obj.source === v.mesh && obj.indices !== v.mesh.indices && this.patchPart(obj);
+      const inPlace =
+        obj && obj.source === v.mesh && obj.indices !== v.mesh.indices && this.patchPart(obj);
       if (!inPlace && (!obj || obj.source !== v.mesh || obj.indices !== v.mesh.indices)) {
         if (obj) {
           this.scene.remove(obj.mesh);
           disposePart(obj);
         }
         const mesh = new THREE.Mesh(buildGeometry(v.mesh, 0, v.mesh.labels.length), newMaterial());
-        obj = { mesh, source: v.mesh, indices: v.mesh.indices, baseTris: v.mesh.labels.length, patch: null, dirty: null };
+        obj = {
+          mesh,
+          source: v.mesh,
+          indices: v.mesh.indices,
+          baseTris: v.mesh.labels.length,
+          patch: null,
+          dirty: null,
+        };
         obj.mesh.userData.partId = v.id;
         this.parts.set(v.id, obj);
         this.scene.add(obj.mesh);
@@ -241,7 +263,12 @@ export class Viewport {
     const changed: number[] = [];
     const oldIdx = obj.indices;
     for (let t = 0; t < obj.baseTris; t++) {
-      if (oldIdx[3 * t] !== m.indices[3 * t] || oldIdx[3 * t + 1] !== m.indices[3 * t + 1] || oldIdx[3 * t + 2] !== m.indices[3 * t + 2]) changed.push(t);
+      if (
+        oldIdx[3 * t] !== m.indices[3 * t] ||
+        oldIdx[3 * t + 1] !== m.indices[3 * t + 1] ||
+        oldIdx[3 * t + 2] !== m.indices[3 * t + 2]
+      )
+        changed.push(t);
     }
     obj.indices = m.indices;
     this.markDirty(obj, changed);
@@ -266,12 +293,14 @@ export class Viewport {
   /** Ana geometride `tris`in şu anki konumlarını kirli kutuya katar. */
   private markDirty(obj: PartObject, tris: ArrayLike<number>): void {
     if (!tris.length) return;
-    const pos = (obj.mesh.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
+    const pos = (obj.mesh.geometry.getAttribute('position') as THREE.BufferAttribute)
+      .array as Float32Array;
     const box = obj.dirty ?? new THREE.Box3();
     const v = new THREE.Vector3();
     for (let i = 0; i < tris.length; i++) {
       const j = 9 * tris[i];
-      for (let k = 0; k < 9; k += 3) box.expandByPoint(v.set(pos[j + k], pos[j + k + 1], pos[j + k + 2]));
+      for (let k = 0; k < 9; k += 3)
+        box.expandByPoint(v.set(pos[j + k], pos[j + k + 1], pos[j + k + 2]));
     }
     obj.dirty = box;
   }
@@ -346,7 +375,11 @@ export class Viewport {
    * Konumu veya etiketi değişen üçgenleri yerinde günceller (yumuşatma
    * fırçası). `tris` null ise darbe bitti: seçim ağacı yeniden oturtulur.
    */
-  updateTriangles(partId: string, tris: ArrayLike<number> | null, colors: (label: number) => THREE.Color): void {
+  updateTriangles(
+    partId: string,
+    tris: ArrayLike<number> | null,
+    colors: (label: number) => THREE.Color,
+  ): void {
     const obj = this.parts.get(partId);
     if (!obj) return;
     if (tris === null) {
@@ -357,7 +390,8 @@ export class Viewport {
       }
       for (const m of obj.patch ? [obj.mesh, obj.patch] : [obj.mesh]) {
         // geçersiz sınır küresi modeli görünüm dışı sayar ve model sessizce kaybolur: kaydet
-        if (!Number.isFinite(m.geometry.boundingSphere?.radius ?? Number.NaN)) console.error('Parça geometrisi geçersiz sınır küresi üretti', partId);
+        if (!Number.isFinite(m.geometry.boundingSphere?.radius ?? Number.NaN))
+          console.error('Parça geometrisi geçersiz sınır küresi üretti', partId);
       }
       this.requestRender();
       return;
@@ -368,7 +402,8 @@ export class Viewport {
     this.markDirty(obj, main);
     writeTriangles(obj.mesh.geometry, obj.source, main, 0);
     this.markDirty(obj, main);
-    if (obj.patch && extra.length) writeTriangles(obj.patch.geometry, obj.source, extra, obj.baseTris);
+    if (obj.patch && extra.length)
+      writeTriangles(obj.patch.geometry, obj.source, extra, obj.baseTris);
     this.recolor(partId, colors, tris);
   }
 
@@ -393,7 +428,11 @@ export class Viewport {
     }
     const mid = all.isEmpty() ? new THREE.Vector3() : all.getCenter(new THREE.Vector3());
     for (const [id, p] of this.parts) {
-      if (this.explode > 0) p.mesh.position.copy(centers.get(id) as THREE.Vector3).sub(mid).multiplyScalar(this.explode);
+      if (this.explode > 0)
+        p.mesh.position
+          .copy(centers.get(id) as THREE.Vector3)
+          .sub(mid)
+          .multiplyScalar(this.explode);
       else p.mesh.position.set(0, 0, 0);
       p.mesh.updateMatrixWorld();
     }
@@ -420,7 +459,9 @@ export class Viewport {
     this.controls.minDistance = size * 0.02;
     this.controls.maxDistance = size * 10;
     this.controls.target.copy(center);
-    this.camera.position.copy(center).add(new THREE.Vector3(0, -1, 0.6).normalize().multiplyScalar(size * 1.4));
+    this.camera.position
+      .copy(center)
+      .add(new THREE.Vector3(0, -1, 0.6).normalize().multiplyScalar(size * 1.4));
     this.controls.update();
     this.updateClipping();
     this.requestRender();
@@ -441,7 +482,12 @@ export class Viewport {
   }
 
   /** Önizleme (Space): tapa hacimleri/kapaklar yarı saydam, pimler mavi. */
-  setPreview(volumes: MeshData[], pins: MeshData[], thin: MeshData[] = [], ringMarkers: Vec3[] = []): void {
+  setPreview(
+    volumes: MeshData[],
+    pins: MeshData[],
+    thin: MeshData[] = [],
+    ringMarkers: Vec3[] = [],
+  ): void {
     this.clearOverlay();
     this.setXray(true);
     const volMat = new THREE.MeshStandardMaterial({
@@ -466,7 +512,12 @@ export class Viewport {
       this.overlay.add(m);
     });
     // ince duvar: modelin dışına taşan kısım, her şeyin üstünde kırmızı
-    const thinMat = new THREE.MeshBasicMaterial({ color: '#ff2020', depthTest: false, transparent: true, opacity: 0.85 });
+    const thinMat = new THREE.MeshBasicMaterial({
+      color: '#ff2020',
+      depthTest: false,
+      transparent: true,
+      opacity: 0.85,
+    });
     for (const t of thin) {
       const m = new THREE.Mesh(toGeometry(t), thinMat);
       m.renderOrder = 6;
@@ -486,7 +537,12 @@ export class Viewport {
     for (const p of pins) {
       const m = new THREE.Mesh(
         new THREE.SphereGeometry(p.radius, 16, 12),
-        new THREE.MeshBasicMaterial({ color: p.selected ? '#ff9900' : '#2f80ff', transparent: true, opacity: 0.7, depthTest: false }),
+        new THREE.MeshBasicMaterial({
+          color: p.selected ? '#ff9900' : '#2f80ff',
+          transparent: true,
+          opacity: 0.7,
+          depthTest: false,
+        }),
       );
       m.renderOrder = 5;
       m.position.set(...p.point);
@@ -536,7 +592,12 @@ export class Viewport {
    * Socket yön okunu gösterir. `editable` ise döndürme gizmosu bağlanır;
    * değişiklik `onChange` ile bildirilir. `center` null ise gizlenir.
    */
-  showDirection(center: Vec3 | null, dir: Vec3, editable: boolean, onChange: (dir: Vec3) => void): void {
+  showDirection(
+    center: Vec3 | null,
+    dir: Vec3,
+    editable: boolean,
+    onChange: (dir: Vec3) => void,
+  ): void {
     this.onDirectionChange = onChange;
     if (!center) {
       this.dirHandle.visible = false;
@@ -548,7 +609,10 @@ export class Viewport {
     this.dirHandle.position.set(...center);
     // sürükleme sırasında store'dan dönen yön tutamağı geri çevirmesin
     if (!this.gizmo.dragging) {
-      this.dirHandle.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...dir).normalize());
+      this.dirHandle.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 0, 1),
+        new THREE.Vector3(...dir).normalize(),
+      );
     }
     const size = this.sceneDiagonal() * 0.15;
     this.dirArrow.setLength(size, size * 0.25, size * 0.12);
@@ -611,10 +675,19 @@ export class Viewport {
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
       const other = [0, 1, 2].filter((k) => k !== plane.axis);
-      const g = new THREE.PlaneGeometry(size.getComponent(other[0]) * 1.2, size.getComponent(other[1]) * 1.2);
+      const g = new THREE.PlaneGeometry(
+        size.getComponent(other[0]) * 1.2,
+        size.getComponent(other[1]) * 1.2,
+      );
       const m = new THREE.Mesh(
         g,
-        new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false }),
+        new THREE.MeshBasicMaterial({
+          color: '#8fd3ff',
+          transparent: true,
+          opacity: 0.15,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        }),
       );
       // düzlemin normali (varsayılan +Z) ayna eksenine çevrilir
       const n = new THREE.Vector3();
@@ -632,7 +705,9 @@ export class Viewport {
 
   /** Kameradan hedefe değil, hedeften kameraya bakan birim yön (Socket "kameradan"). */
   viewDirection(): Vec3 {
-    const d = new THREE.Vector3().subVectors(this.camera.position, this.controls.target).normalize();
+    const d = new THREE.Vector3()
+      .subVectors(this.camera.position, this.controls.target)
+      .normalize();
     return d.toArray() as Vec3;
   }
 
@@ -682,12 +757,17 @@ export class Viewport {
 
   pick(e: { clientX: number; clientY: number }): Hit | null {
     const rect = this.renderer.domElement.getBoundingClientRect();
-    const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+    const ndc = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1,
+    );
     this.raycaster.setFromCamera(ndc, this.camera);
     this.raycaster.firstHitOnly = true;
-    const targets = [...this.parts.values()].filter((p) => p.mesh.visible).flatMap((p) => (p.patch ? [p.mesh, p.patch] : [p.mesh]));
+    const targets = [...this.parts.values()]
+      .filter((p) => p.mesh.visible)
+      .flatMap((p) => (p.patch ? [p.mesh, p.patch] : [p.mesh]));
     const hit = this.raycaster.intersectObjects(targets, false)[0];
-    if (!hit || !hit.face) return null;
+    if (!hit?.face) return null;
     return {
       partId: hit.object.userData.partId,
       // geometri indekssiz: köşe 3t+k, BVH'nin yeniden sıraladığı indeksten bağımsız; yamada ofset eklenir
@@ -787,7 +867,12 @@ function buildGeometry(m: LabeledMesh, from: number, to: number): THREE.BufferGe
 }
 
 /** `tris` üçgenlerinin konum ve yüz normallerini geometriye yazar (geometrideki numara = t − offset). */
-function writeTriangles(g: THREE.BufferGeometry, src: LabeledMesh, tris: ArrayLike<number>, offset: number): void {
+function writeTriangles(
+  g: THREE.BufferGeometry,
+  src: LabeledMesh,
+  tris: ArrayLike<number>,
+  offset: number,
+): void {
   const posAttr = g.getAttribute('position') as THREE.BufferAttribute;
   const nrmAttr = g.getAttribute('normal') as THREE.BufferAttribute;
   const pos = posAttr.array as Float32Array;
@@ -825,7 +910,12 @@ function writeTriangles(g: THREE.BufferGeometry, src: LabeledMesh, tris: ArrayLi
 }
 
 function newMaterial(): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.8, metalness: 0 });
+  return new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    flatShading: true,
+    roughness: 0.8,
+    metalness: 0,
+  });
 }
 
 function disposePart(obj: PartObject): void {

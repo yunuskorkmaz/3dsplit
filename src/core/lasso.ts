@@ -7,7 +7,12 @@ import type { MeshData } from './types';
  * boş dizi. Kenar yolu üçgen boyunda zikzak yapar; düzleştirme sonradan
  * sınır yumuşatmayla (X34) yapılır.
  */
-export function surfacePath(mesh: MeshData, nbr: { start: Uint32Array; list: Uint32Array }, from: number, to: number): number[] {
+export function surfacePath(
+  mesh: MeshData,
+  nbr: { start: Uint32Array; list: Uint32Array },
+  from: number,
+  to: number,
+): number[] {
   if (from === to) return [from];
   const p = mesh.positions;
   const dist = new Map<number, number>([[from, 0]]);
@@ -15,14 +20,17 @@ export function surfacePath(mesh: MeshData, nbr: { start: Uint32Array; list: Uin
   const heap = new MinHeap();
   heap.push(0, from);
   // hedefe düz uzaklık: A* sezgisi (kenar yolu hiçbir zaman düz çizgiden kısa değil)
-  const h = (v: number) => Math.hypot(p[3 * v] - p[3 * to], p[3 * v + 1] - p[3 * to + 1], p[3 * v + 2] - p[3 * to + 2]);
+  const h = (v: number) =>
+    Math.hypot(p[3 * v] - p[3 * to], p[3 * v + 1] - p[3 * to + 1], p[3 * v + 2] - p[3 * to + 2]);
   while (heap.size) {
     const [, v] = heap.pop();
     if (v === to) break;
     const dv = dist.get(v) as number;
     for (let i = nbr.start[v]; i < nbr.start[v + 1]; i++) {
       const w = nbr.list[i];
-      const d = dv + Math.hypot(p[3 * v] - p[3 * w], p[3 * v + 1] - p[3 * w + 1], p[3 * v + 2] - p[3 * w + 2]);
+      const d =
+        dv +
+        Math.hypot(p[3 * v] - p[3 * w], p[3 * v + 1] - p[3 * w + 1], p[3 * v + 2] - p[3 * w + 2]);
       if (d < (dist.get(w) ?? Infinity)) {
         dist.set(w, d);
         prev.set(w, v);
@@ -43,7 +51,12 @@ export { vertexNeighbors };
  * yayılan üçgen bileşenleri bulunur, alanı en küçük olan döner (çizilen
  * halkanın içi). Halka yüzeyi ayırmıyorsa null.
  */
-export function regionInsideLoop(mesh: MeshData, adj: Int32Array, areas: Float32Array, loop: number[]): Uint8Array | null {
+export function regionInsideLoop(
+  mesh: MeshData,
+  adj: Int32Array,
+  areas: Float32Array,
+  loop: number[],
+): Uint8Array | null {
   const idx = mesh.indices;
   const triCount = idx.length / 3;
   const vCount = mesh.positions.length / 3;

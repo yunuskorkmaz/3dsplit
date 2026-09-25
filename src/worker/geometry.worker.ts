@@ -1,14 +1,21 @@
-import type { PinOptions } from '../core/cut';
-import { toleranceCoupon } from '../core/coupon';
 import * as Comlink from 'comlink';
-import wasmUrl from 'manifold-3d/manifold.wasm?url';
-import { CutError, type CutOptions, cutRegion, previewCut, splitComponents, suggestCutMode } from '../core/cut';
 import type { Manifold } from 'manifold-3d';
+import wasmUrl from 'manifold-3d/manifold.wasm?url';
+import { toleranceCoupon } from '../core/coupon';
+import type { PinOptions } from '../core/cut';
+import {
+  CutError,
+  type CutOptions,
+  cutRegion,
+  previewCut,
+  splitComponents,
+  suggestCutMode,
+} from '../core/cut';
 import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from '../core/kernel';
 import { refineMesh } from '../core/refine';
 import { type RepairReport, repairMesh } from '../core/repair';
-import { voxelRepair } from '../core/voxelRepair';
 import { BASE_SLOT, type LabeledMesh } from '../core/types';
+import { voxelRepair } from '../core/voxelRepair';
 
 export interface PreparedMesh {
   mesh: LabeledMesh;
@@ -42,7 +49,9 @@ function modelProvider(mesh: LabeledMesh, key?: string) {
 }
 
 function buffersOf(meshes: LabeledMesh[]): ArrayBuffer[] {
-  return meshes.flatMap((m) => [m.positions.buffer, m.indices.buffer, m.labels.buffer] as ArrayBuffer[]);
+  return meshes.flatMap(
+    (m) => [m.positions.buffer, m.indices.buffer, m.labels.buffer] as ArrayBuffer[],
+  );
 }
 
 const api = {
@@ -50,11 +59,17 @@ const api = {
    * Yükleme: onarım + manifold doğrulaması. `labels` verilirse (boyalı 3MF)
    * onarımdan ve manifold'dan üçgen başına geçirilir.
    */
-  async prepare(positions: Float32Array, indices?: Uint32Array, labels?: Uint16Array): Promise<PreparedMesh> {
+  async prepare(
+    positions: Float32Array,
+    indices?: Uint32Array,
+    labels?: Uint16Array,
+  ): Promise<PreparedMesh> {
     await ready;
     const { mesh, report, source } = repairMesh(positions, indices);
     const mapped = new Uint16Array(source.length);
-    if (labels) for (let t = 0; t < source.length; t++) mapped[t] = source[t] >= 0 ? labels[source[t]] : BASE_SLOT;
+    if (labels)
+      for (let t = 0; t < source.length; t++)
+        mapped[t] = source[t] >= 0 ? labels[source[t]] : BASE_SLOT;
     let result: PreparedMesh;
     try {
       // faceID = etiket: manifold üçgen sırasını değiştirse de etiket üçgenle birlikte gider
@@ -70,7 +85,12 @@ const api = {
         const man = toManifold(v.mesh, v.mesh.labels);
         const canonical = fromManifold(man, BASE_SLOT);
         man.delete();
-        result = { mesh: canonical, report, manifold: true, voxel: { voxelSize: v.voxelSize, closedGap: v.closedGap } };
+        result = {
+          mesh: canonical,
+          report,
+          manifold: true,
+          voxel: { voxelSize: v.voxelSize, closedGap: v.closedGap },
+        };
       } catch {
         result = { mesh: { ...mesh, labels: mapped }, report, manifold: false, error };
       }
@@ -85,7 +105,8 @@ const api = {
       const r = cutRegion(mesh, opts, modelProvider(mesh, geomKey));
       return Comlink.transfer({ ok: true as const, ...r }, buffersOf([r.body, ...r.parts]));
     } catch (e) {
-      if (e instanceof CutError) return { ok: false as const, error: e.message, loops: e.loops ?? [] };
+      if (e instanceof CutError)
+        return { ok: false as const, error: e.message, loops: e.loops ?? [] };
       throw e;
     }
   },
@@ -107,7 +128,10 @@ const api = {
     const man = toManifold(v.mesh, v.mesh.labels);
     const out = fromManifold(man, BASE_SLOT);
     man.delete();
-    return Comlink.transfer({ mesh: out, voxelSize: v.voxelSize, closedGap: v.closedGap }, buffersOf([out]));
+    return Comlink.transfer(
+      { mesh: out, voxelSize: v.voxelSize, closedGap: v.closedGap },
+      buffersOf([out]),
+    );
   },
 
   async refine(mesh: LabeledMesh, edgeLength: number) {

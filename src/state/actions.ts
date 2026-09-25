@@ -1,4 +1,6 @@
 import type { CutOptions, PinPlacement } from '../core/cut';
+import { boundingBox } from '../core/geometry';
+import { regionInsideLoop, surfacePath, vertexNeighbors } from '../core/lasso';
 import {
   brushSelect,
   bucketFill,
@@ -11,9 +13,25 @@ import {
   smartFill,
   suggestFeatures,
 } from '../core/paint';
+import {
+  applySplit,
+  revertSplit,
+  type SplitDiff,
+  smoothBoundaryAt,
+  smoothRegionBoundary,
+  smoothStrokeSplit,
+} from '../core/smooth';
+import { mirrorPoint } from '../core/spatial';
+import { connectedComponents } from '../core/topology';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
-import { downloadBytes, type ExportObject, write3mf, writeStl, writeStlZip } from '../io/exportFile';
 import { filamentColors, write3mfBambu } from '../io/bambu3mf';
+import {
+  downloadBytes,
+  type ExportObject,
+  write3mf,
+  writeStl,
+  writeStlZip,
+} from '../io/exportFile';
 import { importFile } from '../io/importFile';
 import { PROJECT_EXTENSION, readProject, writeProject } from '../io/project';
 import { geometry } from '../worker/client';
@@ -29,12 +47,15 @@ import {
   selectedPart,
   set,
 } from './store';
-import { applySplit, revertSplit, type SplitDiff, smoothBoundaryAt, smoothRegionBoundary, smoothStrokeSplit } from '../core/smooth';
-import { boundingBox } from '../core/geometry';
-import { connectedComponents } from '../core/topology';
-import { mirrorPoint } from '../core/spatial';
-import { regionInsideLoop, surfacePath, vertexNeighbors } from '../core/lasso';
-import { concavityOf, gridOf, invalidateTopology, patchTopology, refreshGeometry, type Topology, topologyOf } from './topologyCache';
+import {
+  concavityOf,
+  gridOf,
+  invalidateTopology,
+  patchTopology,
+  refreshGeometry,
+  type Topology,
+  topologyOf,
+} from './topologyCache';
 
 // ---------- dosya ----------
 
@@ -64,7 +85,10 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
           );
         }
         if (!prepared.manifold) {
-          notify('warn', `${obj.name}: onarım sonrası mesh kapalı değil, kesim çalışmayabilir. ${prepared.error ?? ''}`);
+          notify(
+            'warn',
+            `${obj.name}: onarım sonrası mesh kapalı değil, kesim çalışmayabilir. ${prepared.error ?? ''}`,
+          );
         }
         const part: Part = {
           id: newPartId(),
@@ -107,7 +131,10 @@ export function regionFrame(): { center: Vec3; normal: Vec3 } | null {
   }
   if (area === 0) return null;
   const len = Math.hypot(...n) || 1;
-  return { center: [c[0] / area, c[1] / area, c[2] / area], normal: [n[0] / len, n[1] / len, n[2] / len] };
+  return {
+    center: [c[0] / area, c[1] / area, c[2] / area],
+    normal: [n[0] / len, n[1] / len, n[2] / len],
+  };
 }
 
 export function setSocketDirection(direction: Vec3 | null): void {
@@ -119,7 +146,10 @@ export function saveProject(): void {
   const { parts, slots, activeSlot, selectedPartId } = get();
   if (!parts.length) return notify('warn', 'Kaydedilecek parça yok.');
   const name = parts.find((p) => p.badge !== 'source')?.name ?? 'proje';
-  downloadBytes(writeProject({ parts, slots, activeSlot, selectedPartId }), `${name}${PROJECT_EXTENSION}`);
+  downloadBytes(
+    writeProject({ parts, slots, activeSlot, selectedPartId }),
+    `${name}${PROJECT_EXTENSION}`,
+  );
 }
 
 async function openProject(file: File): Promise<void> {
@@ -213,7 +243,11 @@ interface Stroke {
 
 let stroke: Stroke | null = null;
 /** Son Smart Fill; eşik değişince canlı yeniden hesaplanır. */
-let lastSmart: { partId: string; seeds: number[]; entry: Extract<HistoryEntry, { kind: 'paint' }> } | null = null;
+let lastSmart: {
+  partId: string;
+  seeds: number[];
+  entry: Extract<HistoryEntry, { kind: 'paint' }>;
+} | null = null;
 
 // ---------- ayna (B8) ----------
 
@@ -258,7 +292,8 @@ function applyLabels(part: Part, tris: ArrayLike<number>, label: number): void {
 }
 
 /** Konumu değişen üçgenleri viewport'ta yerinde güncellemek için kanca. */
-export let onGeometryChanged: ((partId: string, tris: ArrayLike<number> | null) => void) | null = null;
+export let onGeometryChanged: ((partId: string, tris: ArrayLike<number> | null) => void) | null =
+  null;
 export function setGeometryChangedHook(fn: typeof onGeometryChanged): void {
   onGeometryChanged = fn;
 }
@@ -297,7 +332,10 @@ export function brushAt(partId: string, tri: number, point: Vec3, erase: boolean
   const topo = topologyOf(part.mesh);
   const { brushRadius, xray } = get();
   // X-ray: yüzey boyunca değil, küre içindeki her üçgen (arka/gizli yüzler dahil)
-  const select = (t: number, p: Vec3) => (xray ? gridOf(part.mesh).within(p, brushRadius) : brushSelect(topo.adj, topo.centroids, t, p, brushRadius));
+  const select = (t: number, p: Vec3) =>
+    xray
+      ? gridOf(part.mesh).within(p, brushRadius)
+      : brushSelect(topo.adj, topo.centroids, t, p, brushRadius);
   applyLabels(part, select(tri, point), paintLabel(erase));
   const m = mirrored(part, point);
   if (m) applyLabels(part, select(m.tri, m.point), paintLabel(erase));
@@ -309,14 +347,22 @@ export function bucketAt(partId: string, tri: number, erase: boolean): void {
   beginStroke(partId);
   const m = mirrored(part, triCenter(part, tri));
   const mirrorTris = m ? bucketFill(topologyOf(part.mesh).adj, part.mesh.labels, m.tri) : [];
-  applyLabels(part, bucketFill(topologyOf(part.mesh).adj, part.mesh.labels, tri), paintLabel(erase));
+  applyLabels(
+    part,
+    bucketFill(topologyOf(part.mesh).adj, part.mesh.labels, tri),
+    paintLabel(erase),
+  );
   if (mirrorTris.length) applyLabels(part, mirrorTris, paintLabel(erase));
   endStroke();
 }
 
 function smartOptions(topo: Topology): SmartFillOptions {
   const { smartAngle, smartScale, smartConcave } = get();
-  return { maxAngleDeg: smartAngle, scale: smartScale > 0 ? smartScale : topo.meanEdge * 3, concaveOnly: smartConcave };
+  return {
+    maxAngleDeg: smartAngle,
+    scale: smartScale > 0 ? smartScale : topo.meanEdge * 3,
+    concaveOnly: smartConcave,
+  };
 }
 
 /**
@@ -334,10 +380,18 @@ function smartSelect(topo: Topology, mesh: LabeledMesh, seed: number): Uint32Arr
     tris = smartFill(topo.adj, topo.normals, topo.centroids, seed, opts);
   } else {
     // X14: ölçek tıklanan özelliğe göre seçilir (göz küçük, kulak büyük ölçek ister)
-    const auto = chooseSmartScale(topo.adj, topo.normals, topo.centroids, topo.areas, seed, topo.meanEdge, {
-      maxAngleDeg: opts.maxAngleDeg,
-      concaveOnly: opts.concaveOnly,
-    });
+    const auto = chooseSmartScale(
+      topo.adj,
+      topo.normals,
+      topo.centroids,
+      topo.areas,
+      seed,
+      topo.meanEdge,
+      {
+        maxAngleDeg: opts.maxAngleDeg,
+        concaveOnly: opts.concaveOnly,
+      },
+    );
     tris = auto.tris;
     opts.scale = auto.scale;
     set({ smartAutoScale: auto.scale });
@@ -345,7 +399,13 @@ function smartSelect(topo: Topology, mesh: LabeledMesh, seed: number): Uint32Arr
   if (get().smartValley) {
     const mask = new Uint8Array(labels.length);
     for (let i = 0; i < tris.length; i++) mask[tris[i]] = 1;
-    const refined = refineToValley(topo.adj, topo.centroids, concavityOf(mesh, opts.scale), mask, opts.scale * 2);
+    const refined = refineToValley(
+      topo.adj,
+      topo.centroids,
+      concavityOf(mesh, opts.scale),
+      mask,
+      opts.scale * 2,
+    );
     for (let t = 0; t < refined.length; t++) if (refined[t] && !same(t)) refined[t] = 0;
     // vadi seçimi tohumu dışarıda bırakırsa (ör. düz alana tıklama) ham sonuç kalır
     if (refined[seed]) {
@@ -355,7 +415,9 @@ function smartSelect(topo: Topology, mesh: LabeledMesh, seed: number): Uint32Arr
       tris = out;
     }
   }
-  return Uint32Array.from(closeHoles(topo.adj, topo.areas, tris, { maxHoleFraction: 0.05, accept: same }).tris);
+  return Uint32Array.from(
+    closeHoles(topo.adj, topo.areas, tris, { maxHoleFraction: 0.05, accept: same }).tris,
+  );
 }
 
 /** Birden çok tohum (ayna): hepsi aynı etiket durumunda hesaplanıp birleştirilir. */
@@ -393,7 +455,10 @@ export function smartFillAt(partId: string, tri: number, erase: boolean): void {
 
 function warnIfLeaked(selected: number, total: number): void {
   if (selected > total * 0.5) {
-    notify('warn', 'Seçim modelin yarısından fazlasına yayıldı. Açıyı düşürün (Shift+sağ sürükle) veya Ctrl+Z.');
+    notify(
+      'warn',
+      'Seçim modelin yarısından fazlasına yayıldı. Açıyı düşürün (Shift+sağ sürükle) veya Ctrl+Z.',
+    );
   }
 }
 
@@ -433,7 +498,13 @@ export function gapFillSelected(): void {
   const part = selectedPart();
   if (!part) return notify('warn', 'Önce bir parça seçin.');
   const topo = topologyOf(part.mesh);
-  const { tris, newLabels } = gapFill(part.mesh, topo.adj, part.mesh.labels, topo.areas, get().gapArea);
+  const { tris, newLabels } = gapFill(
+    part.mesh,
+    topo.adj,
+    part.mesh.labels,
+    topo.areas,
+    get().gapArea,
+  );
   if (!tris.length) return notify('info', 'Kapatılacak boşluk bulunamadı.');
   const byLabel = new Map<number, number[]>();
   tris.forEach((t, i) => {
@@ -512,7 +583,13 @@ function neighborLabel(adj: Int32Array, labels: Uint16Array, t: number, exclude:
 // ---------- yumuşatma fırçası ----------
 
 /** Açık yumuşatma darbesi: mesh yerinde değişir, darbe başındaki hali geri alma farkı için saklanır. */
-let smoothStroke: { partId: string; mesh: LabeledMesh; pos0: Float32Array; lab0: Uint16Array; path: Vec3[] } | null = null;
+let smoothStroke: {
+  partId: string;
+  mesh: LabeledMesh;
+  pos0: Float32Array;
+  lab0: Uint16Array;
+  path: Vec3[];
+} | null = null;
 
 /**
  * Yumuşatma darbesi başlar. Mesh kopyalanmaz: darbe boyunca yerinde değişir,
@@ -592,8 +669,17 @@ export function smoothAt(point: Vec3): void {
       onGeometryChanged?.(partId, null);
       onLabelsChanged?.(partId);
     }
-    console.error('Yumuşatma geçersiz konum üretti', { point, brushRadius, smoothStrength, slot, tris: tris.length });
-    notify('error', 'Yumuşatma geçersiz bir sonuç üretti ve geri alındı. Tekrarlarsa bildirin (konsolda ayrıntı var).');
+    console.error('Yumuşatma geçersiz konum üretti', {
+      point,
+      brushRadius,
+      smoothStrength,
+      slot,
+      tris: tris.length,
+    });
+    notify(
+      'error',
+      'Yumuşatma geçersiz bir sonuç üretti ve geri alındı. Tekrarlarsa bildirin (konsolda ayrıntı var).',
+    );
     return;
   }
   if (tris.length) onGeometryChanged?.(partId, tris);
@@ -604,7 +690,12 @@ function trianglesOfVertices(mesh: LabeledMesh, verts: number[]): number[] {
   const set = new Set(verts);
   const out: number[] = [];
   for (let t = 0; t < mesh.labels.length; t++) {
-    if (set.has(mesh.indices[3 * t]) || set.has(mesh.indices[3 * t + 1]) || set.has(mesh.indices[3 * t + 2])) out.push(t);
+    if (
+      set.has(mesh.indices[3 * t]) ||
+      set.has(mesh.indices[3 * t + 1]) ||
+      set.has(mesh.indices[3 * t + 2])
+    )
+      out.push(t);
   }
   return out;
 }
@@ -614,7 +705,8 @@ function finiteAt(mesh: LabeledMesh, tris: ArrayLike<number>): boolean {
   for (let i = 0; i < tris.length; i++) {
     for (let k = 0; k < 3; k++) {
       const v = 3 * idx[3 * tris[i] + k];
-      if (!Number.isFinite(p[v]) || !Number.isFinite(p[v + 1]) || !Number.isFinite(p[v + 2])) return false;
+      if (!Number.isFinite(p[v]) || !Number.isFinite(p[v + 1]) || !Number.isFinite(p[v + 2]))
+        return false;
     }
   }
   return true;
@@ -626,7 +718,11 @@ export function endSmoothStroke(): void {
   smoothStroke = null;
   const verts: number[] = [];
   for (let v = 0; v < pos0.length / 3; v++) {
-    if (pos0[3 * v] !== mesh.positions[3 * v] || pos0[3 * v + 1] !== mesh.positions[3 * v + 1] || pos0[3 * v + 2] !== mesh.positions[3 * v + 2]) {
+    if (
+      pos0[3 * v] !== mesh.positions[3 * v] ||
+      pos0[3 * v + 1] !== mesh.positions[3 * v + 1] ||
+      pos0[3 * v + 2] !== mesh.positions[3 * v + 2]
+    ) {
       verts.push(v);
     }
   }
@@ -653,7 +749,10 @@ export function endSmoothStroke(): void {
     onGeometryChanged?.(partId, verts.length ? trianglesOfVertices(mesh, verts) : []);
     onGeometryChanged?.(partId, null);
     onLabelsChanged?.(partId);
-    notify('error', 'Yumuşatma darbesi geçersiz bir sonuç üretti ve geri alındı (ayrıntı konsolda).');
+    notify(
+      'error',
+      'Yumuşatma darbesi geçersiz bir sonuç üretti ve geri alındı (ayrıntı konsolda).',
+    );
     return;
   }
   const tris: number[] = [];
@@ -664,7 +763,9 @@ export function endSmoothStroke(): void {
   if (!verts.length && !tris.length) return;
   const pick = (src: Float32Array) => {
     const out = new Float32Array(verts.length * 3);
-    verts.forEach((v, i) => out.set(src.subarray(3 * v, 3 * v + 3), 3 * i));
+    verts.forEach((v, i) => {
+      out.set(src.subarray(3 * v, 3 * v + 3), 3 * i);
+    });
     return out;
   };
   pushHistory({
@@ -718,7 +819,11 @@ function replaceMeshArrays(mesh: LabeledMesh, next: LabeledMesh, forward?: Split
   else invalidateTopology(mesh);
   bumpGeometry(mesh);
   // viewport geometrisi yeniden kurulsun: parça nesnesi yenilenir, mesh aynı kalır
-  set((s) => ({ parts: s.parts.map((p) => (p.mesh === mesh ? { ...p } : p)), preview: null, paintVersion: s.paintVersion + 1 }));
+  set((s) => ({
+    parts: s.parts.map((p) => (p.mesh === mesh ? { ...p } : p)),
+    preview: null,
+    paintVersion: s.paintVersion + 1,
+  }));
 }
 
 // ---------- bölgeler (C12) ----------
@@ -730,14 +835,20 @@ export interface IslandInfo {
   center: Vec3;
 }
 
-let islandCache: { mesh: LabeledMesh; slot: number; version: number; list: IslandInfo[] } | null = null;
+let islandCache: { mesh: LabeledMesh; slot: number; version: number; list: IslandInfo[] } | null =
+  null;
 
 /** Seçili parçada aktif slotun bölgeleri (1 mm² altı kırıntılar hariç, çekirdekteki gibi). */
 export function activeIslands(): IslandInfo[] {
   const part = selectedPart();
   const { activeSlot: slot, paintVersion } = get();
   if (!part || slot === BASE_SLOT) return [];
-  if (islandCache && islandCache.mesh === part.mesh && islandCache.slot === slot && islandCache.version === paintVersion) {
+  if (
+    islandCache &&
+    islandCache.mesh === part.mesh &&
+    islandCache.slot === slot &&
+    islandCache.version === paintVersion
+  ) {
     return islandCache.list;
   }
   const topo = topologyOf(part.mesh);
@@ -764,7 +875,10 @@ export function activeIslands(): IslandInfo[] {
 // ---------- pimler ----------
 
 export function updatePin(index: number, patch: Partial<PinPlacement>): void {
-  set((s) => ({ pins: s.pins.map((p, i) => (i === index ? { ...p, ...patch } : p)), preview: null }));
+  set((s) => ({
+    pins: s.pins.map((p, i) => (i === index ? { ...p, ...patch } : p)),
+    preview: null,
+  }));
 }
 
 export function removePin(index: number): void {
@@ -804,7 +918,10 @@ export function autoSuggestFeatures(): void {
   }
   endStroke();
   set({ slots });
-  notify('info', `${found.length} çıkıntı önerildi ve "Öneri" slotlarına boyandı. Beğenmediğini Silgi ile sil ya da Ctrl+Z ile geri al.`);
+  notify(
+    'info',
+    `${found.length} çıkıntı önerildi ve "Öneri" slotlarına boyandı. Beğenmediğini Silgi ile sil ya da Ctrl+Z ile geri al.`,
+  );
 }
 
 // ---------- slotlar ----------
@@ -836,7 +953,15 @@ function cutOptions(): CutOptions {
     planar: cut.mode !== 'socket' && cut.planar,
     minWall: cut.minWall,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
-    pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart, depthClearance: cut.pinDepthClearance, chamfer: cut.pinChamfer, auto: cut.pinAuto },
+    pin: {
+      shape: cut.pinShape,
+      radius: cut.pinRadius,
+      length: cut.pinLength,
+      onPart: cut.pinOnPart,
+      depthClearance: cut.pinDepthClearance,
+      chamfer: cut.pinChamfer,
+      auto: cut.pinAuto,
+    },
     pins: cut.mode === 'keys' ? pins : undefined,
   };
 }
@@ -945,7 +1070,9 @@ export async function runCut(): Promise<void> {
     const before = get().parts;
     const after = before.flatMap((p) => {
       const cleared = p.badge === 'new' ? { ...p, badge: null } : p;
-      return p.id === part.id ? [{ ...p, badge: 'source' as const, visible: false }, ...newParts] : [cleared];
+      return p.id === part.id
+        ? [{ ...p, badge: 'source' as const, visible: false }, ...newParts]
+        : [cleared];
     });
     // yön ve pimler bölgeye özgü: sonraki kesim otomatikten başlar
     set((s) => ({
@@ -984,10 +1111,15 @@ export async function voxelRepairSelected(resolution = 200): Promise<void> {
   await busy('Voxel onarım…', async () => {
     const r = await geometry.voxel(part.mesh, resolution);
     const before = get().parts;
-    const after = before.map((p) => (p.id === part.id ? { ...p, mesh: r.mesh, manifold: true } : p));
+    const after = before.map((p) =>
+      p.id === part.id ? { ...p, mesh: r.mesh, manifold: true } : p,
+    );
     set({ parts: after, preview: null });
     pushHistory({ kind: 'parts', before, after });
-    notify('info', `${part.name}: voxel onarım (voksel ${r.voxelSize.toFixed(2)} mm), ${r.mesh.labels.length} üçgen.`);
+    notify(
+      'info',
+      `${part.name}: voxel onarım (voksel ${r.voxelSize.toFixed(2)} mm), ${r.mesh.labels.length} üçgen.`,
+    );
   });
 }
 
@@ -1022,11 +1154,25 @@ export async function splitSelected(): Promise<void> {
 export async function makeToleranceCoupon(): Promise<void> {
   const { cut } = get();
   const c = cut.clearance;
-  const clearances = [...new Set([Math.max(0, c - 0.1), c, c + 0.1].map((x) => Math.round(x * 100) / 100))];
+  const clearances = [
+    ...new Set([Math.max(0, c - 0.1), c, c + 0.1].map((x) => Math.round(x * 100) / 100)),
+  ];
   const pin =
     cut.mode === 'keys'
-      ? { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: true, chamfer: cut.pinChamfer }
-      : { shape: 'cylinder' as const, radius: 4, length: 2 * cut.depth, onPart: true, chamfer: 0.4 };
+      ? {
+          shape: cut.pinShape,
+          radius: cut.pinRadius,
+          length: cut.pinLength,
+          onPart: true,
+          chamfer: cut.pinChamfer,
+        }
+      : {
+          shape: 'cylinder' as const,
+          radius: 4,
+          length: 2 * cut.depth,
+          onPart: true,
+          chamfer: 0.4,
+        };
   const depthClearance = cut.mode === 'keys' ? cut.pinDepthClearance : c;
   await busy('Deneme parçası hazırlanıyor…', async () => {
     const coupon = await geometry.coupon(pin, clearances, depthClearance);
@@ -1056,7 +1202,10 @@ export async function makeToleranceCoupon(): Promise<void> {
       colorSlot: BASE_SLOT,
       manifold: true,
     });
-    const newParts = [make(coupon.plate, `Tolerans plakası (${label} mm)`), ...coupon.pins.map((m, i) => make(m, `Tolerans pimi ${i + 1}`))];
+    const newParts = [
+      make(coupon.plate, `Tolerans plakası (${label} mm)`),
+      ...coupon.pins.map((m, i) => make(m, `Tolerans pimi ${i + 1}`)),
+    ];
     const before = get().parts;
     const after = [...before, ...newParts];
     set({ parts: after });
@@ -1076,7 +1225,11 @@ function nearestCorner(mesh: LabeledMesh, tri: number, p: Vec3): number {
   let bd = Infinity;
   for (let k = 0; k < 3; k++) {
     const v = mesh.indices[3 * tri + k];
-    const d = Math.hypot(mesh.positions[3 * v] - p[0], mesh.positions[3 * v + 1] - p[1], mesh.positions[3 * v + 2] - p[2]);
+    const d = Math.hypot(
+      mesh.positions[3 * v] - p[0],
+      mesh.positions[3 * v + 1] - p[1],
+      mesh.positions[3 * v + 2] - p[2],
+    );
     if (d < bd) {
       bd = d;
       best = v;
@@ -1132,7 +1285,11 @@ export function linePreview(): { path: Vec3[]; anchors: Vec3[]; size: number } {
   if (!part) return { path: [], anchors: [], size: 1 };
   const p = part.mesh.positions;
   const at = (v: number): Vec3 => [p[3 * v], p[3 * v + 1], p[3 * v + 2]];
-  return { path: line.path.map(at), anchors: line.anchors.map(at), size: Math.max(0.2, topologyOf(part.mesh).meanEdge * 1.5) };
+  return {
+    path: line.path.map(at),
+    anchors: line.anchors.map(at),
+    size: Math.max(0.2, topologyOf(part.mesh).meanEdge * 1.5),
+  };
 }
 
 /** Son noktayı geri alır. */
@@ -1143,7 +1300,11 @@ export function lineUndo(): void {
   const anchors = line.anchors.slice(0, -1);
   // yolu baştan kur (segmentler kısa, ucuz)
   let path = [anchors[0]];
-  for (let i = 1; i < anchors.length; i++) path = [...path, ...surfacePath(part.mesh, neighborsOf(part.mesh), anchors[i - 1], anchors[i]).slice(1)];
+  for (let i = 1; i < anchors.length; i++)
+    path = [
+      ...path,
+      ...surfacePath(part.mesh, neighborsOf(part.mesh), anchors[i - 1], anchors[i]).slice(1),
+    ];
   set({ line: { ...line, anchors, path } });
 }
 
@@ -1163,23 +1324,47 @@ export function lineClose(): void {
   const slot = get().activeSlot;
   if (slot === BASE_SLOT) return notify('warn', 'Boyanacak slotu seçin (taban değil).');
   const mesh = part.mesh;
-  const closing = surfacePath(mesh, neighborsOf(mesh), line.anchors[line.anchors.length - 1], line.anchors[0]);
+  const closing = surfacePath(
+    mesh,
+    neighborsOf(mesh),
+    line.anchors[line.anchors.length - 1],
+    line.anchors[0],
+  );
   const loop = [...line.path, ...closing.slice(1, -1)];
   const topo = topologyOf(mesh);
   const inside = regionInsideLoop(mesh, topo.adj, topo.areas, loop);
   if (!inside) return notify('warn', 'Çizgi yüzeyi iki parçaya ayırmıyor; halkayı kontrol edin.');
   const tris: number[] = [];
-  for (let t = 0; t < inside.length; t++) if (inside[t] && mesh.labels[t] !== slot && mesh.labels[t] === BASE_SLOT) tris.push(t);
+  for (let t = 0; t < inside.length; t++)
+    if (inside[t] && mesh.labels[t] !== slot && mesh.labels[t] === BASE_SLOT) tris.push(t);
   const before = Uint16Array.from(tris, (t) => mesh.labels[t]);
   for (const t of tris) mesh.labels[t] = slot;
-  pushHistory({ kind: 'paint', mesh, tris: Uint32Array.from(tris), before, after: new Uint16Array(tris.length).fill(slot) });
+  pushHistory({
+    kind: 'paint',
+    mesh,
+    tris: Uint32Array.from(tris),
+    before,
+    after: new Uint16Array(tris.length).fill(slot),
+  });
   onLabelsChanged?.(part.id, tris);
   lineCancel();
   // zikzakı düzelt: çizgi boyunca yumuşatıp üçgenlerin içinden geçir
-  const pts: Vec3[] = [...loop, loop[0]].map((v) => [mesh.positions[3 * v], mesh.positions[3 * v + 1], mesh.positions[3 * v + 2]]);
+  const pts: Vec3[] = [...loop, loop[0]].map((v) => [
+    mesh.positions[3 * v],
+    mesh.positions[3 * v + 1],
+    mesh.positions[3 * v + 2],
+  ]);
   const labels = mesh.labels;
   const radius = Math.max(3 * topo.meanEdge, get().smoothRadius || 0);
-  const diff = smoothStrokeSplit(mesh, slot, pts, radius, 1, (t) => labels[t] === BASE_SLOT, (t) => neighborLabel(topo.adj, labels, t, slot));
+  const diff = smoothStrokeSplit(
+    mesh,
+    slot,
+    pts,
+    radius,
+    1,
+    (t) => labels[t] === BASE_SLOT,
+    (t) => neighborLabel(topo.adj, labels, t, slot),
+  );
   if (diff && (diff.changedTris.length || diff.addedIndices.length)) applyMeshSplit(mesh, diff);
   else set((s) => ({ paintVersion: s.paintVersion + 1 }));
   notify('info', `Çizgi kapatıldı: ${tris.length} üçgen boyandı.`);
@@ -1203,7 +1388,11 @@ export function soloPart(id: string): void {
     set({ parts: parts.map((p) => ({ ...p, visible: p.badge !== 'source' || p.id === id })) });
     return;
   }
-  set({ parts: parts.map((p) => ({ ...p, visible: p.id === id })), selectedPartId: id, preview: null });
+  set({
+    parts: parts.map((p) => ({ ...p, visible: p.id === id })),
+    selectedPartId: id,
+    preview: null,
+  });
 }
 
 /** Kesimden önceki kaynak parçalar hariç hepsini gösterir (kaynak yalnızsa o da gösterilir). */
@@ -1215,7 +1404,11 @@ export function showAllParts(): void {
 
 export function hideSelectedPart(): void {
   const id = get().selectedPartId;
-  if (id) set((s) => ({ parts: s.parts.map((p) => (p.id === id ? { ...p, visible: false } : p)), preview: null }));
+  if (id)
+    set((s) => ({
+      parts: s.parts.map((p) => (p.id === id ? { ...p, visible: false } : p)),
+      preview: null,
+    }));
 }
 
 export function toggleExplode(): void {
@@ -1225,7 +1418,10 @@ export function toggleExplode(): void {
 export function deletePart(id: string): void {
   const before = get().parts;
   const after = before.filter((p) => p.id !== id);
-  set((s) => ({ parts: after, selectedPartId: s.selectedPartId === id ? (after[0]?.id ?? null) : s.selectedPartId }));
+  set((s) => ({
+    parts: after,
+    selectedPartId: s.selectedPartId === id ? (after[0]?.id ?? null) : s.selectedPartId,
+  }));
   pushHistory({ kind: 'parts', before, after });
 }
 
@@ -1248,7 +1444,9 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
   } else if (entry.kind === 'geometry') {
     const pos = reverse ? entry.posBefore : entry.posAfter;
     const lab = reverse ? entry.labelsBefore : entry.labelsAfter;
-    entry.verts.forEach((v, i) => entry.mesh.positions.set(pos.subarray(3 * i, 3 * i + 3), 3 * v));
+    entry.verts.forEach((v, i) => {
+      entry.mesh.positions.set(pos.subarray(3 * i, 3 * i + 3), 3 * v);
+    });
     if (entry.verts.length) bumpGeometry(entry.mesh);
     entry.tris.forEach((t, i) => {
       entry.mesh.labels[t] = lab[i];
@@ -1261,7 +1459,8 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
       const moved = new Set<number>(entry.verts);
       const idx = entry.mesh.indices;
       for (let t = 0; t < idx.length / 3; t++) {
-        if (moved.has(idx[3 * t]) || moved.has(idx[3 * t + 1]) || moved.has(idx[3 * t + 2])) touched.add(t);
+        if (moved.has(idx[3 * t]) || moved.has(idx[3 * t + 1]) || moved.has(idx[3 * t + 2]))
+          touched.add(t);
       }
       onGeometryChanged?.(part.id, [...touched]);
       onGeometryChanged?.(part.id, null);
@@ -1271,7 +1470,9 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
     const parts = reverse ? entry.before : entry.after;
     set((s) => ({
       parts,
-      selectedPartId: parts.some((p) => p.id === s.selectedPartId) ? s.selectedPartId : (parts[0]?.id ?? null),
+      selectedPartId: parts.some((p) => p.id === s.selectedPartId)
+        ? s.selectedPartId
+        : (parts[0]?.id ?? null),
       preview: null,
     }));
   }

@@ -26,7 +26,11 @@ describe('X35 tolerans deneme parçası', () => {
   });
 
   it('snap pim şekliyle de üretilir', () => {
-    const c = toleranceCoupon({ shape: 'snap', radius: 2, length: 8, onPart: true }, [0.1, 0.2], 0.3);
+    const c = toleranceCoupon(
+      { shape: 'snap', radius: 2, length: 8, onPart: true },
+      [0.1, 0.2],
+      0.3,
+    );
     expect(c.pins.length).toBe(2);
     expect(signedVolume(c.plate)).toBeGreaterThan(0);
   });

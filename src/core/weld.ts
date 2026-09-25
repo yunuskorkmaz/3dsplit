@@ -25,7 +25,12 @@ export function weldVertices(
     const x = positions[3 * v];
     const y = positions[3 * v + 1];
     const z = positions[3 * v + 2];
-    const h = table.slot(Math.round((x - min[0]) * inv), Math.round((y - min[1]) * inv), Math.round((z - min[2]) * inv), next);
+    const h = table.slot(
+      Math.round((x - min[0]) * inv),
+      Math.round((y - min[1]) * inv),
+      Math.round((z - min[2]) * inv),
+      next,
+    );
     if (table.inserted) {
       out[3 * next] = x;
       out[3 * next + 1] = y;

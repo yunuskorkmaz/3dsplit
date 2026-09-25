@@ -22,7 +22,8 @@ describe.skipIf(!existsSync(FILE))('testa.stl', () => {
     const buf = readFileSync(FILE);
     const n = buf.readUInt32LE(80);
     const pos = new Float32Array(n * 9);
-    for (let t = 0; t < n; t++) for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
+    for (let t = 0; t < n; t++)
+      for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
     const man = toManifold(repairMesh(pos).mesh);
     mesh = fromManifold(man, 0);
     man.delete();
@@ -54,7 +55,10 @@ describe.skipIf(!existsSync(FILE))('testa.stl', () => {
   };
   for (const [name, [p, lo, hi]] of Object.entries(features)) {
     it(`otomatik ölçek: ${name}`, () => {
-      const r = chooseSmartScale(adj, normals, c, areas, near(p), meanEdgeLength(mesh), { maxAngleDeg: 20, concaveOnly: true });
+      const r = chooseSmartScale(adj, normals, c, areas, near(p), meanEdgeLength(mesh), {
+        maxAngleDeg: 20,
+        concaveOnly: true,
+      });
       let a = 0;
       for (const t of r.tris) a += areas[t];
       expect(r.leaked).toBe(false);
@@ -71,7 +75,8 @@ describe.skipIf(!existsSync(FILE))('testa.stl kesim önerisi', () => {
     const buf = readFileSync(FILE);
     const n = buf.readUInt32LE(80);
     const pos = new Float32Array(n * 9);
-    for (let t = 0; t < n; t++) for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
+    for (let t = 0; t < n; t++)
+      for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
     const man = toManifold(repairMesh(pos).mesh);
     const mesh = fromManifold(man, 0);
     man.delete();
@@ -90,7 +95,11 @@ describe.skipIf(!existsSync(FILE))('testa.stl kesim önerisi', () => {
           seed = t;
         }
       }
-      for (const t of chooseSmartScale(adj, normals, c, areas, seed, edge, { maxAngleDeg: 20, concaveOnly: true }).tris) mesh.labels[t] = 1;
+      for (const t of chooseSmartScale(adj, normals, c, areas, seed, edge, {
+        maxAngleDeg: 20,
+        concaveOnly: true,
+      }).tris)
+        mesh.labels[t] = 1;
       return suggestCutMode(mesh, 1)?.mode;
     };
     expect(check([30.4, 14, 44.7])).toBe('socket');
@@ -106,7 +115,8 @@ describe.skipIf(!existsSync(FILE))('testa.stl otomatik özellik önerisi', () =>
     const buf = readFileSync(FILE);
     const n = buf.readUInt32LE(80);
     const pos = new Float32Array(n * 9);
-    for (let t = 0; t < n; t++) for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
+    for (let t = 0; t < n; t++)
+      for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
     const man = toManifold(repairMesh(pos).mesh);
     const mesh = fromManifold(man, 0);
     man.delete();
@@ -115,7 +125,12 @@ describe.skipIf(!existsSync(FILE))('testa.stl otomatik özellik önerisi', () =>
     const c = faceCentroids(mesh);
     const edge = meanEdgeLength(mesh);
     const conc = triangleConcavity(mesh, normals, areas, edge * 3);
-    const found = suggestFeatures(adj, normals, c, areas, conc, { meanEdge: edge, maxSeeds: 40, spacing: 4, areaRange: [0.0005, 0.15] });
+    const found = suggestFeatures(adj, normals, c, areas, conc, {
+      meanEdge: edge,
+      maxSeeds: 40,
+      spacing: 4,
+      areaRange: [0.0005, 0.15],
+    });
     const centers = found.map((tris) => {
       let a = 0;
       const p = [0, 0, 0];
@@ -125,7 +140,8 @@ describe.skipIf(!existsSync(FILE))('testa.stl otomatik özellik önerisi', () =>
       }
       return p.map((x) => x / a);
     });
-    const has = (q: number[], tol: number) => centers.some((p) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]) < tol);
+    const has = (q: number[], tol: number) =>
+      centers.some((p) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]) < tol);
     expect(has([32, 14, 44], 3)).toBe(true); // göz
     expect(has([58, 24, 48], 3)).toBe(true); // göz
     expect(has([26, 19, 56], 4)).toBe(true); // kaş

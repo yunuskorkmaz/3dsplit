@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { cutRegion, previewCut, splitComponents, type CutOptions } from '../src/core/cut';
+import { type CutOptions, cutRegion, previewCut, splitComponents } from '../src/core/cut';
 import { faceCentroids, faceNormalsAndAreas, signedVolume } from '../src/core/geometry';
 import { initKernel, toManifold } from '../src/core/kernel';
 import { bucketFill, gapFill, smartFill } from '../src/core/paint';
@@ -38,7 +38,8 @@ describe('onarım', () => {
     const cube = subdividedCube(20, 4);
     const idx = new Uint32Array(cube.indices);
     // tüm yönelimi ters çevir, bir üçgeni sil
-    for (let t = 0; t < idx.length / 3; t++) [idx[3 * t + 1], idx[3 * t + 2]] = [idx[3 * t + 2], idx[3 * t + 1]];
+    for (let t = 0; t < idx.length / 3; t++)
+      [idx[3 * t + 1], idx[3 * t + 2]] = [idx[3 * t + 2], idx[3 * t + 1]];
     const holed = idx.slice(3);
     const { mesh, report } = repairMesh(cube.positions, holed);
     expect(report.filledHoles).toBe(1);
@@ -81,7 +82,7 @@ describe('boyama', () => {
 
   it('bucket fill aynı etiketli bölgeyi doldurur', () => {
     const m = labelWhere(cube, 1, (_x, _y, z) => z > 9.99);
-    const top = m.labels.findIndex((l) => l === 1);
+    const top = m.labels.indexOf(1);
     expect(bucketFill(adj, m.labels, top).length).toBe(32);
   });
 
@@ -138,8 +139,16 @@ describe('kesim', () => {
   });
 
   it('X31: boy boşluğu delik derinliğini yarıçaptan bağımsız büyütür', () => {
-    const r0 = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, depthClearance: 0.2 } });
-    const r1 = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, depthClearance: 1.2 } });
+    const r0 = cutRegion(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, depthClearance: 0.2 },
+    });
+    const r1 = cutRegion(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, depthClearance: 1.2 },
+    });
     // delik gövde tarafında 1 mm daha derin: π·2.2²·1
     const diff = volume(r0.body) - volume(r1.body);
     expect(diff).toBeGreaterThan(Math.PI * 2.2 * 2.2 * 0.8);
@@ -150,7 +159,11 @@ describe('kesim', () => {
 
   it('X32: pahlı pim daha az hacimli, delik aynı', () => {
     const flat = cutRegion(capRegion, { ...baseOpts, mode: 'keys' });
-    const ch = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, chamfer: 0.5 } });
+    const ch = cutRegion(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, chamfer: 0.5 },
+    });
     // gövdeye giren uçta kesik koni: π·h/3·(R²+Rr+r²) − π·R²·h, R=2 r=1.5 h=0.5
     const cone = (Math.PI * 0.5 * (4 + 3 + 2.25)) / 3;
     const lost = Math.PI * 4 * 0.5 - cone;
@@ -161,8 +174,16 @@ describe('kesim', () => {
   });
 
   it('X33: otomatik pim boyutu kesite göre', () => {
-    const big = previewCut(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, auto: true } });
-    const small = previewCut(patch, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, auto: true } });
+    const big = previewCut(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, auto: true },
+    });
+    const small = previewCut(patch, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, auto: true },
+    });
     const size = (m: { positions: Float32Array }) => {
       let lo = Infinity;
       let hi = -Infinity;
@@ -195,8 +216,16 @@ describe('kesim', () => {
   });
 
   it('Keys: snap pim tırnaklı, yarıklı; yuvada oluk var', () => {
-    const cyl = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, length: 8 } });
-    const snap = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, length: 8, shape: 'snap' } });
+    const cyl = cutRegion(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, length: 8 },
+    });
+    const snap = cutRegion(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, length: 8, shape: 'snap' },
+    });
     // yuva oluk yüzünden silindirden büyük: gövde daha az hacimli
     expect(volume(snap.body)).toBeLessThan(volume(cyl.body) - 1);
     // pim yarık yüzünden daha hafif ama tırnak ekliyor: parça hacmi farklı ve makul
@@ -215,7 +244,8 @@ describe('kesim', () => {
     for (let t = 0; t < p.labels.length; t++) {
       const z = [0, 1, 2].map((k) => p.positions[3 * p.indices[3 * t + k] + 2]);
       // pimin ucu (z≈2) hariç, kesim yüzeyi bölgesi
-      if (z.every((v) => v > 3.5 && v < 6.5) && Math.max(...z) - Math.min(...z) < 1e-3) zs.add(z[0].toFixed(2));
+      if (z.every((v) => v > 3.5 && v < 6.5) && Math.max(...z) - Math.min(...z) < 1e-3)
+        zs.add(z[0].toFixed(2));
     }
     expect(zs.size).toBe(1);
     const pinVol = Math.PI * 4 * 6;
@@ -225,7 +255,11 @@ describe('kesim', () => {
   });
 
   it('Keys: pim ince duvara taşarsa uyarır', () => {
-    const r = cutRegion(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, length: 14 } });
+    const r = cutRegion(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      pin: { ...baseOpts.pin, length: 14 },
+    });
     expect(r.warnings.length).toBe(1);
   });
 
@@ -275,7 +309,12 @@ describe('kesim', () => {
     const ok = previewCut(capRegion, { ...baseOpts, mode: 'keys', minWall: 0.8 });
     expect(ok.thin).toEqual([]);
     // kenara yakın pim: yuva + clearance + duvar yan yüzü aşıyor
-    const edge = previewCut(capRegion, { ...baseOpts, mode: 'keys', minWall: 0.8, pins: [{ point: [8.5, 0, 10] }] });
+    const edge = previewCut(capRegion, {
+      ...baseOpts,
+      mode: 'keys',
+      minWall: 0.8,
+      pins: [{ point: [8.5, 0, 10] }],
+    });
     expect(edge.thin.length).toBe(1);
     expect(edge.warnings.some((w) => w.includes('ince'))).toBe(true);
   });
@@ -301,7 +340,10 @@ describe('kesim', () => {
   });
 
   it('Split kopuk parçaları ayırır', () => {
-    const r = cutRegion(labelWhere(cube, 1, (_x, _y, z) => Math.abs(z) < 2), { ...baseOpts, mode: 'fast' });
+    const r = cutRegion(
+      labelWhere(cube, 1, (_x, _y, z) => Math.abs(z) < 2),
+      { ...baseOpts, mode: 'fast' },
+    );
     const pieces = splitComponents(r.body);
     expect(pieces.length).toBe(2);
   });

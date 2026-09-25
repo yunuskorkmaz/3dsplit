@@ -24,7 +24,11 @@ function fill(seedPoint: [number, number, number], concaveOnly: boolean, scale: 
   let seed = 0;
   let best = Infinity;
   for (let t = 0; t < areas.length; t++) {
-    const d = Math.hypot(c[3 * t] - seedPoint[0], c[3 * t + 1] - seedPoint[1], c[3 * t + 2] - seedPoint[2]);
+    const d = Math.hypot(
+      c[3 * t] - seedPoint[0],
+      c[3 * t + 1] - seedPoint[1],
+      c[3 * t + 2] - seedPoint[2],
+    );
     if (d < best) {
       best = d;
       seed = t;
@@ -62,7 +66,10 @@ describe('otomatik ölçek', () => {
         seed = t;
       }
     }
-    const r = chooseSmartScale(adj, normals, c, areas, seed, meanEdgeLength(boss), { maxAngleDeg: 20, concaveOnly: true });
+    const r = chooseSmartScale(adj, normals, c, areas, seed, meanEdgeLength(boss), {
+      maxAngleDeg: 20,
+      concaveOnly: true,
+    });
     let a = 0;
     for (const t of r.tris) a += areas[t];
     expect(r.leaked).toBe(false);

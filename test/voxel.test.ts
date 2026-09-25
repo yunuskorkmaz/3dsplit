@@ -22,7 +22,11 @@ describe('voxel onarım', () => {
       keep.push(cube.indices[3 * t], cube.indices[3 * t + 1], cube.indices[3 * t + 2]);
       labels.push(cube.labels[t]);
     }
-    const broken = { positions: cube.positions, indices: Uint32Array.from(keep), labels: Uint16Array.from(labels) };
+    const broken = {
+      positions: cube.positions,
+      indices: Uint32Array.from(keep),
+      labels: Uint16Array.from(labels),
+    };
     const t0 = performance.now();
     const r = voxelRepair(broken, 80);
     const ms = performance.now() - t0;

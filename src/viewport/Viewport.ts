@@ -306,7 +306,7 @@ export class Viewport {
   }
 
   /** Önizleme (Space): tapa hacimleri/kapaklar yarı saydam, pimler mavi. */
-  setPreview(volumes: MeshData[], pins: MeshData[], thin: MeshData[] = []): void {
+  setPreview(volumes: MeshData[], pins: MeshData[], thin: MeshData[] = [], ringMarkers: Vec3[] = []): void {
     this.clearOverlay();
     this.setXray(true);
     const volMat = new THREE.MeshStandardMaterial({
@@ -319,6 +319,17 @@ export class Viewport {
     const pinMat = new THREE.MeshStandardMaterial({ color: '#2f80ff' });
     for (const v of volumes) this.overlay.add(new THREE.Mesh(toGeometry(v), volMat));
     for (const p of pins) this.overlay.add(new THREE.Mesh(toGeometry(p), pinMat));
+    // C6: halka kontrol noktaları (1 numara kırmızı)
+    const size = this.sceneSize / 150;
+    ringMarkers.forEach((p, i) => {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(size, 10, 8),
+        new THREE.MeshBasicMaterial({ color: i === 0 ? '#ff2020' : '#ff9900', depthTest: false }),
+      );
+      m.position.set(...p);
+      m.renderOrder = 8;
+      this.overlay.add(m);
+    });
     // ince duvar: modelin dışına taşan kısım, her şeyin üstünde kırmızı
     const thinMat = new THREE.MeshBasicMaterial({ color: '#ff2020', depthTest: false, transparent: true, opacity: 0.85 });
     for (const t of thin) {

@@ -82,3 +82,10 @@ ul.keymap li { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
 ul.keymap li span { flex: 1; }
 ul.keymap kbd { min-width: 44px; text-align: center; background: #2b2d31; border: 1px solid #44464d; border-radius: 3px; padding: 1px 6px; font-size: 11px; }
 ul.keymap button { padding: 1px 6px; font-size: 11px; }
+.ring-editor { display: flex; align-items: flex-end; gap: 6px; margin: 4px 0; }
+.ring-editor svg { width: 150px; height: 150px; background: #1e1f22; border-radius: 6px; touch-action: none; }
+.ring-base { fill: none; stroke: #555; stroke-dasharray: 3 3; }
+.ring-shape { fill: #ffcc0033; stroke: #ffcc00; }
+.ring-handle { fill: #ff9900; cursor: grab; }
+.ring-handle.first { fill: #ff2020; }
+.ring-editor text { fill: #aaa; font-size: 9px; text-anchor: middle; }

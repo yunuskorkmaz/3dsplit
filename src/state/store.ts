@@ -33,6 +33,8 @@ export interface CutSettings {
   minWall: number;
   /** C7: tapa ayağının kenardan içeri çekilmesi, mm (0: tam yüzey). */
   inset: number;
+  /** C6: tapa alt halkasının 8 yönlü radyal düzeltmesi, mm. */
+  ringProfile: number[];
   /** C12: açıkken tüm bölgeler aynı derinlikte; kapalıyken `islandDepths`. */
   linkAll: boolean;
   /** Ada anahtarı (en küçük üçgen numarası) -> derinlik. */
@@ -142,6 +144,7 @@ export const useStore = create<AppState>(() => ({
     squeeze: 0,
     minWall: 0.8,
     inset: 0,
+    ringProfile: [0, 0, 0, 0, 0, 0, 0, 0],
     linkAll: true,
     islandDepths: {},
     direction: null,

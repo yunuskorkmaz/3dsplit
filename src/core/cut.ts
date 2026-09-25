@@ -46,6 +46,12 @@ export interface CutOptions {
    * gövdede taşıyıcı basamak kalır. Düz yamada görünen tapa da daralır.
    */
   inset?: number;
+  /**
+   * C6: tapa alt halkasının 8 yöndeki radyal düzeltmesi, mm (+ dışa). Yönler tapa
+   * ekseninin etrafında `orthoBasis(yön)` tabanına göre 0°, 45°, … 315°; aradaki
+   * açılar yumuşak (kosinüs) aradeğerlenir.
+   */
+  ringProfile?: number[];
   /** Önizlemede yuva çevresindeki en az duvar kalınlığı, mm (0: kontrol yok). */
   minWall?: number;
   /** Socket uzama yönü (dışa doğru). Verilmezse bölge normallerinin ortalaması. */
@@ -67,6 +73,8 @@ export interface CutPreview {
   pins: MeshData[];
   /** Duvarın `minWall`'dan ince kaldığı yerler (yuva büyütülünce modelin dışına taşan kısım). */
   thin: MeshData[];
+  /** C6: tapa alt halkasındaki 8 kontrol yönünün noktaları (ilki 0°). */
+  ringMarkers: Vec3[];
   warnings: string[];
 }
 
@@ -434,6 +442,7 @@ function extrudePatch(
   eps: number,
   squeeze = 0,
   inset = 0,
+  ringProfile?: number[],
 ): MeshData {
   const vmap = new Map<number, number>();
   for (let i = 0; i < tris.length; i++) if (!vmap.has(tris[i])) vmap.set(tris[i], vmap.size);
@@ -451,6 +460,8 @@ function extrudePatch(
   }
   meanR /= Math.max(1, n);
   const ki = meanR > 0 ? Math.max(0.1, 1 - Math.max(0, inset) / meanR) : 1;
+  const [bu, bv] = orthoBasis(dir);
+  const profile = ringProfile && ringProfile.some((x) => x !== 0) ? ringProfile : null;
   // üst köşeler 0..n-1, alt köşeler n..2n-1
   const out = new Float32Array(n * 6);
   for (const [v, i] of vmap) {
@@ -459,7 +470,16 @@ function extrudePatch(
     const lateral = sub(rel, scale(dir, dot(rel, dir)));
     const top = sub(add(p, scale(dir, eps)), scale(lateral, 1 - ki));
     out.set(top, 3 * i);
-    const bottom = sub(sub(p, scale(dir, depth)), scale(lateral, 1 - k * ki));
+    let f = k * ki;
+    if (profile) {
+      // C6: alt halkanın bu yöndeki radyal düzeltmesi
+      const len = Math.hypot(...lateral) * f;
+      if (len > 1e-6) {
+        const angle = Math.atan2(dot(lateral, bv), dot(lateral, bu));
+        f *= Math.max(0.1, (len + ringDelta(profile, angle)) / len);
+      }
+    }
+    const bottom = sub(sub(p, scale(dir, depth)), scale(lateral, 1 - f));
     out.set(bottom, 3 * (i + n));
   }
   const idx: number[] = [];
@@ -481,11 +501,51 @@ function extrudePatch(
   return { positions: out, indices: Uint32Array.from(idx) };
 }
 
+/** Profil değeri: 8 yön arasında kosinüsle yumuşak aradeğerleme (periyodik). */
+export function ringDelta(profile: number[], angle: number): number {
+  const n = profile.length;
+  const x = ((angle / (2 * Math.PI)) * n + n) % n;
+  const i = Math.floor(x);
+  const t = x - i;
+  const w = (1 - Math.cos(t * Math.PI)) / 2;
+  return profile[i % n] * (1 - w) + profile[(i + 1) % n] * w;
+}
+
+/** Tapa alt halkasının kontrol noktaları (önizlemede gösterilir). */
+function ringMarkersFor(mesh: MeshData, island: Island, dir: Vec3, depth: number, profile: number[] | undefined): Vec3[] {
+  let center: Vec3 = [0, 0, 0];
+  let r = 0;
+  const loop = island.mainLoop;
+  for (const v of loop) center = add(center, vertexAt(mesh.positions, v));
+  center = scale(center, 1 / Math.max(1, loop.length));
+  for (const v of loop) {
+    const rel = sub(vertexAt(mesh.positions, v), center);
+    r += Math.hypot(...sub(rel, scale(dir, dot(rel, dir))));
+  }
+  r /= Math.max(1, loop.length);
+  const [bu, bv] = orthoBasis(dir);
+  const base = sub(center, scale(dir, depth));
+  return Array.from({ length: 8 }, (_, i) => {
+    const a = (i * Math.PI) / 4;
+    const rr = Math.max(0.1, r + (profile?.[i] ?? 0));
+    return add(base, add(scale(bu, Math.cos(a) * rr), scale(bv, Math.sin(a) * rr)));
+  });
+}
+
 /** Socket hacmi: ada yüzeyi `dir` boyunca süpürülür. */
-function extrudeVolume(mesh: MeshData, island: Island, dir: Vec3, depth: number, eps: number, squeeze = 0, inset = 0): MeshData {
+function extrudeVolume(
+  mesh: MeshData,
+  island: Island,
+  dir: Vec3,
+  depth: number,
+  eps: number,
+  squeeze = 0,
+  inset = 0,
+  ringProfile?: number[],
+): MeshData {
   const tris: number[] = [];
   for (const t of island.tris) tris.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
-  return extrudePatch(mesh.positions, tris, island.loops, dir, depth, eps, squeeze, inset);
+  return extrudePatch(mesh.positions, tris, island.loops, dir, depth, eps, squeeze, inset, ringProfile);
 }
 
 /**
@@ -501,12 +561,13 @@ function capPlugVolumes(
   projection?: Projection,
   squeeze = 0,
   inset = 0,
+  ringProfile?: number[],
 ): { mesh: MeshData; dir: Vec3 }[] {
   return island.loops.map((loop) => {
     const dir = projection?.(island) ?? loopPlane(positions, loop).normal;
     // triangulateLoop gövdeye bakan kapak verir; süpürme için dışa (dir) bakanı gerekir
     const cap = flipAll(triangulateLoop(positions, loop, dir));
-    return { mesh: extrudePatch(positions, cap, [loop], dir, depth, eps, squeeze, inset), dir };
+    return { mesh: extrudePatch(positions, cap, [loop], dir, depth, eps, squeeze, inset, ringProfile), dir };
   });
 }
 
@@ -719,7 +780,7 @@ function isHeightField(mesh: MeshData, island: Island, dir: Vec3): boolean {
 function socketVolume(mesh: MeshData, island: Island, opts: CutOptions, eps: number, scope: Scope, warnings: string[]): Manifold {
   const dir = socketDirection(island, opts);
   if (isHeightField(mesh, island, dir)) {
-    return scope.keep(toManifold(extrudeVolume(mesh, island, dir, depthOf(island, opts), eps, opts.squeeze, opts.inset), CUT_FACE_ID));
+    return scope.keep(toManifold(extrudeVolume(mesh, island, dir, depthOf(island, opts), eps, opts.squeeze, opts.inset, opts.ringProfile), CUT_FACE_ID));
   }
   warnings.push('Bölge seçilen yönden tam görünmüyor; yedek yöntem (süpürme + prizma) kullanıldı.');
   return prismUnion(mesh, island, dir, depthOf(island, opts), eps, scope);
@@ -748,6 +809,12 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
     const islands = findIslands(mesh, opts.slot, warnings);
     const volumes: MeshData[] = [];
     const pins: MeshData[] = [];
+    const ringMarkers: Vec3[] = [];
+    if (opts.mode === 'socket' && islands[0]) {
+      const i0 = islands[0];
+      const dir0 = useSweepSocket(mesh, islands, opts) ? socketDirection(i0, opts) : (capProjections(opts)[0]?.(i0) ?? i0.capNormal);
+      ringMarkers.push(...ringMarkersFor(mesh, i0, dir0, depthOf(i0, opts), opts.ringProfile));
+    }
     // duvar kontrolü için: [yuvayı içeren katı, yuva hacmi (büyütülmüş), içeri bakan yön, yüzeydeki referans nokta, ad]
     const cavities: { container: () => Manifold; grown: () => Manifold; inward: Vec3; ref: Vec3; slack: number; name: string }[] = [];
     // kesim halkası düzlemden ne kadar sapıyor: yuvanın ağzı bu kadar derinliğe kadar yüzeye açılabilir
@@ -764,7 +831,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
       // çıkıntı yöntemi: kesim kapakları ve gövdeye giren tapa prizmaları
       const eps = Math.max(1, 4 * opts.clearance);
       for (const island of islands) {
-        for (const { mesh: vol, dir } of capPlugVolumes(mesh.positions, island, depthOf(island, opts), eps, capProjections(opts)[0], opts.squeeze, opts.inset)) {
+        for (const { mesh: vol, dir } of capPlugVolumes(mesh.positions, island, depthOf(island, opts), eps, capProjections(opts)[0], opts.squeeze, opts.inset, opts.ringProfile)) {
           volumes.push(vol);
           cavities.push({
             container: modelM,
@@ -781,7 +848,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
       for (const island of islands) {
         const dir = socketDirection(island, opts);
         const vol = isHeightField(mesh, island, dir)
-          ? extrudeVolume(mesh, island, dir, depthOf(island, opts), eps, opts.squeeze, opts.inset)
+          ? extrudeVolume(mesh, island, dir, depthOf(island, opts), eps, opts.squeeze, opts.inset, opts.ringProfile)
           : manifoldMesh(socketVolume(mesh, island, opts, eps, scope, warnings));
         volumes.push(vol);
         cavities.push({
@@ -846,7 +913,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
         }
       }
     }
-    return { volumes, pins, thin, warnings };
+    return { volumes, pins, thin, ringMarkers, warnings };
   } finally {
     scope.dispose();
   }
@@ -1017,7 +1084,7 @@ function capSocketCutWith(mesh: LabeledMesh, islands: Island[], opts: CutOptions
   const holes: Manifold[] = [];
   islands.forEach((island, i) => {
     let part = scope.keep(toManifold(split.parts[i], split.parts[i].origin));
-    for (const { mesh: volMesh, dir } of capPlugVolumes(mesh.positions, island, depthOf(island, opts), eps, projection, opts.squeeze, opts.inset)) {
+    for (const { mesh: volMesh, dir } of capPlugVolumes(mesh.positions, island, depthOf(island, opts), eps, projection, opts.squeeze, opts.inset, opts.ringProfile)) {
       const vol = scope.keep(toManifold(volMesh, CUT_FACE_ID));
       part = scope.keep(part.add(scope.keep(vol.intersect(model))));
       holes.push(growVolume(vol, dir, opts.clearance, scope));

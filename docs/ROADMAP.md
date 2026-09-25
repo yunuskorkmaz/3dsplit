@@ -31,7 +31,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | A2 | Voxel yedek onarım (kapanmayan mesh için) | A2'nin eksiği | [x] |
 | E2 | Kısayolları özelleştirme | Faz 3 | [x] |
 | C7 | Socket: tam yüzey / sadece iç kısım seçeneği | Faz 3 | [x] |
-| C6 | Socket: Ring Selection | Faz 3 | [ ] |
+| C6 | Socket: Ring Selection | Faz 3 | [x] |
 | B9 | Auto-paint: açılışta özellik önerisi | Faz 3 | [x] |
 
 ## Sprint 2 — seçim kalitesi ve sonrası (bitti)
@@ -102,7 +102,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C3 | Socket: Depth | 1 | [x] | Düz yamada süpürme, çıkıntıda kapak prizması (X12), alttan oyuk bölgede süpürme + prizma |
 | C4 | Socket: gizmo yönü | 2 | [x] | Ok + döndürme gizmosu, Kameradan, Oto. Elle yön çıkıntı yönteminde kapak izdüşümü olarak da kullanılır |
 | C5 | Socket: Squeeze | 2 | [x] | Taban yüzde olarak daralır; yedek (prizma) yolunda uygulanmaz |
-| C6 | Socket: Ring Selection | 3 | [ ] | |
+| C6 | Socket: Ring Selection | 3 | [x] | "Kesit şekli": tapa alt halkasının 8 yönlü radyal profili (sürüklenen tutamaçlar), önizlemede kontrol noktaları |
 | C7 | Socket: full surface | 3 | [x] | "Ayak payı": 0 tam yüzey; artınca gövdeye giren ayak kenardan içeri çekilir, yuva çevresinde basamak kalır |
 | C8 | Keys: pim yerleştirme | 1 | [x] | Tıkla ekle/seç, sürükle taşı, Shift+tık sil; seçili pime yarıçap/boy ve döndürme gizmosuyla eksen (X16) |
 | C9 | Keys: clearance | 1 | [x] | |
@@ -174,3 +174,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | A2: voxel yedek onarım | `bdf60b0` |
 | 2026-09-25 | E2: özelleştirilebilir kısayollar | `fae5279` |
 | 2026-09-25 | C7: Socket ayak payı | `8e00bd2` |
+| 2026-09-25 | B9: çıkıntıları otomatik öner | `bf0faa2` |

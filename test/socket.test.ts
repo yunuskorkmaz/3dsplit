@@ -86,6 +86,21 @@ describe('çıkıntı socket', () => {
     expect(signedVolume(inner.body)).toBeGreaterThan(signedVolume(full.body) + 40);
   });
 
+  it('C6 halka profili: tek yön genişletilince tapa o yöne büyür', async () => {
+    const { ringDelta } = await import('../src/core/cut');
+    expect(ringDelta([1, 0, 0, 0, 0, 0, 0, 0], 0)).toBeCloseTo(1, 6);
+    expect(ringDelta([1, 0, 0, 0, 0, 0, 0, 0], Math.PI)).toBeCloseTo(0, 6);
+    const base = cutRegion(boss, opts);
+    const all = cutRegion(boss, { ...opts, ringProfile: [1, 1, 1, 1, 1, 1, 1, 1] });
+    expect(signedVolume(all.parts[0])).toBeGreaterThan(signedVolume(base.parts[0]) + 10);
+    const one = cutRegion(boss, { ...opts, ringProfile: [2, 0, 0, 0, 0, 0, 0, 0] });
+    // tek yönde genişleme: hacim artar ama tüm yönlerdekinden az
+    const vOne = signedVolume(one.parts[0]);
+    expect(vOne).toBeGreaterThan(signedVolume(base.parts[0]) + 1);
+    expect(vOne).toBeLessThan(signedVolume(all.parts[0]));
+    expect(previewCut(boss, { ...opts, ringProfile: [2, 0, 0, 0, 0, 0, 0, 0] }).ringMarkers.length).toBe(8);
+  });
+
   it('önizleme tapa prizmasını döndürür', () => {
     const p = previewCut(boss, opts);
     expect(p.volumes.length).toBe(1);

@@ -730,6 +730,7 @@ function cutOptions(): CutOptions {
     clearance: cut.clearance,
     squeeze: cut.mode === 'socket' ? cut.squeeze : 0,
     inset: cut.mode === 'socket' ? cut.inset : 0,
+    ringProfile: cut.mode === 'socket' ? cut.ringProfile : undefined,
     minWall: cut.minWall,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
     pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart },
@@ -851,7 +852,7 @@ export async function runCut(): Promise<void> {
       pins: [],
       selectedPin: -1,
       directionGizmo: false,
-      cut: { ...s.cut, direction: null, islandDepths: {} },
+      cut: { ...s.cut, direction: null, islandDepths: {}, ringProfile: [0, 0, 0, 0, 0, 0, 0, 0] },
     }));
     pushHistory({ kind: 'parts', before, after });
     notify('info', `Kesildi: ${newParts.length} yeni parça. Kaynak parça gizlendi (sarı rozet).`);

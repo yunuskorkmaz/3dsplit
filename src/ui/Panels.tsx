@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { CutMode, PinShape } from '../core/cut';
 import { ACCEPTED_EXTENSIONS } from '../io/importFile';
 import {
@@ -27,6 +27,7 @@ import {
 } from '../state/actions';
 import { type CutSettings, dismiss, set, setCameraPrefs, useStore } from '../state/store';
 import { NumberField } from './fields';
+import { RingEditor } from './RingEditor';
 import { cameraDirection } from './ViewportHost';
 
 export function FilePanel() {
@@ -195,6 +196,7 @@ export function CutPanel() {
   const pinCount = useStore((s) => s.pins.length);
   const directionGizmo = useStore((s) => s.directionGizmo);
   const suggestion = useStore((s) => s.suggestion);
+  const [ringOpen, setRingOpen] = useState(false);
   useStore((s) => s.paintVersion);
   const islands = cut.mode === 'socket' ? activeIslands() : [];
   const previewOn = useStore((s) => s.preview !== null);
@@ -269,6 +271,12 @@ export function CutPanel() {
             title="0: tapa tam yüzeyle girer. Artırınca gövdeye giren ayak kenardan içeri çekilir; yuvanın çevresinde gövdede taşıyıcı basamak kalır"
             onChange={(v) => update({ inset: v })}
           />
+          <div className="row">
+            <button type="button" className={ringOpen ? 'active' : ''} onClick={() => setRingOpen(!ringOpen)} title="Tapa ayağının kesitini yönlere göre şekillendir (önizlemede 1 numara kırmızı)">
+              Kesit şekli {cut.ringProfile.some((v) => v !== 0) ? '•' : ''}
+            </button>
+          </div>
+          {ringOpen && <RingEditor value={cut.ringProfile} onChange={(v) => update({ ringProfile: v })} />}
           <NumberField
             label="Squeeze"
             value={Math.round(cut.squeeze * 100)}

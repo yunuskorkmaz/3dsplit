@@ -11,7 +11,7 @@ export interface ImportedObject {
   indices?: Uint32Array;
 }
 
-export const ACCEPTED_EXTENSIONS = '.stl,.obj,.3mf';
+export const ACCEPTED_EXTENSIONS = '.stl,.obj,.3mf,.3dsplit';
 
 /** STL, OBJ veya 3MF dosyasını ham geometriye çevirir. 3MF'teki her nesne ayrı döner. */
 export async function importFile(file: File): Promise<ImportedObject[]> {

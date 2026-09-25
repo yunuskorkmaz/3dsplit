@@ -13,6 +13,7 @@ import {
   refineSelected,
   renamePart,
   runCut,
+  saveProject,
   selectPart,
   setSmartAngle,
   setSmartOptions,
@@ -86,6 +87,11 @@ export function FilePanel() {
         </button>
         <button type="button" onClick={exportStlZip}>
           STL (ZIP)
+        </button>
+      </div>
+      <div className="row">
+        <button type="button" onClick={saveProject} title="Boyama ve parçalarla birlikte kaydet (.3dsplit); İçe aktar ile açılır">
+          Projeyi kaydet
         </button>
       </div>
       <div className="row">

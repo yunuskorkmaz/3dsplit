@@ -129,6 +129,14 @@ export function newPartId(): string {
   return `p${++partCounter}`;
 }
 
+/** Dışarıdan gelen kimliklerle çakışmasın diye sayacı ileri alır (proje açma). */
+export function reservePartIds(ids: string[]): void {
+  for (const id of ids) {
+    const n = Number(id.replace(/^p/, ''));
+    if (Number.isFinite(n)) partCounter = Math.max(partCounter, n);
+  }
+}
+
 export function selectedPart(): Part | undefined {
   const s = get();
   return s.parts.find((p) => p.id === s.selectedPartId);

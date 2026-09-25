@@ -27,7 +27,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C5 | Socket Squeeze: tapa tabanı içe daraltılır, yandan taşma önlenir | [x] |
 | C4 | Socket yönü: önizlemede ok, gizmo ile döndürme; "kameradan al" ve "otomatik" | [ ] |
 | X3 | Pim düzenleme: pime tıklayıp silme, sürükleyip taşıma | [x] |
-| A4 | Proje kaydetme / açma (`.3dsplit`): parçalar, etiketler, slotlar | [ ] |
+| A4 | Proje kaydetme / açma (`.3dsplit`): parçalar, etiketler, slotlar | [x] |
 
 ## Özellik listesi
 
@@ -38,7 +38,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | A1 | İçe aktarma: STL, OBJ, 3MF | 1 | [~] | Boyalı 3MF renkleri (Bambu `paint_color`) içe alınmıyor |
 | A2 | Otomatik onarım | 1 | [~] | Kaynaştırma, dejenere/tekrar silme, yönelim, delik kapama var. Voxel yedek onarım yok |
 | A3 | Dışa aktarma: parça STL, çok nesneli 3MF, ZIP | 1 | [~] | Bambu/Orca filament ataması (`model_settings.config`) yazılmıyor |
-| A4 | Proje kaydetme | 2 | [ ] | Sprint 1 |
+| A4 | Proje kaydetme | 2 | [x] | `.3dsplit` (zip: project.json + ikili mesh); İçe aktar ile açılır. Undo geçmişi kaydedilmez |
 
 ### B. Seçim ve boyama
 
@@ -112,3 +112,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X11, X12: yoğun mesh'te Smart Fill, çıkıntı socket'i | `bfb879b` |
 | 2026-09-25 | X15: kendini kesen kapak izdüşümleri, pim merkezi | `a2c5c3b` |
 | 2026-09-25 | C5: Socket squeeze | `77b165f` |
+| 2026-09-25 | X3: pim düzenleme | `7d8acdc` |

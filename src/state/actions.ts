@@ -3,6 +3,7 @@ import { brushSelect, bucketFill, closeHoles, gapFill, type SmartFillOptions, sm
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { downloadBytes, type ExportObject, write3mf, writeStl, writeStlZip } from '../io/exportFile';
 import { importFile } from '../io/importFile';
+import { PROJECT_EXTENSION, readProject, writeProject } from '../io/project';
 import { geometry } from '../worker/client';
 import {
   get,
@@ -12,6 +13,7 @@ import {
   notify,
   type Part,
   pushHistory,
+  reservePartIds,
   selectedPart,
   set,
 } from './store';
@@ -21,6 +23,10 @@ import { type Topology, topologyOf } from './topologyCache';
 
 export async function importFiles(files: FileList | File[]): Promise<void> {
   for (const file of Array.from(files)) {
+    if (file.name.toLowerCase().endsWith(PROJECT_EXTENSION)) {
+      await openProject(file);
+      continue;
+    }
     await busy(`${file.name} yükleniyor…`, async () => {
       const objects = await importFile(file);
       for (const obj of objects) {
@@ -51,6 +57,34 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
       }
     });
   }
+}
+
+/** A4: parçalar, etiketler ve slotlar tek dosyada. */
+export function saveProject(): void {
+  const { parts, slots, activeSlot, selectedPartId } = get();
+  if (!parts.length) return notify('warn', 'Kaydedilecek parça yok.');
+  const name = parts.find((p) => p.badge !== 'source')?.name ?? 'proje';
+  downloadBytes(writeProject({ parts, slots, activeSlot, selectedPartId }), `${name}${PROJECT_EXTENSION}`);
+}
+
+async function openProject(file: File): Promise<void> {
+  await busy(`${file.name} açılıyor…`, async () => {
+    const data = readProject(new Uint8Array(await file.arrayBuffer()));
+    reservePartIds(data.parts.map((p) => p.id));
+    stroke = null;
+    lastSmart = null;
+    set({
+      parts: data.parts,
+      slots: data.slots,
+      activeSlot: data.activeSlot,
+      selectedPartId: data.selectedPartId,
+      preview: null,
+      pinPoints: [],
+      undoStack: [],
+      redoStack: [],
+    });
+    notify('info', `${file.name}: ${data.parts.length} parça açıldı.`);
+  });
 }
 
 function exportObjects(): ExportObject[] {

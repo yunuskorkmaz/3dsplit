@@ -1,0 +1,386 @@
+import type { CutOptions } from '../core/cut';
+import { brushSelect, bucketFill, gapFill, smartFill } from '../core/paint';
+import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
+import { downloadBytes, type ExportObject, write3mf, writeStl, writeStlZip } from '../io/exportFile';
+import { importFile } from '../io/importFile';
+import { geometry } from '../worker/client';
+import {
+  get,
+  type HistoryEntry,
+  newPartId,
+  nextSlotColor,
+  notify,
+  type Part,
+  pushHistory,
+  selectedPart,
+  set,
+} from './store';
+import { topologyOf } from './topologyCache';
+
+// ---------- dosya ----------
+
+export async function importFiles(files: FileList | File[]): Promise<void> {
+  for (const file of Array.from(files)) {
+    await busy(`${file.name} yükleniyor…`, async () => {
+      const objects = await importFile(file);
+      for (const obj of objects) {
+        const prepared = await geometry.prepare(obj.positions, obj.indices);
+        const r = prepared.report;
+        const fixes = [
+          r.removedDegenerate && `${r.removedDegenerate} dejenere üçgen silindi`,
+          r.removedDuplicate && `${r.removedDuplicate} tekrarlı üçgen silindi`,
+          r.flippedTriangles && `${r.flippedTriangles} üçgenin yönü düzeltildi`,
+          r.filledHoles && `${r.filledHoles} delik kapatıldı`,
+        ].filter(Boolean);
+        if (fixes.length) notify('info', `${obj.name}: ${fixes.join(', ')}.`);
+        if (!prepared.manifold) {
+          notify('warn', `${obj.name}: onarım sonrası mesh kapalı değil, kesim çalışmayabilir. ${prepared.error ?? ''}`);
+        }
+        const part: Part = {
+          id: newPartId(),
+          name: obj.name,
+          mesh: prepared.mesh,
+          visible: true,
+          badge: null,
+          colorSlot: BASE_SLOT,
+          manifold: prepared.manifold,
+        };
+        const before = get().parts;
+        set({ parts: [...before, part], selectedPartId: part.id });
+        pushHistory({ kind: 'parts', before, after: get().parts });
+      }
+    });
+  }
+}
+
+function exportObjects(): ExportObject[] {
+  const { parts, slots } = get();
+  return parts
+    .filter((p) => p.visible && p.badge !== 'source')
+    .map((p) => ({
+      name: p.name,
+      mesh: p.mesh,
+      color: slots.find((s) => s.id === p.colorSlot)?.color ?? '#b0b0b0',
+    }));
+}
+
+export function export3mf(): void {
+  const objs = exportObjects();
+  if (!objs.length) return notify('warn', 'Dışa aktarılacak görünür parça yok.');
+  downloadBytes(write3mf(objs), 'parts.3mf', 'model/3mf');
+}
+
+export function exportStlZip(): void {
+  const objs = exportObjects();
+  if (!objs.length) return notify('warn', 'Dışa aktarılacak görünür parça yok.');
+  downloadBytes(writeStlZip(objs), 'parts.zip', 'application/zip');
+}
+
+export function exportPartStl(id: string): void {
+  const p = get().parts.find((x) => x.id === id);
+  if (p) downloadBytes(writeStl(p.mesh, p.name), `${p.name}.stl`, 'model/stl');
+}
+
+// ---------- boyama ----------
+
+interface Stroke {
+  partId: string;
+  before: Map<number, number>;
+}
+
+let stroke: Stroke | null = null;
+/** Son Smart Fill; eşik değişince canlı yeniden hesaplanır. */
+let lastSmart: { partId: string; seed: number; entry: Extract<HistoryEntry, { kind: 'paint' }> } | null = null;
+
+function partById(id: string): Part | undefined {
+  return get().parts.find((p) => p.id === id);
+}
+
+function applyLabels(part: Part, tris: ArrayLike<number>, label: number): void {
+  const labels = part.mesh.labels;
+  for (let i = 0; i < tris.length; i++) {
+    const t = tris[i];
+    if (stroke && !stroke.before.has(t)) stroke.before.set(t, labels[t]);
+    labels[t] = label;
+  }
+  set((s) => ({ paintVersion: s.paintVersion + 1 }));
+  onLabelsChanged?.(part.id, tris);
+}
+
+/** Viewport'un değişen üçgenleri yeniden boyaması için kanca. */
+export let onLabelsChanged: ((partId: string, tris?: ArrayLike<number>) => void) | null = null;
+export function setLabelsChangedHook(fn: typeof onLabelsChanged): void {
+  onLabelsChanged = fn;
+}
+
+export function beginStroke(partId: string): void {
+  stroke = { partId, before: new Map() };
+}
+
+export function endStroke(): Extract<HistoryEntry, { kind: 'paint' }> | null {
+  if (!stroke) return null;
+  const part = partById(stroke.partId);
+  const s = stroke;
+  stroke = null;
+  if (!part || s.before.size === 0) return null;
+  const tris = Uint32Array.from(s.before.keys());
+  const before = Uint16Array.from(s.before.values());
+  const after = Uint16Array.from(tris, (t) => part.mesh.labels[t]);
+  const entry = { kind: 'paint' as const, partId: part.id, tris, before, after };
+  pushHistory(entry);
+  return entry;
+}
+
+function paintLabel(erase: boolean): number {
+  return erase ? BASE_SLOT : get().activeSlot;
+}
+
+export function brushAt(partId: string, tri: number, point: Vec3, erase: boolean): void {
+  const part = partById(partId);
+  if (!part) return;
+  const topo = topologyOf(part.mesh);
+  const tris = brushSelect(topo.adj, topo.centroids, tri, point, get().brushRadius);
+  applyLabels(part, tris, paintLabel(erase));
+}
+
+export function bucketAt(partId: string, tri: number, erase: boolean): void {
+  const part = partById(partId);
+  if (!part) return;
+  beginStroke(partId);
+  applyLabels(part, bucketFill(topologyOf(part.mesh).adj, part.mesh.labels, tri), paintLabel(erase));
+  endStroke();
+}
+
+export function smartFillAt(partId: string, tri: number, erase: boolean): void {
+  const part = partById(partId);
+  if (!part) return;
+  const topo = topologyOf(part.mesh);
+  beginStroke(partId);
+  applyLabels(part, smartFill(topo.adj, topo.normals, tri, get().smartAngle), paintLabel(erase));
+  const entry = endStroke();
+  lastSmart = entry ? { partId, seed: tri, entry } : null;
+}
+
+/** Eşik değişti: son Smart Fill'i geri alıp yeni eşikle tekrarlar. */
+export function setSmartAngle(angle: number): void {
+  set({ smartAngle: Math.max(1, Math.min(180, angle)) });
+  const undo = get().undoStack;
+  if (!lastSmart || undo[undo.length - 1] !== lastSmart.entry) return;
+  const part = partById(lastSmart.partId);
+  if (!part) return;
+  const { entry } = lastSmart;
+  const labels = part.mesh.labels;
+  for (let i = 0; i < entry.tris.length; i++) labels[entry.tris[i]] = entry.before[i];
+  onLabelsChanged?.(part.id, entry.tris);
+  const label = entry.after[0];
+  const topo = topologyOf(part.mesh);
+  const tris = smartFill(topo.adj, topo.normals, lastSmart.seed, get().smartAngle);
+  entry.tris = tris;
+  entry.before = Uint16Array.from(tris, (t) => labels[t]);
+  for (let i = 0; i < tris.length; i++) labels[tris[i]] = label;
+  entry.after = new Uint16Array(tris.length).fill(label);
+  onLabelsChanged?.(part.id, tris);
+  set((s) => ({ paintVersion: s.paintVersion + 1 }));
+}
+
+export function gapFillSelected(): void {
+  const part = selectedPart();
+  if (!part) return notify('warn', 'Önce bir parça seçin.');
+  const topo = topologyOf(part.mesh);
+  const { tris, newLabels } = gapFill(part.mesh, topo.adj, part.mesh.labels, topo.areas, get().gapArea);
+  if (!tris.length) return notify('info', 'Kapatılacak boşluk bulunamadı.');
+  const byLabel = new Map<number, number[]>();
+  tris.forEach((t, i) => {
+    const list = byLabel.get(newLabels[i]);
+    if (list) list.push(t);
+    else byLabel.set(newLabels[i], [t]);
+  });
+  beginStroke(part.id);
+  for (const [label, list] of byLabel) applyLabels(part, list, label);
+  endStroke();
+  notify('info', `${tris.length} üçgen komşu renge çevrildi.`);
+}
+
+// ---------- slotlar ----------
+
+export function addSlot(): void {
+  const slots = get().slots;
+  const id = Math.max(...slots.map((s) => s.id)) + 1;
+  set({ slots: [...slots, { id, name: `Slot ${id}`, color: nextSlotColor(id) }], activeSlot: id });
+}
+
+export function updateSlot(id: number, patch: { name?: string; color?: string }): void {
+  set((s) => ({ slots: s.slots.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+  for (const p of get().parts) onLabelsChanged?.(p.id);
+}
+
+// ---------- kesim ----------
+
+function cutOptions(): CutOptions {
+  const { cut, activeSlot, pinPoints } = get();
+  return {
+    mode: cut.mode,
+    slot: activeSlot,
+    depth: cut.mode === 'socket' ? cut.depth : 0,
+    clearance: cut.clearance,
+    pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart },
+    pinPoints: cut.mode === 'keys' ? pinPoints : undefined,
+  };
+}
+
+function cutTarget(): Part | null {
+  const part = selectedPart();
+  if (!part) {
+    notify('warn', 'Önce bir parça seçin.');
+    return null;
+  }
+  if (get().activeSlot === BASE_SLOT) {
+    notify('warn', 'Taban slotu kesilemez; kesilecek bölgenin slotunu seçin.');
+    return null;
+  }
+  return part;
+}
+
+export async function togglePreview(): Promise<void> {
+  if (get().preview) return set({ preview: null });
+  const part = cutTarget();
+  if (!part) return;
+  await busy('Önizleme hazırlanıyor…', async () => {
+    const p = await geometry.preview(part.mesh, cutOptions());
+    for (const w of p.warnings) notify('warn', w);
+    set({ preview: p });
+  });
+}
+
+export async function runCut(): Promise<void> {
+  const part = cutTarget();
+  if (!part) return;
+  const opts = cutOptions();
+  await busy('Kesiliyor…', async () => {
+    const r = await geometry.cut(part.mesh, opts);
+    for (const w of r.warnings) notify('warn', w);
+    const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Slot ${opts.slot}`;
+    const newParts: Part[] = [
+      {
+        id: newPartId(),
+        name: `${part.name} gövde`,
+        mesh: r.body,
+        visible: true,
+        badge: 'new',
+        colorSlot: part.colorSlot,
+        manifold: true,
+      },
+      ...r.parts.map((mesh: LabeledMesh, i: number) => ({
+        id: newPartId(),
+        name: `${part.name} ${slotName}${r.parts.length > 1 ? ` ${i + 1}` : ''}`,
+        mesh,
+        visible: true,
+        badge: 'new' as const,
+        colorSlot: opts.slot,
+        manifold: true,
+      })),
+    ];
+    const before = get().parts;
+    const after = before.flatMap((p) => {
+      const cleared = p.badge === 'new' ? { ...p, badge: null } : p;
+      return p.id === part.id ? [{ ...p, badge: 'source' as const, visible: false }, ...newParts] : [cleared];
+    });
+    set({ parts: after, selectedPartId: newParts[0].id, preview: null, pinPoints: [] });
+    pushHistory({ kind: 'parts', before, after });
+    notify('info', `Kesildi: ${newParts.length} yeni parça. Kaynak parça gizlendi (sarı rozet).`);
+  });
+}
+
+export async function splitSelected(): Promise<void> {
+  const part = selectedPart();
+  if (!part) return notify('warn', 'Önce bir parça seçin.');
+  await busy('Bölünüyor…', async () => {
+    const pieces = await geometry.split(part.mesh);
+    if (pieces.length <= 1) return notify('info', 'Parça zaten tek parça.');
+    const newParts: Part[] = pieces.map((mesh: LabeledMesh, i: number) => ({
+      ...part,
+      id: newPartId(),
+      name: `${part.name} ${i + 1}`,
+      mesh,
+      badge: 'new' as const,
+      visible: true,
+    }));
+    const before = get().parts;
+    const after = before.flatMap((p) => (p.id === part.id ? newParts : [p]));
+    set({ parts: after, selectedPartId: newParts[0].id });
+    pushHistory({ kind: 'parts', before, after });
+    notify('info', `${pieces.length} parçaya bölündü.`);
+  });
+}
+
+// ---------- parça yönetimi ----------
+
+export function selectPart(id: string): void {
+  set({ selectedPartId: id, preview: null });
+}
+
+export function toggleVisible(id: string): void {
+  set((s) => ({ parts: s.parts.map((p) => (p.id === id ? { ...p, visible: !p.visible } : p)) }));
+}
+
+export function deletePart(id: string): void {
+  const before = get().parts;
+  const after = before.filter((p) => p.id !== id);
+  set((s) => ({ parts: after, selectedPartId: s.selectedPartId === id ? (after[0]?.id ?? null) : s.selectedPartId }));
+  pushHistory({ kind: 'parts', before, after });
+}
+
+export function renamePart(id: string, name: string): void {
+  set((s) => ({ parts: s.parts.map((p) => (p.id === id ? { ...p, name } : p)) }));
+}
+
+// ---------- geri al / yinele ----------
+
+function applyEntry(entry: HistoryEntry, reverse: boolean): void {
+  if (entry.kind === 'paint') {
+    const part = partById(entry.partId);
+    if (!part) return;
+    const values = reverse ? entry.before : entry.after;
+    for (let i = 0; i < entry.tris.length; i++) part.mesh.labels[entry.tris[i]] = values[i];
+    onLabelsChanged?.(part.id, entry.tris);
+    set((s) => ({ paintVersion: s.paintVersion + 1 }));
+  } else {
+    const parts = reverse ? entry.before : entry.after;
+    set((s) => ({
+      parts,
+      selectedPartId: parts.some((p) => p.id === s.selectedPartId) ? s.selectedPartId : (parts[0]?.id ?? null),
+      preview: null,
+    }));
+  }
+}
+
+export function undo(): void {
+  const stack = get().undoStack;
+  const entry = stack[stack.length - 1];
+  if (!entry) return;
+  lastSmart = null;
+  set((s) => ({ undoStack: s.undoStack.slice(0, -1), redoStack: [...s.redoStack, entry] }));
+  applyEntry(entry, true);
+}
+
+export function redo(): void {
+  const stack = get().redoStack;
+  const entry = stack[stack.length - 1];
+  if (!entry) return;
+  set((s) => ({ redoStack: s.redoStack.slice(0, -1), undoStack: [...s.undoStack, entry] }));
+  applyEntry(entry, false);
+}
+
+// ---------- yardımcı ----------
+
+async function busy(label: string, fn: () => Promise<void>): Promise<void> {
+  set({ busy: label });
+  try {
+    await fn();
+  } catch (e) {
+    console.error(e);
+    notify('error', e instanceof Error ? e.message : String(e));
+  } finally {
+    set({ busy: null });
+  }
+}

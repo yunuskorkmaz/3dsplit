@@ -26,7 +26,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X12 | Socket çıkıntılarda (burun, göz) hızlı ve sağlam: kapakla ayır + kapak prizması tapa; bölge içi delikler kesime katılır; yedek yöntem sadece sorunlu üçgenlerde prizma | [x] |
 | C5 | Socket Squeeze: tapa tabanı içe daraltılır, yandan taşma önlenir | [x] |
 | C4 | Socket yönü: önizlemede ok, gizmo ile döndürme; "kameradan al" ve "otomatik" | [ ] |
-| X3 | Pim düzenleme: pime tıklayıp silme, sürükleyip taşıma | [ ] |
+| X3 | Pim düzenleme: pime tıklayıp silme, sürükleyip taşıma | [x] |
 | A4 | Proje kaydetme / açma (`.3dsplit`): parçalar, etiketler, slotlar | [ ] |
 
 ## Özellik listesi
@@ -65,7 +65,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C5 | Socket: Squeeze | 2 | [x] | Taban yüzde olarak daralır; yedek (prizma) yolunda uygulanmaz |
 | C6 | Socket: Ring Selection | 3 | [ ] | |
 | C7 | Socket: full surface | 3 | [ ] | |
-| C8 | Keys: pim yerleştirme | 1 | [~] | Tıklayarak konuyor, kapak yüzeyine izdüşüyor. Taşıma/silme yok (X3), gizmo yok |
+| C8 | Keys: pim yerleştirme | 1 | [~] | Tıkla ekle, sürükle taşı, Shift+tık sil (X3); kapak yüzeyine izdüşer. Pim başına boyut/döndürme gizmosu yok |
 | C9 | Keys: clearance | 1 | [x] | |
 | C10 | Keys: çoklu pim | 2 | [x] | Her tıklama bir pim |
 | C11 | Keys: şekiller | 2 | [~] | Silindir, sekizgen, küp var; snap pim yok |
@@ -111,3 +111,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X2: mesh inceltme | `4d01418` |
 | 2026-09-25 | X11, X12: yoğun mesh'te Smart Fill, çıkıntı socket'i | `bfb879b` |
 | 2026-09-25 | X15: kendini kesen kapak izdüşümleri, pim merkezi | `a2c5c3b` |
+| 2026-09-25 | C5: Socket squeeze | `77b165f` |

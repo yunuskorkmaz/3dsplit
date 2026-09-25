@@ -189,11 +189,15 @@ export class Viewport {
     this.requestRender();
   }
 
-  setPinMarkers(points: Vec3[]): void {
+  /** Keys pim işaretleri: yüzeyde tıklanan noktalar, pim yarıçapında. */
+  setPinMarkers(points: Vec3[], radius: number): void {
     this.overlay.children.filter((c) => c.userData.marker).forEach((c) => this.overlay.remove(c));
-    const size = this.sceneSize() / 150;
     for (const p of points) {
-      const m = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 8), new THREE.MeshBasicMaterial({ color: '#2f80ff' }));
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 16, 12),
+        new THREE.MeshBasicMaterial({ color: '#2f80ff', transparent: true, opacity: 0.7, depthTest: false }),
+      );
+      m.renderOrder = 5;
       m.position.set(...p);
       m.userData.marker = true;
       this.overlay.add(m);
@@ -260,12 +264,6 @@ export class Viewport {
       this.frame = 0;
       this.renderer.render(this.scene, this.camera);
     });
-  }
-
-  private sceneSize(): number {
-    const box = new THREE.Box3();
-    for (const p of this.parts.values()) box.expandByObject(p.mesh);
-    return box.isEmpty() ? 100 : box.getSize(new THREE.Vector3()).length();
   }
 
   private resize(): void {

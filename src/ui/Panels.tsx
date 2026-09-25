@@ -293,7 +293,7 @@ export function CutPanel() {
               Temizle ({pinCount})
             </button>
           </div>
-          <p className="hint">Pim yoksa kesim yüzeyinin ortasına bir tane konur.</p>
+          <p className="hint">Bölgeye tıkla: pim ekle. Pime tıklayıp sürükle: taşı. Shift+tık: sil. Pim yoksa kesim yüzeyinin ortasına bir tane konur.</p>
         </>
       )}
       <div className="row">

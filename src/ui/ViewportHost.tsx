@@ -17,6 +17,19 @@ function slotColor(label: number): THREE.Color {
   return new THREE.Color(slot?.color ?? '#ff00ff');
 }
 
+function nearestPin(pins: [number, number, number][], p: [number, number, number], maxDist: number): number {
+  let best = -1;
+  let bestD = maxDist;
+  pins.forEach((q, i) => {
+    const d = Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
+    if (d <= bestD) {
+      best = i;
+      bestD = d;
+    }
+  });
+  return best;
+}
+
 /** Viewport'u React ağacına bağlar; araç olaylarını aksiyonlara çevirir. */
 export function ViewportHost() {
   const ref = useRef<HTMLDivElement>(null);
@@ -33,6 +46,7 @@ export function ViewportHost() {
     // son fırça noktası: hızlı sürüklemede aradaki boşluğu doldurmak için
     let last: { x: number; y: number; point: [number, number, number] } | null = null;
     let strokePart = '';
+    let draggingPin = -1;
     const vp = new Viewport(ref.current, {
       onDown(hit: Hit, e: PointerEvent) {
         const { tool, selectedPartId: sel } = get();
@@ -40,7 +54,19 @@ export function ViewportHost() {
         const erase = e.shiftKey;
         if (tool === 'smart') smartFillAt(hit.partId, hit.tri, erase);
         else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, erase);
-        else if (tool === 'pin') set((s) => ({ pinPoints: [...s.pinPoints, hit.point], preview: null }));
+        else if (tool === 'pin') {
+          // mevcut pime yakın tıklama: Shift ile sil, değilse sürükleyerek taşı
+          const { pinPoints: pins, cut } = get();
+          const near = nearestPin(pins, hit.point, Math.max(1.5, cut.pinRadius * 1.5));
+          if (near >= 0 && e.shiftKey) {
+            set({ pinPoints: pins.filter((_, i) => i !== near), preview: null });
+          } else if (near >= 0) {
+            draggingPin = near;
+            return true;
+          } else if (!e.shiftKey) {
+            set({ pinPoints: [...pins, hit.point], preview: null });
+          }
+        }
         else if (tool === 'brush') {
           beginStroke(hit.partId);
           brushAt(hit.partId, hit.tri, hit.point, erase);
@@ -53,6 +79,11 @@ export function ViewportHost() {
       },
       onMove(hit, e) {
         vp.setBrushCursor(get().tool === 'brush' ? hit : null, get().brushRadius);
+        if (draggingPin >= 0 && hit) {
+          const i = draggingPin;
+          set((s) => ({ pinPoints: s.pinPoints.map((p, j) => (j === i ? hit.point : p)), preview: null }));
+          return;
+        }
         // darbe başladığı parçada kalır
         if (!brushing || !hit || hit.partId !== strokePart) return;
         const radius = get().brushRadius;
@@ -69,6 +100,7 @@ export function ViewportHost() {
         last = { x: e.clientX, y: e.clientY, point: hit.point };
       },
       onUp() {
+        draggingPin = -1;
         if (brushing) endStroke();
         brushing = false;
         last = null;
@@ -104,9 +136,10 @@ export function ViewportHost() {
     else vp.clearOverlay();
   }, [preview]);
 
+  const pinRadius = useStore((s) => s.cut.pinRadius);
   useEffect(() => {
-    vpRef.current?.setPinMarkers(pinPoints);
-  }, [pinPoints]);
+    vpRef.current?.setPinMarkers(pinPoints, pinRadius);
+  }, [pinPoints, pinRadius]);
 
   return <div ref={ref} className="viewport" />;
 }

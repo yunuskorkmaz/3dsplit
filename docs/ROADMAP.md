@@ -228,5 +228,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-26 | X47–X49: kalıcı önizleme + pim gövde payı, seçimi temizle, geçmiş | `61d7d8a` |
 | 2026-09-25 | X50: kesim paneli sadeleştirme | `6c0b5d7` |
 | 2026-09-25 | X51: pim düzenleme: gerçek boyutlu görüntü, taşı/döndür tutamağı, seçme davranışı | `2070559` |
+| 2026-09-25 | X52: pim değişiklikleri geçmişte | `a72bddd` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

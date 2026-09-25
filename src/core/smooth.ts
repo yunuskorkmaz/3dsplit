@@ -428,14 +428,21 @@ function smoothField(
   dist2: (v: number) => number,
   radius: number,
   strength: number,
+  candidates?: ArrayLike<number>,
 ) {
   const { labels, positions: pos, indices: idx } = mesh;
   const triCount = labels.length;
   const vCount = pos.length / 3;
   const reach2 = (radius * 1.5) ** 2;
-  // fırça altındaki üçgenler ve köşeler (yerel numaralı)
+  // fırça altındaki üçgenler ve köşeler (yerel numaralı); aday listesi verilirse sadece onlara bakılır
   const near: number[] = [];
-  for (let t = 0; t < triCount; t++) if (dist2(idx[3 * t]) <= reach2) near.push(t);
+  if (candidates) {
+    for (let i = 0; i < candidates.length; i++) if (dist2(idx[3 * candidates[i]]) <= reach2) near.push(candidates[i]);
+    // tam taramayla aynı sıra: köşeler sırayla kaydırıldığından sonuç sıraya bağlı
+    near.sort((x, y) => x - y);
+  } else {
+    for (let t = 0; t < triCount; t++) if (dist2(idx[3 * t]) <= reach2) near.push(t);
+  }
   if (!near.length) return null;
   const local = new Map<number, number>();
   const verts: number[] = [];
@@ -556,13 +563,19 @@ export function smoothBoundaryAt(
   strength: number,
   accept: (t: number) => boolean,
   outsideLabel: (t: number) => number,
+  /**
+   * X42: fırça altındaki aday üçgenler (ör. vurulan üçgenden yüzey üzerinde
+   * yayılarak bulunanlar). Verilmezse tüm üçgenler taranır; 1.9M üçgende
+   * bu darbe başına ~15 ms.
+   */
+  candidates?: ArrayLike<number>,
 ): number[] {
   const { labels, positions: pos, indices: idx } = mesh;
   const dist2 = (v: number) =>
     (pos[3 * v] - center[0]) ** 2 +
     (pos[3 * v + 1] - center[1]) ** 2 +
     (pos[3 * v + 2] - center[2]) ** 2;
-  const field = smoothField(mesh, slot, dist2, radius, strength);
+  const field = smoothField(mesh, slot, dist2, radius, strength, candidates);
   if (!field) return [];
   const { verts, local, nbr, near, phiN, w, start, list, P, n } = field;
 

@@ -180,6 +180,31 @@ describe('sınır yumuşatma', () => {
 });
 
 describe('yumuşatma fırçası', () => {
+  it('X42: yüzeyde yayılan aday listesiyle sonuç tüm mesh taramasıyla aynı', async () => {
+    const { smoothBoundaryAt } = await import('../src/core/smooth');
+    const { brushSelect } = await import('../src/core/paint');
+    const base = labelWhere(subdividedCube(20, 40), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));
+    const copy = () => ({ positions: new Float32Array(base.positions), indices: base.indices, labels: Uint16Array.from(base.labels) });
+    const a = copy();
+    const b = copy();
+    const adj = buildAdjacency(base);
+    const c = faceCentroids(base);
+    const p: [number, number, number] = [5, 0, 10];
+    let seed = 0;
+    let bd = Infinity;
+    for (let t = 0; t < base.labels.length; t++) {
+      const d = Math.hypot(c[3 * t] - p[0], c[3 * t + 1] - p[1], c[3 * t + 2] - p[2]);
+      if (d < bd) {
+        bd = d;
+        seed = t;
+      }
+    }
+    smoothBoundaryAt(a, 1, p, 1.5, 1, (t) => a.labels[t] === 0, () => 0);
+    smoothBoundaryAt(b, 1, p, 1.5, 1, (t) => b.labels[t] === 0, () => 0, brushSelect(adj, c, seed, p, 1.5 * 1.5 + 1));
+    expect(Array.from(b.labels)).toEqual(Array.from(a.labels));
+    expect(Array.from(b.positions)).toEqual(Array.from(a.positions));
+  });
+
   it('X38: bölmeden sonra komşuluk yerinde güncellenir, baştan kurulanla aynı', async () => {
     const { smoothStrokeSplit, applySplit } = await import('../src/core/smooth');
     const { patchAdjacency } = await import('../src/core/topology');

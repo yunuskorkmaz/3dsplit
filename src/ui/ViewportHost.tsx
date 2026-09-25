@@ -89,7 +89,7 @@ export function ViewportHost() {
     };
     const dab = (h: Hit) => {
       if (drag === 'paint') brushAt(h.partId, h.tri, h.point, eraseStroke);
-      else if (drag === 'smooth') smoothAt(h.point);
+      else if (drag === 'smooth') smoothAt(h.point, h.tri);
     };
 
     const vp = new Viewport(ref.current, {

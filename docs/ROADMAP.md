@@ -32,6 +32,8 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X39 | Türkçe Mac klavyesinde `[` `]` Option ile yazıldığı için fırça küçült/büyüt kısayolu çalışmıyordu (Alt'lı tuşlar yok sayılıyordu); harf/rakam olmayan Alt karakterleri artık kısayol | Türkçe klavye | [x] |
 | X40 | Otomatik pim boyutunda pim işaretçisi ve pim ayarı elle girilen yarıçapı gösteriyordu; artık "Boyut: otomatik", tek pim için elle boyut ve "Otomatiğe dön" | X33 eksiği | [x] |
 | X41 | Lint temizliği: `npm run lint` 70 hatayla kırmızıydı. Biçimlendirme uygulandı, gerçek bulgular düzeltildi (virgül operatörü, forEach dönüşü, yanlış "hook" adı `useSweepSocket`), projeye uymayan kurallar (`noVoidTypeReturn`, liste satırı a11y, CSS özgüllük sırası) `biome.json`da kapatıldı | Kod sağlığı | [x] |
+| X42 | Yumuşatma fırçası her darbede tüm üçgenleri tarıyordu (1.9M üçgende darbe başına ~25 ms). Adaylar vurulan üçgenden yüzey üzerinde yayılarak bulunuyor (~12 ms); sonuç tam taramayla birebir aynı (test) | Performans | [x] |
+| X43 | Uçtan uca test: çizgi aracı, tolerans deneme parçası, yardım ve görünürlük akışı | Yeni araçların arayüz testi yoktu | [ ] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 

@@ -1,5 +1,6 @@
 import type { Manifold } from 'manifold-3d';
 import { faceNormalsAndAreas } from './geometry';
+import { closeHoles } from './paint';
 import { CUT_FACE_ID, fromManifold, KernelError, kernel, Scope, toManifold } from './kernel';
 import { boundaryLoops, buildAdjacency, connectedComponents, extractTriangles } from './topology';
 import { BASE_SLOT, type LabeledMesh, type MeshData, type Vec3 } from './types';
@@ -56,9 +57,11 @@ interface Island {
   capNormal: Vec3;
   capCenter: Vec3;
   mainLoop: number[];
+  /** Tüm mesh'in komşuluk tablosu (adalar arasında ortak). */
+  adj: Int32Array;
 }
 
-function findIslands(mesh: LabeledMesh, slot: number): Island[] {
+function findIslands(mesh: LabeledMesh, slot: number, warnings: string[] = []): Island[] {
   const triCount = mesh.labels.length;
   const mask = new Uint8Array(triCount);
   let selected = 0;
@@ -77,11 +80,27 @@ function findIslands(mesh: LabeledMesh, slot: number): Island[] {
   const groups: number[][] = Array.from({ length: count }, () => []);
   for (let t = 0; t < triCount; t++) if (component[t] >= 0) groups[component[t]].push(t);
 
-  return groups.map((tris) => {
+  // köşeden bağlı tek tük üçgenler (tırtıklı boyamadan) ayrı parça olmasın
+  const groupArea = groups.map((g) => g.reduce((sum, t) => sum + areas[t], 0));
+  const largest = Math.max(...groupArea);
+  let dropped = 0;
+
+  const absorbedAll = new Uint8Array(triCount);
+  let absorbedHoles = 0;
+  const islands: Island[] = [];
+  for (const [gi, group] of groups.entries()) {
+    if (absorbedAll[group[0]]) continue; // başka adanın deliğinin içinde kalmış
+    if (groupArea[gi] < 1 && groupArea[gi] < largest * 0.01) {
+      dropped++;
+      continue;
+    }
+    const { tris, holes } = closeHoles(adj, areas, group);
+    absorbedHoles += holes;
     const islandMask = new Uint8Array(triCount);
     let n: Vec3 = [0, 0, 0];
     for (const t of tris) {
       islandMask[t] = 1;
+      absorbedAll[t] = 1;
       n = add(n, scale([normals[3 * t], normals[3 * t + 1], normals[3 * t + 2]], areas[t]));
     }
     const loops = boundaryLoops(mesh, adj, islandMask);
@@ -96,8 +115,11 @@ function findIslands(mesh: LabeledMesh, slot: number): Island[] {
       }
     }
     const { normal: capNormal, center: capCenter } = main;
-    return { tris, loops, normal: normalize(n), capNormal, capCenter, mainLoop };
-  });
+    islands.push({ tris, loops, normal: normalize(n), capNormal, capCenter, mainLoop, adj });
+  }
+  if (dropped) warnings.push(`${dropped} çok küçük boyalı kırıntı atlandı (1 mm² altı).`);
+  if (absorbedHoles) warnings.push(`Bölgenin içinde kalan ${absorbedHoles} boyanmamış delik kesime dahil edildi.`);
+  return islands;
 }
 
 /** Halkanın Newell normali, ağırlık merkezi ve izdüşüm alanı. */
@@ -121,8 +143,8 @@ function loopPlane(positions: Float32Array, loop: number[]): { normal: Vec3; cen
  * düzlemde üçgenlenir, sonra atılan köşeler ait oldukları kenarın üçgenine
  * yelpaze olarak geri eklenir. Böylece halkadaki her köşe kapakta kalır.
  */
-function triangulateLoop(positions: Float32Array, loop: number[]): number[] {
-  const [u, v] = orthoBasis(loopPlane(positions, loop).normal);
+function triangulateLoop(positions: Float32Array, loop: number[], normal?: Vec3): number[] {
+  const [u, v] = orthoBasis(normal ?? loopPlane(positions, loop).normal);
   const pts = loop.map((i) => {
     const p = vertexAt(positions, i);
     return [dot(p, u), dot(p, v)] as [number, number];
@@ -144,7 +166,18 @@ function triangulateLoop(positions: Float32Array, loop: number[]): number[] {
   }
   if (kept.length < 3) throw new CutError('Sınır halkası kapak düzleminde çökük; kapak üretilemedi.');
 
-  const tris = kernel().triangulate([kept.map((i) => pts[i])]);
+  const poly = kept.map((i) => pts[i]);
+  // izdüşüm yönüne göre halka saat yönünde de olabilir; üçgenler halkayla aynı yöne çevrilir
+  let polyArea = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    polyArea += a[0] * b[1] - b[0] * a[1];
+  }
+  const sign = polyArea >= 0 ? 1 : -1;
+  const tris = kernel().triangulate(sign > 0 ? [poly] : [poly.slice().reverse()]).map(
+    (tri) => (sign > 0 ? tri : tri.map((x) => poly.length - 1 - x)) as [number, number, number],
+  );
   if (!tris.length) throw new CutError('Sınır halkası üçgenlenemedi.');
   const K = kept.length;
   // kept[k] ile kept[k+1] arasında atılan halka köşeleri
@@ -160,7 +193,7 @@ function triangulateLoop(positions: Float32Array, loop: number[]): number[] {
     const area =
       (pts[kept[j]][0] - pts[kept[i]][0]) * (pts[kept[k]][1] - pts[kept[i]][1]) -
       (pts[kept[k]][0] - pts[kept[i]][0]) * (pts[kept[j]][1] - pts[kept[i]][1]);
-    if (area < 0) [j, k] = [k, j];
+    if (area * sign < 0) [j, k] = [k, j];
     const corners = [i, j, k];
     // her kenar (c -> sonraki) sınır kenarıysa atılan köşeleri araya ekle
     const edges = corners.map((c, e) => {
@@ -185,7 +218,16 @@ function triangulateLoop(positions: Float32Array, loop: number[]): number[] {
 }
 
 /** Fast/Keys: bölgeyi sınır halkası boyunca düz kapakla ayırır. */
-function capSplit(mesh: LabeledMesh, islands: Island[], slot: number): { body: LabeledMesh; parts: LabeledMesh[] } {
+/**
+ * `regionNormal`: kapaklar halka düzlemi yerine bölgenin ortalama normaline
+ * izdüşürülür. Kavisli halkalar (kaş gibi) kendi düzleminde katlanabiliyor.
+ */
+function capSplit(
+  mesh: LabeledMesh,
+  islands: Island[],
+  slot: number,
+  regionNormal = false,
+): { body: LabeledMesh; parts: LabeledMesh[] } {
   const triCount = mesh.labels.length;
   const inIsland = new Uint8Array(triCount);
   const bodyIdx: number[] = [];
@@ -201,7 +243,7 @@ function capSplit(mesh: LabeledMesh, islands: Island[], slot: number): { body: L
       partLabels.push(mesh.labels[t]);
     }
     for (const loop of island.loops) {
-      const cap = triangulateLoop(mesh.positions, loop);
+      const cap = triangulateLoop(mesh.positions, loop, regionNormal ? island.normal : undefined);
       for (let i = 0; i < cap.length; i += 3) {
         partIdx.push(cap[i], cap[i + 1], cap[i + 2]);
         partLabels.push(slot);
@@ -228,34 +270,37 @@ function compact(positions: Float32Array, idx: number[], labels: number[]): Labe
 }
 
 /**
- * Socket hacmi: bölge yüzeyi `dir` boyunca +eps'ten -depth'e süpürülür.
- * Bölge `dir` yönünde yükseklik alanı olmalı.
+ * Yüzey yamasını `dir` boyunca +eps'ten -depth'e süpürerek kapalı hacim üretir.
+ * `tris` düz köşe indeksi üçlüleri (dışa, `dir` tarafına bakan), `loops` yamanın
+ * sınır halkaları (üçgenlerdeki kenar yönüyle). Yama `dir` yönünde yükseklik alanı olmalı.
  */
-function extrudeVolume(mesh: MeshData, island: Island, dir: Vec3, depth: number, eps: number): MeshData {
+function extrudePatch(
+  positions: Float32Array,
+  tris: ArrayLike<number>,
+  loops: number[][],
+  dir: Vec3,
+  depth: number,
+  eps: number,
+): MeshData {
   const vmap = new Map<number, number>();
-  for (const t of island.tris) {
-    for (let k = 0; k < 3; k++) {
-      const v = mesh.indices[3 * t + k];
-      if (!vmap.has(v)) vmap.set(v, vmap.size);
-    }
-  }
+  for (let i = 0; i < tris.length; i++) if (!vmap.has(tris[i])) vmap.set(tris[i], vmap.size);
   const n = vmap.size;
   // üst köşeler 0..n-1, alt köşeler n..2n-1
-  const positions = new Float32Array(n * 6);
+  const out = new Float32Array(n * 6);
   for (const [v, i] of vmap) {
-    const p = vertexAt(mesh.positions, v);
-    positions.set(add(p, scale(dir, eps)), 3 * i);
-    positions.set(sub(p, scale(dir, depth)), 3 * (i + n));
+    const p = vertexAt(positions, v);
+    out.set(add(p, scale(dir, eps)), 3 * i);
+    out.set(sub(p, scale(dir, depth)), 3 * (i + n));
   }
   const idx: number[] = [];
-  for (const t of island.tris) {
-    const a = vmap.get(mesh.indices[3 * t]) as number;
-    const b = vmap.get(mesh.indices[3 * t + 1]) as number;
-    const c = vmap.get(mesh.indices[3 * t + 2]) as number;
+  for (let i = 0; i < tris.length; i += 3) {
+    const a = vmap.get(tris[i]) as number;
+    const b = vmap.get(tris[i + 1]) as number;
+    const c = vmap.get(tris[i + 2]) as number;
     idx.push(a, b, c);
     idx.push(a + n, c + n, b + n);
   }
-  for (const loop of island.loops) {
+  for (const loop of loops) {
     for (let i = 0; i < loop.length; i++) {
       const a = vmap.get(loop[i]) as number;
       const b = vmap.get(loop[(i + 1) % loop.length]) as number;
@@ -263,14 +308,68 @@ function extrudeVolume(mesh: MeshData, island: Island, dir: Vec3, depth: number,
       idx.push(b, a + n, b + n);
     }
   }
-  return { positions, indices: Uint32Array.from(idx) };
+  return { positions: out, indices: Uint32Array.from(idx) };
 }
 
-/** Yükseklik alanı olmayan bölgeler için yedek: üçgen başına prizma birleşimi. */
+/** Socket hacmi: ada yüzeyi `dir` boyunca süpürülür. */
+function extrudeVolume(mesh: MeshData, island: Island, dir: Vec3, depth: number, eps: number): MeshData {
+  const tris: number[] = [];
+  for (const t of island.tris) tris.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
+  return extrudePatch(mesh.positions, tris, island.loops, dir, depth, eps);
+}
+
+/**
+ * Çıkıntı socket'i için tapa gövdesi: her sınır halkasının kapağı, kendi
+ * normali boyunca derinlik kadar gövdenin içine uzatılır. Kapak kendi
+ * düzleminde üçgenlendiği için her zaman yükseklik alanıdır.
+ */
+function capPlugVolumes(
+  positions: Float32Array,
+  island: Island,
+  depth: number,
+  eps: number,
+  regionNormal = false,
+): { mesh: MeshData; dir: Vec3 }[] {
+  return island.loops.map((loop) => {
+    const dir = regionNormal ? island.normal : loopPlane(positions, loop).normal;
+    // triangulateLoop gövdeye bakan kapak verir; süpürme için dışa (dir) bakanı gerekir
+    const cap = flipAll(triangulateLoop(positions, loop, dir));
+    return { mesh: extrudePatch(positions, cap, [loop], dir, depth, eps), dir };
+  });
+}
+
+/**
+ * Yükseklik alanı olmayan bölgeler için yedek: `dir`'e bakan üçgenler tek
+ * parça süpürülür, bakmayanlar için üçgen başına prizma eklenir.
+ */
 function prismUnion(mesh: MeshData, island: Island, dir: Vec3, depth: number, eps: number, scope: Scope): Manifold {
   const { normals } = faceNormalsAndAreas(mesh);
-  const prisms: Manifold[] = [];
+  const pieces: Manifold[] = [];
+  const goodMask = new Uint8Array(mesh.indices.length / 3);
+  const good: number[] = [];
+  const bad: number[] = [];
   for (const t of island.tris) {
+    const nd = normals[3 * t] * dir[0] + normals[3 * t + 1] * dir[1] + normals[3 * t + 2] * dir[2];
+    if (nd >= 0.02) {
+      goodMask[t] = 1;
+      good.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
+    } else {
+      bad.push(t);
+    }
+  }
+  let sweptAll = false;
+  if (good.length) {
+    try {
+      const loops = boundaryLoops(mesh, island.adj, goodMask);
+      pieces.push(scope.keep(toManifold(extrudePatch(mesh.positions, good, loops, dir, depth, eps), CUT_FACE_ID)));
+      sweptAll = true;
+    } catch (e) {
+      if (!(e instanceof KernelError)) throw e;
+    }
+  }
+  // süpürme başarısızsa tüm üçgenler prizma olur
+  const prismTris = sweptAll ? bad : island.tris;
+  for (const t of prismTris) {
     const nd = normals[3 * t] * dir[0] + normals[3 * t + 1] * dir[1] + normals[3 * t + 2] * dir[2];
     if (Math.abs(nd) < 1e-3) continue;
     const vs = [0, 1, 2].map((k) => vertexAt(mesh.positions, mesh.indices[3 * t + k]));
@@ -281,10 +380,10 @@ function prismUnion(mesh: MeshData, island: Island, dir: Vec3, depth: number, ep
     });
     let idx = [0, 1, 2, 3, 5, 4, 1, 0, 3, 1, 3, 4, 2, 1, 4, 2, 4, 5, 0, 2, 5, 0, 5, 3];
     if (nd < 0) idx = flipAll(idx);
-    prisms.push(scope.keep(toManifold({ positions, indices: Uint32Array.from(idx) }, CUT_FACE_ID)));
+    pieces.push(scope.keep(toManifold({ positions, indices: Uint32Array.from(idx) }, CUT_FACE_ID)));
   }
-  if (!prisms.length) throw new CutError('Bölge seçilen yöne paralel; hacim üretilemedi.');
-  return scope.keep(kernel().Manifold.union(prisms));
+  if (!pieces.length) throw new CutError('Bölge seçilen yöne paralel; hacim üretilemedi.');
+  return pieces.length === 1 ? pieces[0] : scope.keep(kernel().Manifold.union(pieces));
 }
 
 function flipAll(idx: number[]): number[] {
@@ -403,7 +502,7 @@ function socketVolume(mesh: MeshData, island: Island, opts: CutOptions, eps: num
   if (isHeightField(mesh, island, dir)) {
     return scope.keep(toManifold(extrudeVolume(mesh, island, dir, opts.depth, eps), CUT_FACE_ID));
   }
-  warnings.push('Bölge seçilen yönden tam görünmüyor; yavaş yedek yöntem (prizma birleşimi) kullanıldı.');
+  warnings.push('Bölge seçilen yönden tam görünmüyor; yedek yöntem (süpürme + prizma) kullanıldı.');
   return prismUnion(mesh, island, dir, opts.depth, eps, scope);
 }
 
@@ -423,10 +522,16 @@ export function previewCut(mesh: LabeledMesh, opts: CutOptions): CutPreview {
   const scope = new Scope();
   const warnings: string[] = [];
   try {
-    const islands = findIslands(mesh, opts.slot);
+    const islands = findIslands(mesh, opts.slot, warnings);
     const volumes: MeshData[] = [];
     const pins: MeshData[] = [];
-    if (opts.mode === 'socket') {
+    if (opts.mode === 'socket' && !useSweepSocket(mesh, islands, opts)) {
+      // çıkıntı yöntemi: kesim kapakları ve gövdeye giren tapa prizmaları
+      const eps = Math.max(1, 4 * opts.clearance);
+      for (const island of islands) {
+        for (const { mesh: vol } of capPlugVolumes(mesh.positions, island, opts.depth, eps)) volumes.push(vol);
+      }
+    } else if (opts.mode === 'socket') {
       const eps = Math.max(0.5, 4 * opts.clearance);
       for (const island of islands) {
         const dir = socketDirection(island, opts);
@@ -462,7 +567,7 @@ export function cutRegion(mesh: LabeledMesh, opts: CutOptions): CutResult {
   const scope = new Scope();
   const warnings: string[] = [];
   try {
-    const islands = findIslands(mesh, opts.slot);
+    const islands = findIslands(mesh, opts.slot, warnings);
     if (opts.mode === 'socket') return socketCut(mesh, islands, opts, scope, warnings);
 
     const split = capSplit(mesh, islands, opts.slot);
@@ -498,7 +603,7 @@ export function cutRegion(mesh: LabeledMesh, opts: CutOptions): CutResult {
     }
     return {
       body: fromManifold(body, BASE_SLOT),
-      parts: parts.map((p) => fromManifold(p, opts.slot)),
+      parts: parts.map((p) => partFrom(p, opts.slot)),
       warnings,
     };
   } finally {
@@ -528,7 +633,67 @@ function checkPinContainment(pin: Manifold, part: Manifold, body: Manifold, opts
   }
 }
 
+/**
+ * Süpürme kullanılabilir mi: yön elle verildiyse veya her ada kendi yönünde
+ * yükseklik alanıysa (düz/sığ yamalar). Değilse çıkıntı yöntemi denenir.
+ */
+function useSweepSocket(mesh: MeshData, islands: Island[], opts: CutOptions): boolean {
+  return opts.direction !== undefined || islands.every((i) => isHeightField(mesh, i, socketDirection(i, opts)));
+}
+
 function socketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, warnings: string[]): CutResult {
+  if (!useSweepSocket(mesh, islands, opts)) {
+    try {
+      return capSocketCut(mesh, islands, opts, scope, warnings);
+    } catch (e) {
+      if (!(e instanceof CutError || e instanceof KernelError)) throw e;
+    }
+    const r = sweepSocketCut(mesh, islands, opts, scope, []);
+    const note = 'Bölge alttan oyuk (tek yönden tam görünmüyor); yedek yöntemle kesildi. Tapanın oturmasını önizlemede kontrol edin.';
+    return { ...r, warnings: [...warnings, note, ...r.warnings.filter((w) => !w.startsWith('Bölge seçilen yönden'))] };
+  }
+  return sweepSocketCut(mesh, islands, opts, scope, warnings);
+}
+
+/** Çıkıntı socket'i: kapakla ayır, kapak prizmasını tapaya ekle, büyütülmüş halini gövdeden çıkar. */
+function capSocketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, warnings: string[]): CutResult {
+  let r: CutResult;
+  try {
+    r = capSocketCutWith(mesh, islands, opts, scope, false);
+  } catch (e) {
+    if (!(e instanceof CutError || e instanceof KernelError)) throw e;
+    // halka kendi düzleminde katlanıyorsa bölgeye önden bakarak dene
+    r = capSocketCutWith(mesh, islands, opts, scope, true);
+  }
+  return { ...r, warnings: [...warnings, ...r.warnings] };
+}
+
+function capSocketCutWith(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, regionNormal: boolean): CutResult {
+  const warnings: string[] = [];
+  const split = capSplit(mesh, islands, opts.slot, regionNormal);
+  const bodyBase = scope.keep(toManifold(split.body, split.body.labels));
+  // gövdeye giren kısım orijinal modelden alınır: kapağın üstüne de biraz taşar,
+  // çıkıntıyla çakışan yüzey yerine hacim olarak üst üste biner
+  const model = scope.keep(toManifold(mesh, mesh.labels));
+  const eps = Math.max(1, 4 * opts.clearance);
+  const parts: LabeledMesh[] = [];
+  const holes: Manifold[] = [];
+  islands.forEach((island, i) => {
+    let part = scope.keep(toManifold(split.parts[i], split.parts[i].labels));
+    for (const { mesh: volMesh, dir } of capPlugVolumes(mesh.positions, island, opts.depth, eps, regionNormal)) {
+      const vol = scope.keep(toManifold(volMesh, CUT_FACE_ID));
+      part = scope.keep(part.add(scope.keep(vol.intersect(model))));
+      holes.push(growVolume(vol, dir, opts.clearance, scope));
+    }
+    if (part.volume() <= 0) throw new CutError('Tapa hacmi boş çıktı.');
+    parts.push(partFrom(part, opts.slot));
+  });
+  const allHoles = holes.length === 1 ? holes[0] : scope.keep(kernel().Manifold.union(holes));
+  const body = scope.keep(bodyBase.subtract(allHoles));
+  return { body: fromManifold(body, BASE_SLOT), parts, warnings };
+}
+
+function sweepSocketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, warnings: string[]): CutResult {
   const model = scope.keep(toManifold(mesh, mesh.labels));
   const eps = Math.max(0.5, 4 * opts.clearance);
   const parts: LabeledMesh[] = [];
@@ -540,13 +705,20 @@ function socketCut(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope
       warnings.push('Bir bölge için tapa boş çıktı; atlandı.');
       continue;
     }
-    parts.push(fromManifold(part, opts.slot));
+    parts.push(partFrom(part, opts.slot));
     holes.push(growVolume(vol, socketDirection(island, opts), opts.clearance, scope));
   }
   if (!parts.length) throw new CutError('Hiç tapa üretilemedi.');
   const allHoles = holes.length === 1 ? holes[0] : scope.keep(kernel().Manifold.union(holes));
   const body = scope.keep(model.subtract(allHoles));
   return { body: fromManifold(body, BASE_SLOT), parts, warnings };
+}
+
+/** Kesilen parçadaki taban etiketli yüzler parçanın slotunu alır; başka slotlar korunur. */
+function partFrom(man: Manifold, slot: number): LabeledMesh {
+  const m = fromManifold(man, slot);
+  for (let t = 0; t < m.labels.length; t++) if (m.labels[t] === BASE_SLOT) m.labels[t] = slot;
+  return m;
 }
 
 /** D3: kopuk parçaları ayrı mesh'lere böler. */

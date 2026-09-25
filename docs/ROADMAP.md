@@ -19,8 +19,10 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 
 | # | İş | Durum |
 | --- | --- | --- |
-| X1 | Fırça darbesinde boşluk kalmasın: hızlı sürüklemede iki nokta arası ara noktalarla doldurulsun | [ ] |
-| X2 | Mesh inceltme: seçili parçayı hedef kenar uzunluğuna kadar bölme; etiketler korunur. Düşük poligonlu modelde sınır tırtıklı çıkmasın | [ ] |
+| X1 | Fırça darbesinde boşluk kalmasın: hızlı sürüklemede iki nokta arası ara noktalarla doldurulsun | [x] |
+| X2 | Mesh inceltme: seçili parçayı hedef kenar uzunluğuna kadar bölme; etiketler korunur. Düşük poligonlu modelde sınır tırtıklı çıkmasın | [x] |
+| X11 | Smart Fill yoğun mesh'te tüm modele yayılıyordu: ölçekli açı karşılaştırması, "sadece çukur kenarda dur" modu, seçimdeki küçük deliklerin kapanması, yayılma uyarısı | [x] |
+| X12 | Socket çıkıntılarda (burun, göz) hızlı ve sağlam: kapakla ayır + kapak prizması tapa; bölge içi delikler kesime katılır; yedek yöntem sadece sorunlu üçgenlerde prizma | [x] |
 | C5 | Socket Squeeze: tapa tabanı içe daraltılır, yandan taşma önlenir | [ ] |
 | C4 | Socket yönü: önizlemede ok, gizmo ile döndürme; "kameradan al" ve "otomatik" | [ ] |
 | X3 | Pim düzenleme: pime tıklayıp silme, sürükleyip taşıma | [ ] |
@@ -42,8 +44,8 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | # | Özellik | Faz | Durum | Not |
 | --- | --- | --- | --- | --- |
 | B1 | Renk slotları | 1 | [x] | |
-| B2 | Smart Fill | 1 | [x] | Eşik kaydırıcı + Shift+sağ sürükle, canlı güncelleme |
-| B3 | Brush | 1 | [~] | Yüzey boyunca yayılır, Shift ile siler. Hızlı sürüklemede boşluk (X1) |
+| B2 | Smart Fill | 1 | [x] | Eşik + ölçek + çukur modu, Shift+sağ sürükle ile canlı ayar (X11) |
+| B3 | Brush | 1 | [x] | Yüzey boyunca yayılır, Shift ile siler, darbe aralıkları doldurulur (X1) |
 | B4 | Bucket Fill | 1 | [x] | |
 | B5 | Gap Fill | 1 | [x] | |
 | B6 | Smooth sınır | 2 | [ ] | Önce X2 (inceltme) + çoğunluk oylaması |
@@ -57,7 +59,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | --- | --- | --- | --- | --- |
 | C1 | Önizleme (Space) | 1 | [x] | Önizlemede model yarı saydam |
 | C2 | Fast | 1 | [x] | Sınır halkasından düz kapak; boolean yok |
-| C3 | Socket: Depth | 1 | [x] | Yön boyunca süpürme; yükseklik alanı değilse prizma birleşimi (yavaş) |
+| C3 | Socket: Depth | 1 | [x] | Düz yamada süpürme, çıkıntıda kapak prizması (X12), alttan oyuk bölgede süpürme + prizma |
 | C4 | Socket: gizmo yönü | 2 | [ ] | Sprint 1 |
 | C5 | Socket: Squeeze | 2 | [ ] | Sprint 1 |
 | C6 | Socket: Ring Selection | 3 | [ ] | |
@@ -95,6 +97,8 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X7 | 1–2M üçgen performansı: komşuluk ve kaynaştırma için Map yerine sıralama tabanlı yapı | Büyük modellerde yavaşlık |
 | X8 | Playwright smoke testi | Arayüz regresyonları |
 | X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği |
+| X13 | Alttan oyuk bölgelerde (ör. kaş) de hızlı yöntem: kapak yerine bölgeye oturan eğri taban | Şu an yedek yöntemle 2–3 s |
+| X14 | Smart Fill ölçeği/açısı için model başına otomatik ayar önerisi | Farklı yoğunluktaki modellerde tek varsayılan yetmeyebilir |
 
 ## Tamamlananlar günlüğü
 
@@ -102,3 +106,6 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | --- | --- | --- |
 | 2026-09-25 | Geometri çekirdeği: onarım, boyama algoritmaları, Fast/Socket/Keys, testler | `f67a4d8` |
 | 2026-09-25 | MVP arayüzü: viewport, araçlar, kesim paneli, içe/dışa aktarma, Worker, undo/redo | `f29af18` |
+| 2026-09-25 | Dokümanlar: yol haritası, mimari, çalışma kuralları | `3e32c28` |
+| 2026-09-25 | X1: fırça darbesi ara noktaları | `1c1247b` |
+| 2026-09-25 | X2: mesh inceltme | `4d01418` |

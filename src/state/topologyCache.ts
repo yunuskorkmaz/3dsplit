@@ -1,4 +1,5 @@
 import { faceCentroids, faceNormalsAndAreas } from '../core/geometry';
+import { meanEdgeLength } from '../core/paint';
 import { buildAdjacency } from '../core/topology';
 import type { LabeledMesh } from '../core/types';
 
@@ -7,6 +8,7 @@ export interface Topology {
   normals: Float32Array;
   areas: Float32Array;
   centroids: Float32Array;
+  meanEdge: number;
 }
 
 const cache = new WeakMap<LabeledMesh, Topology>();
@@ -16,7 +18,7 @@ export function topologyOf(mesh: LabeledMesh): Topology {
   let t = cache.get(mesh);
   if (!t) {
     const { normals, areas } = faceNormalsAndAreas(mesh);
-    t = { adj: buildAdjacency(mesh), normals, areas, centroids: faceCentroids(mesh) };
+    t = { adj: buildAdjacency(mesh), normals, areas, centroids: faceCentroids(mesh), meanEdge: meanEdgeLength(mesh) };
     cache.set(mesh, t);
   }
   return t;

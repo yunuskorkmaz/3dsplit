@@ -55,6 +55,10 @@ export interface AppState {
   tool: Tool;
   brushRadius: number;
   smartAngle: number;
+  /** Smart Fill karşılaştırma ölçeği, mm. 0: otomatik (ortalama kenar × 3). */
+  smartScale: number;
+  /** Smart Fill sadece içbükey kıvrımlarda dursun (göz, burun gibi çıkıntılar için). */
+  smartConcave: boolean;
   gapArea: number;
   /** İnceltme hedef kenar uzunluğu, mm. */
   refineEdge: number;
@@ -76,7 +80,9 @@ export const useStore = create<AppState>(() => ({
   activeSlot: 1,
   tool: 'smart',
   brushRadius: 3,
-  smartAngle: 30,
+  smartAngle: 20,
+  smartScale: 0,
+  smartConcave: true,
   gapArea: 5,
   refineEdge: 1,
   cut: {

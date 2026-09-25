@@ -1,5 +1,5 @@
 import type { CutOptions } from '../core/cut';
-import { brushSelect, bucketFill, gapFill, smartFill } from '../core/paint';
+import { brushSelect, bucketFill, closeHoles, gapFill, type SmartFillOptions, smartFill } from '../core/paint';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { downloadBytes, type ExportObject, write3mf, writeStl, writeStlZip } from '../io/exportFile';
 import { importFile } from '../io/importFile';
@@ -15,7 +15,7 @@ import {
   selectedPart,
   set,
 } from './store';
-import { topologyOf } from './topologyCache';
+import { type Topology, topologyOf } from './topologyCache';
 
 // ---------- dosya ----------
 
@@ -151,19 +151,56 @@ export function bucketAt(partId: string, tri: number, erase: boolean): void {
   endStroke();
 }
 
+function smartOptions(topo: Topology): SmartFillOptions {
+  const { smartAngle, smartScale, smartConcave } = get();
+  return { maxAngleDeg: smartAngle, scale: smartScale > 0 ? smartScale : topo.meanEdge * 3, concaveOnly: smartConcave };
+}
+
+/**
+ * Smart Fill + seçimin içinde kalan küçük deliklerin kapatılması. Sadece
+ * seçimin %5'inden küçük ve tohumla aynı etiketli delikler kapanır; başka
+ * slota boyanmış yerlerin üzerine yazılmaz.
+ */
+function smartSelect(topo: Topology, labels: Uint16Array, seed: number): Uint32Array {
+  const raw = smartFill(topo.adj, topo.normals, topo.centroids, seed, smartOptions(topo));
+  const seedLabel = labels[seed];
+  return Uint32Array.from(
+    closeHoles(topo.adj, topo.areas, raw, { maxHoleFraction: 0.05, accept: (t) => labels[t] === seedLabel }).tris,
+  );
+}
+
+/** Otomatik ölçekte seçili parçanın kullanacağı değer (arayüzde göstermek için). */
+export function autoSmartScale(): number {
+  const part = selectedPart();
+  return part ? topologyOf(part.mesh).meanEdge * 3 : 0;
+}
+
 export function smartFillAt(partId: string, tri: number, erase: boolean): void {
   const part = partById(partId);
   if (!part) return;
   const topo = topologyOf(part.mesh);
   beginStroke(partId);
-  applyLabels(part, smartFill(topo.adj, topo.normals, tri, get().smartAngle), paintLabel(erase));
+  const tris = smartSelect(topo, part.mesh.labels, tri);
+  applyLabels(part, tris, paintLabel(erase));
   const entry = endStroke();
   lastSmart = entry ? { partId, seed: tri, entry } : null;
+  warnIfLeaked(tris.length, part.mesh.labels.length);
+}
+
+function warnIfLeaked(selected: number, total: number): void {
+  if (selected > total * 0.5) {
+    notify('warn', 'Seçim modelin yarısından fazlasına yayıldı. Açıyı düşürün (Shift+sağ sürükle) veya Ctrl+Z.');
+  }
 }
 
 /** Eşik değişti: son Smart Fill'i geri alıp yeni eşikle tekrarlar. */
 export function setSmartAngle(angle: number): void {
-  set({ smartAngle: Math.max(1, Math.min(180, angle)) });
+  setSmartOptions({ smartAngle: Math.max(1, Math.min(180, angle)) });
+}
+
+/** Smart Fill ayarı değişti: son Smart Fill yeni ayarla canlı tekrarlanır. */
+export function setSmartOptions(patch: { smartAngle?: number; smartScale?: number; smartConcave?: boolean }): void {
+  set(patch);
   const undo = get().undoStack;
   if (!lastSmart || undo[undo.length - 1] !== lastSmart.entry) return;
   const part = partById(lastSmart.partId);
@@ -174,7 +211,7 @@ export function setSmartAngle(angle: number): void {
   onLabelsChanged?.(part.id, entry.tris);
   const label = entry.after[0];
   const topo = topologyOf(part.mesh);
-  const tris = smartFill(topo.adj, topo.normals, lastSmart.seed, get().smartAngle);
+  const tris = smartSelect(topo, labels, lastSmart.seed);
   entry.tris = tris;
   entry.before = Uint16Array.from(tris, (t) => labels[t]);
   for (let i = 0; i < tris.length; i++) labels[tris[i]] = label;

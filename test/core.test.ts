@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { cutRegion, previewCut, splitComponents, type CutOptions } from '../src/core/cut';
-import { faceNormalsAndAreas, signedVolume } from '../src/core/geometry';
+import { faceCentroids, faceNormalsAndAreas, signedVolume } from '../src/core/geometry';
 import { initKernel, toManifold } from '../src/core/kernel';
 import { bucketFill, gapFill, smartFill } from '../src/core/paint';
 import { repairMesh } from '../src/core/repair';
@@ -51,9 +51,16 @@ describe('boyama', () => {
   const adj = buildAdjacency(cube);
   const { normals, areas } = faceNormalsAndAreas(cube);
 
+  const centroids = faceCentroids(cube);
+  const opts = { maxAngleDeg: 30, scale: 0, concaveOnly: false };
+
   it('smart fill tek yüzde durur', () => {
-    expect(smartFill(adj, normals, 0, 30).length).toBe(32);
-    expect(smartFill(adj, normals, 0, 95).length).toBe(192);
+    expect(smartFill(adj, normals, centroids, 0, opts).length).toBe(32);
+    expect(smartFill(adj, normals, centroids, 0, { ...opts, maxAngleDeg: 95 }).length).toBe(192);
+  });
+
+  it('smart fill concaveOnly dışbükey kenarlardan geçer', () => {
+    expect(smartFill(adj, normals, centroids, 0, { ...opts, concaveOnly: true }).length).toBe(192);
   });
 
   it('bucket fill aynı etiketli bölgeyi doldurur', () => {
@@ -143,6 +150,21 @@ describe('kesim', () => {
     expect(p.pins.length).toBe(1);
     const s = previewCut(patch, { ...baseOpts, mode: 'socket' });
     expect(s.volumes.length).toBe(1);
+  });
+
+  it('bölge içindeki boyanmamış delik kesime katılır', () => {
+    const holed = { ...capRegion, labels: Uint16Array.from(capRegion.labels) };
+    // üst yüzün ortasındaki bir üçgen boyanmamış kalsın
+    const c = faceCentroids(holed);
+    let hole = -1;
+    for (let t = 0; t < holed.labels.length && hole < 0; t++) {
+      if (c[3 * t + 2] > 9.99 && Math.abs(c[3 * t]) < 2 && Math.abs(c[3 * t + 1]) < 2) hole = t;
+    }
+    holed.labels[hole] = 0;
+    const r = cutRegion(holed, { ...baseOpts, mode: 'fast' });
+    expect(r.parts.length).toBe(1);
+    expect(r.warnings.some((w) => w.includes('delik'))).toBe(true);
+    expect(volume(r.parts[0]) + volume(r.body)).toBeCloseTo(8000, 1);
   });
 
   it('boş slot hata verir', () => {

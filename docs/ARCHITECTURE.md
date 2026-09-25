@@ -37,7 +37,19 @@ Bölge = seçili slottaki üçgenler; bağlı her ada ayrı işlenir.
 
 **Keys pimi.** Pim ekseni kapak normali, merkezi kapak yüzeyi üzerindeki nokta (kapak üçgenleriyle doğru kesişimi). `parça ∪ pim`, `gövde − büyütülmüş(pim, clearance)`. Pim modelin dışına taşıyorsa uyarı verilir.
 
-**Socket.** Yön `d` = bölge normallerinin alan ağırlıklı ortalaması (veya verilen yön). Ada yüzeyi `+eps·d`'den `−depth·d`'ye süpürülerek kapalı hacim `V` üretilir (üst kapak, alt kapak, sınırdan duvarlar). `tapa = model ∩ V`, `gövde = model − büyüt(V)`. Büyütme: `V`'nin yana 8 yönde ve `−d` yönünde clearance kadar kaydırılmış kopyalarının birleşimi. Ada `d` yönünde yükseklik alanı değilse (bazı üçgenler `d`'ye bakmıyorsa) üçgen başına prizma birleşimine düşer.
+**Socket.** Önce bölgenin yapısına göre yol seçilir:
+
+1. *Süpürme* (düz/sığ yamalar, ya da yön elle verildiyse): yön `d` = bölge normallerinin alan ağırlıklı ortalaması. Ada yüzeyi `+eps·d`'den `−depth·d`'ye süpürülerek kapalı hacim `V` üretilir. `tapa = model ∩ V`, `gövde = model − büyüt(V)`.
+2. *Çıkıntı* (burun, göz; bölge tek yönden tam görünmüyorsa): bölge Fast gibi kapakla ayrılır. Her kapak kendi düzleminde üçgenlendiği için yükseklik alanıdır; kapak normali boyunca `depth` kadar gövdeye süpürülür (`V`). `tapa = çıkıntı ∪ (V ∩ model)`, `gövde = kapaklı gövde − büyüt(V)`. Halka kendi düzleminde katlanırsa bölgenin ortalama normali ile tekrar denenir.
+3. *Yedek* (alttan oyuk bölgeler, ör. kaş): `d`'ye bakan üçgenler tek parça süpürülür, bakmayanlar için üçgen başına prizma eklenir.
+
+Büyütme (clearance): `V`'nin yana 8 yönde ve `−d` yönünde clearance kadar kaydırılmış kopyalarının birleşimi. Kesilen parçadaki taban etiketli yüzler parçanın slotunu alır.
+
+**Bölge hazırlığı (her mod).** Adanın içinde kalan, adadan küçük boyanmamış alanlar (delikler) kesime katılır. 1 mm²'den küçük, köşeden bağlı kırıntı adalar atlanır.
+
+## Smart Fill (`src/core/paint.ts`)
+
+Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan atasının normaliyle karşılaştırılır; komşu üçgen karşılaştırması yoğun mesh'te kıvrım birçok üçgene yayıldığı için eşiği hiç aşmıyor. "Sadece çukur kenarda dur" modunda eşiği aşan kıvrım, yerel kenar içbükeyse durdurur; tümsek tepelerinden geçilir (göz, kaş, burun gibi çıkıntılar tek tıkla seçilir). Ölçek varsayılanı ortalama kenar × 3. Sonuçtaki küçük, aynı etiketli delikler kapatılır.
 
 ## Onarım (`src/core/repair.ts`)
 

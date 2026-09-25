@@ -15,6 +15,8 @@ import {
   runCut,
   selectPart,
   setSmartAngle,
+  setSmartOptions,
+  autoSmartScale,
   splitSelected,
   togglePreview,
   toggleVisible,
@@ -148,6 +150,10 @@ export function ToolPanel() {
   const tool = useStore((s) => s.tool);
   const brushRadius = useStore((s) => s.brushRadius);
   const smartAngle = useStore((s) => s.smartAngle);
+  const smartScale = useStore((s) => s.smartScale);
+  const smartConcave = useStore((s) => s.smartConcave);
+  useStore((s) => s.selectedPartId);
+  const auto = autoSmartScale();
   const gapArea = useStore((s) => s.gapArea);
   return (
     <section>
@@ -160,7 +166,30 @@ export function ToolPanel() {
         ))}
       </div>
       {tool === 'smart' && (
-        <NumberField label="Açı eşiği" value={smartAngle} min={1} max={90} step={1} unit="°" onChange={setSmartAngle} />
+        <>
+          <NumberField label="Açı eşiği" value={smartAngle} min={1} max={90} step={1} unit="°" onChange={setSmartAngle} />
+          <NumberField
+            label={smartScale > 0 ? 'Ölçek' : 'Ölçek (oto)'}
+            value={smartScale > 0 ? smartScale : auto}
+            min={0.1}
+            max={10}
+            step={0.1}
+            unit="mm"
+            onChange={(v) => setSmartOptions({ smartScale: v })}
+          />
+          <div className="row">
+            <label className="field">
+              <input type="checkbox" checked={smartConcave} onChange={(e) => setSmartOptions({ smartConcave: e.target.checked })} />
+              <span>Sadece çukur kenarda dur</span>
+            </label>
+            {smartScale > 0 && (
+              <button type="button" onClick={() => setSmartOptions({ smartScale: 0 })}>
+                Oto ölçek
+              </button>
+            )}
+          </div>
+          <p className="hint">Yayılıyorsa: açıyı düşür veya ölçeği büyüt. Çukur modu göz, burun gibi çıkıntılar içindir.</p>
+        </>
       )}
       {tool === 'brush' && (
         <NumberField label="Yarıçap" value={brushRadius} min={0.2} max={50} step={0.1} unit="mm" onChange={(v) => set({ brushRadius: v })} />

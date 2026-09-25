@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { faceCentroids, faceNormalsAndAreas } from '../src/core/geometry';
 import { fromManifold, initKernel, kernel } from '../src/core/kernel';
-import { meanEdgeLength, refineToValley, smoothBoundaryVertices, smoothSelection, triangleConcavity } from '../src/core/paint';
+import { refineToValley, triangleConcavity } from '../src/core/paint';
+import { smoothRegionBoundary } from '../src/core/smooth';
 import { signedVolume } from '../src/core/geometry';
 import { labelWhere, subdividedCube } from './fixtures';
 import { buildAdjacency } from '../src/core/topology';
@@ -69,57 +70,51 @@ describe('vadiye oturtma', () => {
 });
 
 describe('sınır yumuşatma', () => {
-  it('tırtıklı sınırı düzeltir: çentik dolar, tek çıkıntı silinir', () => {
-    const sel = new Uint8Array(areas.length);
-    // üst yüzün x<0 yarısı
-    for (let t = 0; t < areas.length; t++) if (c[3 * t + 2] > 13.99 && c[3 * t] < 0) sel[t] = 1;
-    // çentik ve çıkıntı ekle
-    let notch = -1;
-    let bump = -1;
-    for (let t = 0; t < areas.length; t++) {
-      if (c[3 * t + 2] < 13.99) continue;
-      if (notch < 0 && sel[t] && c[3 * t] > -0.3 && Math.abs(c[3 * t + 1]) < 0.5) notch = t;
-      if (bump < 0 && !sel[t] && c[3 * t] < 0.3 && Math.abs(c[3 * t + 1] - 1.5) < 0.5) bump = t;
-    }
-    sel[notch] = 0;
-    sel[bump] = 1;
-    const out = smoothSelection(adj, c, areas, sel, 1, 2);
-    expect(out[notch]).toBe(1);
-    expect(out[bump]).toBe(0);
-    expect(meanEdgeLength(boss)).toBeGreaterThan(0);
-  });
-});
+  // üst yüzde (0.5 mm ızgara) dalgalı sınırlı disk: r < 5 + 0.8 sin(8θ)
+  const make = () =>
+    labelWhere(subdividedCube(20, 40), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));
 
-describe('sınır köşesi yumuşatma', () => {
-  it('merdiven sınırı çizgiye yaklaştırır, şekli değiştirmez', () => {
-    // üst yüzde x + y < 0 bölgesi: sınır üçgen kenarlarında merdiven yapar
-    const cube = labelWhere(subdividedCube(20, 20), 1, (x, y, z) => z > 9.99 && x + 1.3 * y < 0);
-    const adjC = buildAdjacency(cube);
-    const boundaryVerts = new Set<number>();
-    for (let t = 0; t < cube.labels.length; t++) {
-      if (cube.labels[t] !== 1) continue;
+  const stats = (m: { positions: Float32Array; indices: Uint32Array; labels: Uint16Array }) => {
+    const a = buildAdjacency(m);
+    const { areas: ar } = faceNormalsAndAreas(m);
+    let area = 0;
+    for (let t = 0; t < m.labels.length; t++) if (m.labels[t] === 1) area += ar[t];
+    const rs: number[] = [];
+    for (let t = 0; t < m.labels.length; t++) {
+      if (m.labels[t] !== 1) continue;
       for (let e = 0; e < 3; e++) {
-        const n = adjC[3 * t + e];
-        if (cube.labels[n] === 1) continue;
-        boundaryVerts.add(cube.indices[3 * t + e]);
-        boundaryVerts.add(cube.indices[3 * t + ((e + 1) % 3)]);
+        if (m.labels[a[3 * t + e]] === 1) continue;
+        const v = m.indices[3 * t + e];
+        rs.push(Math.hypot(m.positions[3 * v], m.positions[3 * v + 1]));
       }
     }
-    const dev = (pos: Float32Array) => {
-      let s2 = 0;
-      let n = 0;
-      for (const v of boundaryVerts) {
-        if (pos[3 * v + 2] < 9.99) continue;
-        const x = pos[3 * v];
-        const y = pos[3 * v + 1];
-        if (Math.abs(x) > 9 || Math.abs(y) > 9) continue; // kenarlardaki sabit uçlar hariç
-        s2 += Math.abs(x + 1.3 * y) / Math.hypot(1, 1.3);
-        n++;
-      }
-      return s2 / n;
-    };
-    const out = smoothBoundaryVertices(cube, adjC, 1);
-    expect(dev(out)).toBeLessThan(dev(cube.positions) * 0.6);
-    expect(signedVolume({ positions: out, indices: cube.indices })).toBeCloseTo(8000, 3);
+    const mean = rs.reduce((x, y) => x + y, 0) / rs.length;
+    const std = Math.sqrt(rs.reduce((x, y) => x + (y - mean) ** 2, 0) / rs.length);
+    return { area, std, mean };
+  };
+
+  const smooth = (m: { positions: Float32Array; indices: Uint32Array; labels: Uint16Array }, radius: number) => {
+    const a = buildAdjacency(m);
+    const r = smoothRegionBoundary(m, a, 1, radius, (t) => m.labels[t] === 0, () => 0);
+    return { positions: r.positions, indices: m.indices, labels: r.labels };
+  };
+
+  it('dalgalı sınırı düzleştirir, alanı korur', () => {
+    const m = make();
+    const s0 = stats(m);
+    const m1 = smooth(m, 2);
+    const s1 = stats(m1);
+    expect(s1.std).toBeLessThan(s0.std * 0.4);
+    expect(Math.abs(s1.area - s0.area) / s0.area).toBeLessThan(0.05);
+    // şekil değişmez: sınır köşeleri yüzeyde kalır
+    expect(signedVolume(m1)).toBeCloseTo(8000, 2);
+  });
+
+  it('tekrar basmak bölgeyi daraltmaz', () => {
+    const m1 = smooth(make(), 2);
+    const m2 = smooth(m1, 2);
+    const a1 = stats(m1).area;
+    const a2 = stats(m2).area;
+    expect(Math.abs(a2 - a1) / a1).toBeLessThan(0.03);
   });
 });

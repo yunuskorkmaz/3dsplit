@@ -21,7 +21,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | --- | --- | --- | --- |
 | X17 | Kamera: sağ sürükle her araçta döndürür, orta / Ctrl+sağ kaydırır | Fırça elindeyken model döndürülemiyordu | [x] |
 | X18 | Vadiye oturtma: Smart Fill sonucu içbükeylik haritası üzerinde işaretleyicili havza ile çıkıntının dibine oturur; eksik seçim genişler, taşan seçim geri çekilir | Kaş gibi çıkıntılarda seçim dibe inmiyordu, kesim alanı garip çıkıyordu | [x] |
-| B6 | Sınırı yumuşat (S): küçük yarıçaplı alan oylaması + sınır köşelerini yüzey boyunca kaydırma; kırıntı ve delik temizliği | Üçgen kenarlarından geçen sınır zikzak yapıyordu | [~] |
+| B6 | Sınırı yumuşat (S): sınır eğrisi Gauss ile düzleştirilir, alan dengesiyle büzülme telafi edilir, üçgenler eğrinin tarafına göre etiketlenir, sınır köşeleri eğriye çekilir. Tekrar basmak bölgeyi daraltmaz | İlk sürüm her basışta seçimi daraltıyordu, kenarlar girintili çıkıntılıydı | [x] |
 | X14 | Smart Fill ölçeğini tıklanan özelliğin boyutuna göre otomatik seçme (kulak 3 mm, göz 1.3 mm istedi) | Tek varsayılan her özellikte tutmuyor; kullanıcı ayarla uğraşmasın | [ ] |
 | A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da renkleriyle, ayrı filamentle açılsın | [ ] |
 | X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [ ] |
@@ -63,7 +63,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | B3 | Brush | 1 | [x] | Yüzey boyunca yayılır, Shift ile siler, darbe aralıkları doldurulur (X1) |
 | B4 | Bucket Fill | 1 | [x] | |
 | B5 | Gap Fill | 1 | [x] | |
-| B6 | Smooth sınır | 2 | [~] | Oylama + sınır köşesi kaydırma (şekil korunur). Üçgenleri yeni eğri boyunca kesme (tam sürüm) yok |
+| B6 | Smooth sınır | 2 | [x] | Eğri tabanlı, alan koruyan (`src/core/smooth.ts`). Üçgenler kesilmez; sınır köşeleri eğriye kaydırılır |
 | B7 | Arka yüz / X-ray boyama | 3 | [ ] | |
 | B8 | Mirror boyama | 3 | [ ] | |
 | B9 | Auto-paint | 3 | [ ] | |
@@ -129,3 +129,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | A4: proje kaydetme / açma | `1aad440` |
 | 2026-09-25 | C4: Socket yönü | `29d25ba` |
 | 2026-09-25 | Sprint 1 kapanışı | `eeea091` |
+| 2026-09-25 | X17, X18, B6 ilk sürüm | `d80ab9d` |

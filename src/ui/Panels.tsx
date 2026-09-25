@@ -213,7 +213,7 @@ export function ToolPanel() {
       <div className="row">
         <NumberField
           label={smoothRadius > 0 ? 'Yumuşatma' : 'Yumuşatma (oto)'}
-          value={smoothRadius > 0 ? smoothRadius : auto / 2}
+          value={smoothRadius > 0 ? smoothRadius : auto}
           min={0.1}
           max={10}
           step={0.1}
@@ -221,7 +221,7 @@ export function ToolPanel() {
           onChange={(v) => set({ smoothRadius: v })}
         />
       </div>
-      <button type="button" onClick={smoothActiveRegion} title="Aktif slotun sınırındaki tırtıkları düzeltir (S)">
+      <button type="button" onClick={smoothActiveRegion} title="Aktif slotun sınırını düzgün bir eğriye oturtur; alanı korur (S). Yarıçap büyüdükçe daha düz.">
         Sınırı yumuşat
       </button>
       <div className="row">

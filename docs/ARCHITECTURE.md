@@ -53,7 +53,7 @@ Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan at
 
 **Vadiye oturtma.** Üçgen başına içbükeylik (köşe Laplace vektörünün normal bileşeni, ölçek kadar difüzyonla yumuşatılmış; pozitif = çukur) hesaplanır. Smart Fill sonucunun sınırından `2 × ölçek` içindeki üçgenler belirsiz sayılır; seçimin derini ve dışarının uzağı işaretleyicidir. İki havza içbükeylik değerine göre düşükten yükseğe taşar ve vadi çizgisinde (içbükeyliğin en yüksek olduğu yerde) buluşur. Sonra sadece tıklanan noktanın bağlı olduğu parça tutulur.
 
-**Sınırı yumuşat (B6).** Önce küçük yarıçaplı (ortalama kenar × 1.5) alan oylaması tek üçgenlik diken/çentikleri alır, kırıntılar ve delikler temizlenir. Sonra bölge sınırındaki köşeler, sınırdaki iki komşusunun ortasına doğru teğet düzlemde kaydırılır (6 adım; üçgeni ters çeviren hareket geri alınır, üç bölgenin buluştuğu köşeler sabit). Mesh konumları değiştiği için parça yeni mesh ile değiştirilir.
+**Sınırı yumuşat (B6, `src/core/smooth.ts`).** Bölgenin sınır halkaları çıkarılır ve yay uzunluğu boyunca Gauss çekirdeğiyle (σ = yarıçap) düzgün bir eğriye çevrilir. Eğrinin `1.5 × yarıçap` yakınındaki her üçgen, eğriye işaretli uzaklığına göre (halka yönünde bölge solda) içe ya da dışa atanır. Gauss eğriyi büzdüğü için sınır, bölge alanı eskisine eşit olacak kadar dışa kaydırılır (alan dengesi); bu yüzden tekrar basmak bölgeyi daraltmaz. Kırıntılar ve delikler temizlenir, ardından yeni sınır köşeleri yüzey üzerinde (teğet düzlemde) eğriye çekilir; üçgeni ters çeviren veya %30'un altına incelten hareket geri alınır. Mesh konumları değiştiği için parça yeni mesh ile değiştirilir.
 
 ## Onarım (`src/core/repair.ts`)
 

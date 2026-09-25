@@ -8,8 +8,6 @@ import {
   refineToValley,
   type SmartFillOptions,
   smartFill,
-  smoothBoundaryVertices,
-  smoothSelection,
 } from '../core/paint';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { downloadBytes, type ExportObject, write3mf, writeStl, writeStlZip } from '../io/exportFile';
@@ -28,6 +26,7 @@ import {
   selectedPart,
   set,
 } from './store';
+import { smoothRegionBoundary } from '../core/smooth';
 import { concavityOf, type Topology, topologyOf } from './topologyCache';
 
 // ---------- dosya ----------
@@ -334,36 +333,31 @@ export function gapFillSelected(): void {
 }
 
 /**
- * B6: aktif slotun seçili parçadaki sınırını yumuşatır.
- * 1) Küçük yarıçapla alan oylaması: tek üçgenlik diken ve çentikler gider.
- * 2) Sınır köşeleri yüzey boyunca kaydırılır: zikzak düz bir çizgiye döner.
- * Bölgeden çıkan üçgenler komşularındaki en sık diğer etiketi alır; başka
- * slota boyanmış üçgenler bölgeye katılmaz. Mesh değiştiği için parça yeni
- * mesh'le değiştirilir (geri alınabilir).
+ * B6: aktif slotun seçili parçadaki sınırını düzgün bir eğriye oturtur.
+ * Alan korunur (tekrar basmak bölgeyi daraltmaz); içe/dışa kararı eğriden
+ * okunur. Başka slota boyanmış üçgenler bölgeye katılmaz; bölgeden çıkanlar
+ * komşularındaki en sık diğer etiketi alır. Sınır köşeleri eğriye çekildiği
+ * için parça yeni mesh'le değiştirilir (geri alınabilir).
  */
 export function smoothActiveRegion(): void {
   const part = selectedPart();
   if (!part) return notify('warn', 'Önce bir parça seçin.');
   const slot = get().activeSlot;
   if (slot === BASE_SLOT) return notify('warn', 'Yumuşatmak için boyalı bir slot seçin.');
+  const labels = part.mesh.labels;
+  if (!labels.includes(slot)) return notify('warn', 'Bu slotta boyalı üçgen yok.');
   const topo = topologyOf(part.mesh);
-  const labels = Uint16Array.from(part.mesh.labels);
-  const mask = Uint8Array.from(labels, (l) => (l === slot ? 1 : 0));
-  if (!mask.some((x) => x)) return notify('warn', 'Bu slotta boyalı üçgen yok.');
   const { smoothRadius } = get();
-  const radius = smoothRadius > 0 ? smoothRadius : topo.meanEdge * 1.5;
-  const accept = (t: number) => labels[t] === BASE_SLOT || labels[t] === slot;
-  // oylama kırıntı ve delik bırakabilir: 1 mm² altı parçalar atılır, küçük delikler kapanır
-  const voted = cleanSelection(topo.adj, topo.areas, smoothSelection(topo.adj, topo.centroids, topo.areas, mask, radius, 1), {
-    minArea: 1,
-    accept,
-  });
-  for (let t = 0; t < labels.length; t++) {
-    if (voted[t] && !mask[t] && labels[t] === BASE_SLOT) labels[t] = slot;
-    else if (!voted[t] && mask[t]) labels[t] = neighborLabel(topo.adj, part.mesh.labels, t, slot);
-  }
-  const positions = smoothBoundaryVertices({ ...part.mesh, labels }, topo.adj, slot);
-  const mesh = { positions, indices: part.mesh.indices, labels };
+  const radius = smoothRadius > 0 ? smoothRadius : smartOptions(topo).scale;
+  const r = smoothRegionBoundary(
+    part.mesh,
+    topo.adj,
+    slot,
+    radius,
+    (t) => labels[t] === BASE_SLOT,
+    (t) => neighborLabel(topo.adj, labels, t, slot),
+  );
+  const mesh = { positions: r.positions, indices: part.mesh.indices, labels: r.labels };
   const before = get().parts;
   const after = before.map((p) => (p.id === part.id ? { ...p, mesh } : p));
   lastSmart = null;

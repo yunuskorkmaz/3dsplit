@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { CutMode, CutPreview, PinShape } from '../core/cut';
 import type { LabeledMesh, Vec3 } from '../core/types';
 
-export type Tool = 'smart' | 'brush' | 'bucket' | 'pin';
+export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin';
 /** source: kesilmiş eski parça (sarı rozet), new: kesimden yeni çıkan parça (mavi rozet). */
 export type PartBadge = 'source' | 'new' | null;
 
@@ -65,8 +65,10 @@ export interface AppState {
   smartConcave: boolean;
   /** Smart Fill sonucu çıkıntının dibindeki vadi çizgisine oturtulsun. */
   smartValley: boolean;
-  /** Sınır yumuşatma yarıçapı, mm. 0: otomatik (Smart Fill ölçeği). */
+  /** "Tümünü yumuşat" yarıçapı, mm. 0: otomatik (Smart Fill ölçeği). */
   smoothRadius: number;
+  /** Yumuşatma fırçasının gücü, 0..1. */
+  smoothStrength: number;
   gapArea: number;
   /** İnceltme hedef kenar uzunluğu, mm. */
   refineEdge: number;
@@ -95,6 +97,7 @@ export const useStore = create<AppState>(() => ({
   smartConcave: true,
   smartValley: true,
   smoothRadius: 0,
+  smoothStrength: 0.5,
   gapArea: 5,
   refineEdge: 1,
   cut: {

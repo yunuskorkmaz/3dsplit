@@ -55,6 +55,14 @@ Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan at
 
 **Sınırı yumuşat (B6, `src/core/smooth.ts`).** Bölgenin sınır halkaları çıkarılır ve yay uzunluğu boyunca Gauss çekirdeğiyle (σ = yarıçap) düzgün bir eğriye çevrilir. Eğrinin `1.5 × yarıçap` yakınındaki her üçgen, eğriye işaretli uzaklığına göre (halka yönünde bölge solda) içe ya da dışa atanır. Gauss eğriyi büzdüğü için sınır, bölge alanı eskisine eşit olacak kadar dışa kaydırılır (alan dengesi); bu yüzden tekrar basmak bölgeyi daraltmaz. Kırıntılar ve delikler temizlenir, ardından yeni sınır köşeleri yüzey üzerinde (teğet düzlemde) eğriye çekilir; üçgeni ters çeviren veya %30'un altına incelten hareket geri alınır. Mesh konumları değiştiği için parça yeni mesh ile değiştirilir.
 
+**Yumuşatma fırçası (`smoothBoundaryAt`).** Fırça altındaki köşelere sınıra işaretli uzaklık verilir (içeride +). Alan yerel komşuluk grafiğinde 2G − G∘G süzgeciyle yumuşatılır (G: σ = yarıçap/2 Gauss; bu süzgeç büyük ölçekli biçimi koruduğu için bölge büzülmez), fırça merkezinden kenara azalan ağırlıkla karıştırılır. Üçgenler yeni alanın işaretine göre etiketlenir; sınır köşeleri alanın eğimi boyunca sıfır noktasına kaydırılır. Darbe boyunca mesh kopyası yerinde değişir, viewport sadece değişen üçgenleri günceller; darbe sonunda tek bir geri alma kaydı oluşur.
+
+## Arayüz
+
+- Viewport'un solunda araç çubuğu (Smart Fill F, Fırça B, Silgi E, Yumuşat S, Kova G, Pim P), üstünde seçili aracın ayar şeridi.
+- Sayı alanları (`src/ui/fields.tsx`): etiketi sürükleyerek değiştirilir (Shift ince ayar), kutuya yazılabilir; geniş aralıklı değerler oransal (log) değişir.
+- Kamera: sağ sürükle döndür, orta / Ctrl+sağ kaydır, tekerlek yakınlaştır, Alt+tekerlek fırça boyutu.
+
 ## Onarım (`src/core/repair.ts`)
 
 Köşe kaynaştırma → dejenere ve tekrarlı üçgen silme → yönelimi BFS ile eşitleme, bileşeni dışa baktırma → açık halkaları merkezden yelpazeyle kapama → manifold doğrulaması. Doğrulamadan geçmeyen parça `!` rozetiyle işaretlenir; boyanabilir ama kesim başarısız olabilir.

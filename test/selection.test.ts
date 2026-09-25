@@ -118,3 +118,36 @@ describe('sınır yumuşatma', () => {
     expect(Math.abs(a2 - a1) / a1).toBeLessThan(0.03);
   });
 });
+
+describe('yumuşatma fırçası', () => {
+  it('sadece fırça altındaki dalgaları düzleştirir, alanı korur', async () => {
+    const { smoothBoundaryAt } = await import('../src/core/smooth');
+    const m = labelWhere(subdividedCube(20, 40), 1, (x, y, z) => z > 9.99 && Math.hypot(x, y) < 5 + 0.8 * Math.sin(8 * Math.atan2(y, x)));
+    const mesh = { positions: new Float32Array(m.positions), indices: m.indices, labels: Uint16Array.from(m.labels) };
+    const { areas: ar } = faceNormalsAndAreas(mesh);
+    const area = () => mesh.labels.reduce((s2, l, t) => s2 + (l === 1 ? ar[t] : 0), 0);
+    const a0 = area();
+    // +x yönündeki sınırda birkaç darbe
+    for (let i = 0; i < 6; i++) smoothBoundaryAt(mesh, 1, [5, 0, 10], 2.5, 1, (t) => mesh.labels[t] === 0, () => 0);
+    // fırça altındaki (x > 3.5) sınır köşelerinin yarıçap sapması azalmalı, uzaktakiler değişmemeli
+    const radii = (sel: (x: number, y: number) => boolean, pos: Float32Array, labels: Uint16Array) => {
+      const aa = buildAdjacency({ positions: pos, indices: mesh.indices });
+      const rs: number[] = [];
+      for (let t = 0; t < labels.length; t++) {
+        if (labels[t] !== 1) continue;
+        for (let e = 0; e < 3; e++) {
+          if (labels[aa[3 * t + e]] === 1) continue;
+          const v = mesh.indices[3 * t + e];
+          if (sel(pos[3 * v], pos[3 * v + 1])) rs.push(Math.hypot(pos[3 * v], pos[3 * v + 1]));
+        }
+      }
+      const mu = rs.reduce((x, y) => x + y, 0) / rs.length;
+      return Math.sqrt(rs.reduce((x, y) => x + (y - mu) ** 2, 0) / rs.length);
+    };
+    const nearBrush = (x: number, y: number) => Math.hypot(x - 5, y) < 1;
+    const far = (x: number) => x < -3;
+    expect(radii(nearBrush, mesh.positions, mesh.labels)).toBeLessThan(radii(nearBrush, m.positions, m.labels) * 0.6);
+    expect(radii(far, mesh.positions, mesh.labels)).toBeCloseTo(radii(far, m.positions, m.labels), 5);
+    expect(Math.abs(area() - a0) / a0).toBeLessThan(0.03);
+  });
+});

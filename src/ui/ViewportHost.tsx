@@ -1,15 +1,19 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import {
+  beginSmoothStroke,
   beginStroke,
   brushAt,
   bucketAt,
+  endSmoothStroke,
   endStroke,
   regionFrame,
   setSocketDirection,
+  setGeometryChangedHook,
   setLabelsChangedHook,
   setSmartAngle,
   smartFillAt,
+  smoothAt,
 } from '../state/actions';
 import { get, set, useStore } from '../state/store';
 import { type Hit, Viewport } from '../viewport/Viewport';
@@ -51,18 +55,32 @@ export function ViewportHost() {
 
   useEffect(() => {
     if (!ref.current) return;
-    let brushing = false;
-    // son fırça noktası: hızlı sürüklemede aradaki boşluğu doldurmak için
+    // sürükleme türü: boya/sil fırçası, yumuşatma fırçası, pim taşıma
+    let drag: 'paint' | 'smooth' | 'pin' | null = null;
+    let eraseStroke = false;
+    // son darbe noktası: hızlı sürüklemede aradaki boşluğu doldurmak için
     let last: { x: number; y: number; point: [number, number, number] } | null = null;
     let strokePart = '';
     let draggingPin = -1;
+
+    const cursor = (hit: Hit | null) => {
+      const { tool, brushRadius, activeSlot, slots } = get();
+      if (tool === 'brush') vp.setBrushCursor(hit, brushRadius, slots.find((x) => x.id === activeSlot)?.color);
+      else if (tool === 'erase') vp.setBrushCursor(hit, brushRadius, '#ff5050');
+      else if (tool === 'smooth') vp.setBrushCursor(hit, brushRadius, '#ffffff');
+      else vp.setBrushCursor(null, brushRadius);
+    };
+    const dab = (h: Hit) => {
+      if (drag === 'paint') brushAt(h.partId, h.tri, h.point, eraseStroke);
+      else if (drag === 'smooth') smoothAt(h.point);
+    };
+
     const vp = new Viewport(ref.current, {
       onDown(hit: Hit, e: PointerEvent) {
         const { tool, selectedPartId: sel } = get();
         if (hit.partId !== sel) set({ selectedPartId: hit.partId, preview: null });
-        const erase = e.shiftKey;
-        if (tool === 'smart') smartFillAt(hit.partId, hit.tri, erase);
-        else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, erase);
+        if (tool === 'smart') smartFillAt(hit.partId, hit.tri, e.shiftKey);
+        else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'pin') {
           // mevcut pime yakın tıklama: Shift ile sil, değilse sürükleyerek taşı
           const { pinPoints: pins, cut } = get();
@@ -71,62 +89,78 @@ export function ViewportHost() {
             set({ pinPoints: pins.filter((_, i) => i !== near), preview: null });
           } else if (near >= 0) {
             draggingPin = near;
+            drag = 'pin';
             return true;
           } else if (!e.shiftKey) {
             set({ pinPoints: [...pins, hit.point], preview: null });
           }
-        }
-        else if (tool === 'brush') {
+        } else if (tool === 'brush' || tool === 'erase') {
+          // silgi aracında Shift boyar, fırçada Shift siler
+          eraseStroke = (tool === 'erase') !== e.shiftKey;
+          drag = 'paint';
           beginStroke(hit.partId);
-          brushAt(hit.partId, hit.tri, hit.point, erase);
-          brushing = true;
+        } else if (tool === 'smooth') {
+          if (!beginSmoothStroke(hit.partId)) return false;
+          drag = 'smooth';
+        }
+        if (drag === 'paint' || drag === 'smooth') {
           strokePart = hit.partId;
           last = { x: e.clientX, y: e.clientY, point: hit.point };
+          dab(hit);
           return true;
         }
         return false;
       },
       onMove(hit, e) {
-        vp.setBrushCursor(get().tool === 'brush' ? hit : null, get().brushRadius);
-        if (draggingPin >= 0 && hit) {
+        cursor(hit);
+        if (drag === 'pin' && hit) {
           const i = draggingPin;
           set((s) => ({ pinPoints: s.pinPoints.map((p, j) => (j === i ? hit.point : p)), preview: null }));
           return;
         }
         // darbe başladığı parçada kalır
-        if (!brushing || !hit || hit.partId !== strokePart) return;
+        if ((drag !== 'paint' && drag !== 'smooth') || !hit || hit.partId !== strokePart) return;
         const radius = get().brushRadius;
+        // yumuşatma darbeleri daha seyrek: her darbe bir bölgeyi zaten yumuşatıyor
+        const spacing = radius * (drag === 'smooth' ? 0.35 : 0.5);
         if (last) {
           const dist = Math.hypot(hit.point[0] - last.point[0], hit.point[1] - last.point[1], hit.point[2] - last.point[2]);
-          const steps = Math.min(64, Math.floor(dist / (radius * 0.5)));
+          if (drag === 'smooth' && dist < spacing) return;
+          const steps = Math.min(64, Math.floor(dist / spacing));
           for (let i = 1; i < steps; i++) {
             const f = i / steps;
             const mid = vp.pick({ clientX: last.x + (e.clientX - last.x) * f, clientY: last.y + (e.clientY - last.y) * f });
-            if (mid && mid.partId === strokePart) brushAt(mid.partId, mid.tri, mid.point, e.shiftKey);
+            if (mid && mid.partId === strokePart) dab(mid);
           }
         }
-        brushAt(hit.partId, hit.tri, hit.point, e.shiftKey);
+        dab(hit);
         last = { x: e.clientX, y: e.clientY, point: hit.point };
       },
       onUp() {
+        if (drag === 'paint') endStroke();
+        else if (drag === 'smooth') endSmoothStroke();
+        drag = null;
         draggingPin = -1;
-        if (brushing) endStroke();
-        brushing = false;
         last = null;
       },
       onThresholdDrag(dx) {
         setSmartAngle(get().smartAngle + dx * 0.25);
       },
       onHover(hit) {
-        vp.setBrushCursor(get().tool === 'brush' ? hit : null, get().brushRadius);
+        cursor(hit);
+      },
+      onBrushResize(deltaY) {
+        set((s) => ({ brushRadius: Math.round(Math.min(50, Math.max(0.2, s.brushRadius * (deltaY > 0 ? 1 / 1.1 : 1.1))) * 100) / 100 }));
       },
     });
     vpRef.current = vp;
     activeViewport = vp;
     setLabelsChangedHook((partId, tris) => vp.recolor(partId, slotColor, tris));
+    setGeometryChangedHook((partId, tris) => vp.updateTriangles(partId, tris, slotColor));
     (window as unknown as { viewport: Viewport }).viewport = vp;
     return () => {
       setLabelsChangedHook(null);
+      setGeometryChangedHook(null);
       vp.dispose();
       vpRef.current = null;
       activeViewport = null;

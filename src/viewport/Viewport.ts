@@ -28,6 +28,8 @@ export interface PointerHandlers {
   /** Shift + sağ tık sürükleme (Smart Fill eşiği). */
   onThresholdDrag(dx: number): void;
   onHover(hit: Hit | null): void;
+  /** Alt + tekerlek: fırça boyutu (deltaY > 0 küçült). */
+  onBrushResize(deltaY: number): void;
 }
 
 interface PartObject {
@@ -94,6 +96,17 @@ export class Viewport {
     el.addEventListener('pointermove', this.onPointerMove);
     el.addEventListener('pointerup', this.onPointerUp);
     el.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Alt + tekerlek fırça boyutunu değiştirir; yakınlaştırmaya gitmesin
+    el.addEventListener(
+      'wheel',
+      (e) => {
+        if (!e.altKey) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.handlers.onBrushResize(e.deltaY);
+      },
+      { capture: true, passive: false },
+    );
 
     this.dirArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 10, 0xff9900);
     this.dirHandle.add(this.dirArrow);
@@ -182,6 +195,57 @@ export class Viewport {
     else for (let t = 0; t < labels.length; t++) write(t);
     attr.needsUpdate = true;
     this.requestRender();
+  }
+
+  /**
+   * Konumu veya etiketi değişen üçgenleri yerinde günceller (yumuşatma
+   * fırçası). `tris` null ise darbe bitti: seçim ağacı yeniden oturtulur.
+   */
+  updateTriangles(partId: string, tris: ArrayLike<number> | null, colors: (label: number) => THREE.Color): void {
+    const obj = this.parts.get(partId);
+    if (!obj) return;
+    const g = obj.mesh.geometry;
+    if (tris === null) {
+      g.boundsTree?.refit();
+      g.computeBoundingSphere();
+      this.requestRender();
+      return;
+    }
+    const src = obj.source;
+    const posAttr = g.getAttribute('position') as THREE.BufferAttribute;
+    const nrmAttr = g.getAttribute('normal') as THREE.BufferAttribute;
+    const pos = posAttr.array as Float32Array;
+    const nrm = nrmAttr.array as Float32Array;
+    for (let i = 0; i < tris.length; i++) {
+      const t = tris[i];
+      for (let k = 0; k < 3; k++) {
+        const v = src.indices[3 * t + k];
+        pos[9 * t + 3 * k] = src.positions[3 * v];
+        pos[9 * t + 3 * k + 1] = src.positions[3 * v + 1];
+        pos[9 * t + 3 * k + 2] = src.positions[3 * v + 2];
+      }
+      const ux = pos[9 * t + 3] - pos[9 * t];
+      const uy = pos[9 * t + 4] - pos[9 * t + 1];
+      const uz = pos[9 * t + 5] - pos[9 * t + 2];
+      const vx = pos[9 * t + 6] - pos[9 * t];
+      const vy = pos[9 * t + 7] - pos[9 * t + 1];
+      const vz = pos[9 * t + 8] - pos[9 * t + 2];
+      let nx = uy * vz - uz * vy;
+      let ny = uz * vx - ux * vz;
+      let nz = ux * vy - uy * vx;
+      const l = Math.hypot(nx, ny, nz) || 1;
+      nx /= l;
+      ny /= l;
+      nz /= l;
+      for (let k = 0; k < 3; k++) {
+        nrm[9 * t + 3 * k] = nx;
+        nrm[9 * t + 3 * k + 1] = ny;
+        nrm[9 * t + 3 * k + 2] = nz;
+      }
+    }
+    posAttr.needsUpdate = true;
+    nrmAttr.needsUpdate = true;
+    this.recolor(partId, colors, tris);
   }
 
   fitView(): void {
@@ -294,7 +358,8 @@ export class Viewport {
     }
   }
 
-  setBrushCursor(hit: Hit | null, radius: number): void {
+  setBrushCursor(hit: Hit | null, radius: number, color = '#ffffff'): void {
+    (this.brushCursor.material as THREE.MeshBasicMaterial).color.set(color);
     if (!hit) {
       if (this.brushCursor.visible) {
         this.brushCursor.visible = false;

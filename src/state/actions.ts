@@ -26,8 +26,8 @@ import {
   selectedPart,
   set,
 } from './store';
-import { smoothRegionBoundary } from '../core/smooth';
-import { concavityOf, type Topology, topologyOf } from './topologyCache';
+import { smoothBoundaryAt, smoothRegionBoundary } from '../core/smooth';
+import { concavityOf, refreshGeometry, type Topology, topologyOf } from './topologyCache';
 
 // ---------- dosya ----------
 
@@ -180,6 +180,12 @@ function applyLabels(part: Part, tris: ArrayLike<number>, label: number): void {
   }
   set((s) => ({ paintVersion: s.paintVersion + 1 }));
   onLabelsChanged?.(part.id, tris);
+}
+
+/** Konumu değişen üçgenleri viewport'ta yerinde güncellemek için kanca. */
+export let onGeometryChanged: ((partId: string, tris: ArrayLike<number> | null) => void) | null = null;
+export function setGeometryChangedHook(fn: typeof onGeometryChanged): void {
+  onGeometryChanged = fn;
 }
 
 /** Viewport'un değişen üçgenleri yeniden boyaması için kanca. */
@@ -382,6 +388,62 @@ function neighborLabel(adj: Int32Array, labels: Uint16Array, t: number, exclude:
     }
   }
   return best;
+}
+
+// ---------- yumuşatma fırçası ----------
+
+let smoothStroke: { partId: string; before: Part[] } | null = null;
+
+/**
+ * Yumuşatma darbesi başlar: parçanın mesh'i kopyalanır (geri alma için eski
+ * mesh korunur), darbe boyunca kopya yerinde değiştirilir.
+ */
+export function beginSmoothStroke(partId: string): boolean {
+  const part = partById(partId);
+  if (!part) return false;
+  const slot = get().activeSlot;
+  if (slot === BASE_SLOT) {
+    notify('warn', 'Yumuşatmak için sınırı düzeltilecek slotu seçin.');
+    return false;
+  }
+  const before = get().parts;
+  const mesh = { positions: new Float32Array(part.mesh.positions), indices: part.mesh.indices, labels: Uint16Array.from(part.mesh.labels) };
+  refreshGeometry(mesh, part.mesh);
+  lastSmart = null;
+  set({ parts: before.map((p) => (p.id === partId ? { ...p, mesh } : p)), preview: null });
+  smoothStroke = { partId, before };
+  return true;
+}
+
+export function smoothAt(point: Vec3): void {
+  if (!smoothStroke) return;
+  const part = partById(smoothStroke.partId);
+  if (!part) return;
+  const { activeSlot: slot, brushRadius, smoothStrength } = get();
+  const labels = part.mesh.labels;
+  const adj = topologyOf(part.mesh).adj;
+  const tris = smoothBoundaryAt(
+    part.mesh,
+    slot,
+    point,
+    brushRadius,
+    smoothStrength,
+    (t) => labels[t] === BASE_SLOT,
+    (t) => neighborLabel(adj, labels, t, slot),
+  );
+  if (tris.length) onGeometryChanged?.(part.id, tris);
+}
+
+export function endSmoothStroke(): void {
+  if (!smoothStroke) return;
+  const { partId, before } = smoothStroke;
+  smoothStroke = null;
+  const part = partById(partId);
+  if (!part) return;
+  refreshGeometry(part.mesh);
+  onGeometryChanged?.(partId, null);
+  pushHistory({ kind: 'parts', before, after: get().parts });
+  set((s) => ({ paintVersion: s.paintVersion + 1 }));
 }
 
 // ---------- slotlar ----------

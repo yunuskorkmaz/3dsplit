@@ -42,3 +42,15 @@ export function concavityOf(mesh: LabeledMesh, scale: number): Float32Array {
   }
   return c;
 }
+
+/**
+ * Konumları değişen ama bağlantısı aynı kalan mesh için: komşuluk eski
+ * mesh'ten alınır, yüz bilgileri yeniden hesaplanır (yumuşatma fırçası).
+ */
+export function refreshGeometry(mesh: LabeledMesh, from?: LabeledMesh): void {
+  const prev = cache.get(from ?? mesh);
+  const adj = prev ? prev.adj : buildAdjacency(mesh);
+  const { normals, areas } = faceNormalsAndAreas(mesh);
+  cache.set(mesh, { adj, normals, areas, centroids: faceCentroids(mesh), meanEdge: meanEdgeLength(mesh) });
+  concavityCache.delete(mesh);
+}

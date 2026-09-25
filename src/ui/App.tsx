@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { importFiles, redo, smoothActiveRegion, togglePreview, undo } from '../state/actions';
+import { importFiles, redo, togglePreview, undo } from '../state/actions';
 import { get, set } from '../state/store';
-import { CutPanel, FilePanel, PartsPanel, SlotPanel, StatusBar, ToolPanel } from './Panels';
+import { CutPanel, FilePanel, PartsPanel, SlotPanel, StatusBar } from './Panels';
+import { ToolBar, ToolOptions, TOOLS } from './Toolbar';
 import { ViewportHost } from './ViewportHost';
 
 function useShortcuts() {
@@ -21,12 +22,12 @@ function useShortcuts() {
       if (e.code === 'Space') {
         e.preventDefault();
         togglePreview();
-      } else if (e.key === 'b' || e.key === 'B') set({ tool: 'brush' });
-      else if (e.key === 'f' || e.key === 'F') set({ tool: 'smart' });
-      else if (e.key === 'g' || e.key === 'G') set({ tool: 'bucket' });
-      else if (e.key === 's' || e.key === 'S') smoothActiveRegion();
-      else if (e.key === '[') set({ brushRadius: Math.max(0.2, get().brushRadius / 1.2) });
-      else if (e.key === ']') set({ brushRadius: Math.min(50, get().brushRadius * 1.2) });
+      } else {
+        const t = TOOLS.find((x) => x.key.toLowerCase() === e.key.toLowerCase());
+        if (t) set({ tool: t.id });
+      }
+      if (e.key === '[') set({ brushRadius: Math.round(Math.max(0.2, get().brushRadius / 1.2) * 100) / 100 });
+      else if (e.key === ']') set({ brushRadius: Math.round(Math.min(50, get().brushRadius * 1.2) * 100) / 100 });
       else if (/^[0-9]$/.test(e.key)) {
         const id = Number(e.key);
         if (get().slots.some((s) => s.id === id)) set({ activeSlot: id, preview: null });
@@ -54,10 +55,11 @@ export function App() {
       </aside>
       <main>
         <ViewportHost />
+        <ToolOptions />
+        <ToolBar />
         <StatusBar />
       </main>
       <aside className="right">
-        <ToolPanel />
         <SlotPanel />
         <CutPanel />
       </aside>

@@ -21,7 +21,11 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | --- | --- | --- | --- |
 | X17 | Kamera: sağ sürükle her araçta döndürür, orta / Ctrl+sağ kaydırır | Fırça elindeyken model döndürülemiyordu | [x] |
 | X18 | Vadiye oturtma: Smart Fill sonucu içbükeylik haritası üzerinde işaretleyicili havza ile çıkıntının dibine oturur; eksik seçim genişler, taşan seçim geri çekilir | Kaş gibi çıkıntılarda seçim dibe inmiyordu, kesim alanı garip çıkıyordu | [x] |
-| B6 | Sınırı yumuşat (S): sınır eğrisi Gauss ile düzleştirilir, alan dengesiyle büzülme telafi edilir, üçgenler eğrinin tarafına göre etiketlenir, sınır köşeleri eğriye çekilir. Tekrar basmak bölgeyi daraltmaz | İlk sürüm her basışta seçimi daraltıyordu, kenarlar girintili çıkıntılıydı | [x] |
+| X19 | Yumuşatma fırçası (S): sınırın üstünde gezdirilir; fırça altında işaretli uzaklık alanı 2G−G∘G ile yumuşatılır, sınır köşeleri sıfır çizgisine kayar. Bölge büzülmez | Tek tuşla tüm sınırı yumuşatmak yerine istenen yeri düzeltmek | [x] |
+| X20 | Silgi aracı (E) | Fazla boyanan yeri silmek için ayrı araç (önce sadece Shift+fırça vardı) | [x] |
+| X21 | Araç çubuğu (viewport solu) ve seçenek şeridi (üstte, seçili aracın ayarları) | Daha gerçek bir program düzeni | [x] |
+| X22 | Sayı alanları: etiketi sürükle (Shift ince), kutuya yaz; fırça boyutu Alt+tekerlek ve [ ] | Kaydırıcıyla sayı tutturmak zordu | [x] |
+| B6 | Tüm sınırı yumuşat (Yumuşat aracının şeridinde): sınır eğrisi Gauss ile düzleştirilir, alan dengesiyle büzülme telafi edilir, üçgenler eğrinin tarafına göre etiketlenir, sınır köşeleri eğriye çekilir. Tekrar basmak bölgeyi daraltmaz | İlk sürüm her basışta seçimi daraltıyordu, kenarlar girintili çıkıntılıydı | [x] |
 | X14 | Smart Fill ölçeğini tıklanan özelliğin boyutuna göre otomatik seçme (kulak 3 mm, göz 1.3 mm istedi) | Tek varsayılan her özellikte tutmuyor; kullanıcı ayarla uğraşmasın | [ ] |
 | A3 | 3MF'e Bambu/Orca filament ataması (`model_settings.config`) | Parçalar slicer'da renkleriyle, ayrı filamentle açılsın | [ ] |
 | X16 | Pim başına boyut ve eksen (seçili pime gizmo) | Kol gibi eğik kesimlerde tek eksen yetmiyor (C8'in kalanı) | [ ] |
@@ -100,7 +104,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | # | Özellik | Faz | Durum | Not |
 | --- | --- | --- | --- | --- |
 | E1 | Kamera modları | 1 | [~] | Sağ sürükle döndür, orta/Ctrl+sağ kaydır, Alt+sol döndür (X17). Blender tarzı / ters zoom yok |
-| E2 | Özelleştirilebilir kısayollar | 3 | [~] | Sabit kısayollar var (F, B, G, 0–9, Space, [ ]) |
+| E2 | Özelleştirilebilir kısayollar | 3 | [~] | Sabit kısayollar: F, B, E, S, G, P, 0–9, Space, [ ], Alt+tekerlek |
 
 ## Sonraki sprintler için bekleyen ek işler
 
@@ -130,3 +134,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | C4: Socket yönü | `29d25ba` |
 | 2026-09-25 | Sprint 1 kapanışı | `eeea091` |
 | 2026-09-25 | X17, X18, B6 ilk sürüm | `d80ab9d` |
+| 2026-09-25 | B6: eğri tabanlı, alan koruyan yumuşatma | `eb362d1` |

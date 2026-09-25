@@ -7,61 +7,23 @@ import {
   export3mf,
   exportPartStl,
   exportStlZip,
-  gapFillSelected,
   importFiles,
   redo,
   refineSelected,
   renamePart,
   runCut,
   saveProject,
-  smoothActiveRegion,
   setSocketDirection,
   selectPart,
-  setSmartAngle,
-  setSmartOptions,
-  autoSmartScale,
   splitSelected,
   togglePreview,
   toggleVisible,
   undo,
   updateSlot,
 } from '../state/actions';
-import { type CutSettings, dismiss, set, type Tool, useStore } from '../state/store';
+import { type CutSettings, dismiss, set, useStore } from '../state/store';
+import { NumberField } from './fields';
 import { cameraDirection } from './ViewportHost';
-
-function NumberField(props: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  unit?: string;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <label className="field">
-      <span>{props.label}</span>
-      <input
-        type="range"
-        min={props.min}
-        max={props.max}
-        step={props.step}
-        value={props.value}
-        onChange={(e) => props.onChange(Number(e.target.value))}
-      />
-      <input
-        type="number"
-        className="num"
-        min={props.min}
-        max={props.max}
-        step={props.step}
-        value={Number(props.value.toFixed(3))}
-        onChange={(e) => props.onChange(Number(e.target.value))}
-      />
-      {props.unit && <span className="unit">{props.unit}</span>}
-    </label>
-  );
-}
 
 export function FilePanel() {
   const input = useRef<HTMLInputElement>(null);
@@ -145,91 +107,6 @@ export function PartsPanel() {
         İncelt
       </button>
       <p className="hint">Sınır tırtıklıysa önce inceltin; etiketler korunur.</p>
-    </section>
-  );
-}
-
-const TOOLS: { id: Tool; label: string; key: string }[] = [
-  { id: 'smart', label: 'Smart Fill', key: 'F' },
-  { id: 'brush', label: 'Fırça', key: 'B' },
-  { id: 'bucket', label: 'Kova', key: 'G' },
-];
-
-export function ToolPanel() {
-  const tool = useStore((s) => s.tool);
-  const brushRadius = useStore((s) => s.brushRadius);
-  const smartAngle = useStore((s) => s.smartAngle);
-  const smartScale = useStore((s) => s.smartScale);
-  const smartConcave = useStore((s) => s.smartConcave);
-  const smartValley = useStore((s) => s.smartValley);
-  const smoothRadius = useStore((s) => s.smoothRadius);
-  useStore((s) => s.selectedPartId);
-  const auto = autoSmartScale();
-  const gapArea = useStore((s) => s.gapArea);
-  return (
-    <section>
-      <h3>Boyama</h3>
-      <div className="row">
-        {TOOLS.map((t) => (
-          <button key={t.id} type="button" className={tool === t.id ? 'active' : ''} onClick={() => set({ tool: t.id })} title={t.key}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-      {tool === 'smart' && (
-        <>
-          <NumberField label="Açı eşiği" value={smartAngle} min={1} max={90} step={1} unit="°" onChange={setSmartAngle} />
-          <NumberField
-            label={smartScale > 0 ? 'Ölçek' : 'Ölçek (oto)'}
-            value={smartScale > 0 ? smartScale : auto}
-            min={0.1}
-            max={10}
-            step={0.1}
-            unit="mm"
-            onChange={(v) => setSmartOptions({ smartScale: v })}
-          />
-          <div className="row">
-            <label className="field">
-              <input type="checkbox" checked={smartConcave} onChange={(e) => setSmartOptions({ smartConcave: e.target.checked })} />
-              <span>Sadece çukur kenarda dur</span>
-            </label>
-            <label className="field">
-              <input type="checkbox" checked={smartValley} onChange={(e) => setSmartOptions({ smartValley: e.target.checked })} />
-              <span>Vadiye oturt (çıkıntının dibine kadar)</span>
-            </label>
-            {smartScale > 0 && (
-              <button type="button" onClick={() => setSmartOptions({ smartScale: 0 })}>
-                Oto ölçek
-              </button>
-            )}
-          </div>
-          <p className="hint">Yayılıyorsa: açıyı düşür veya ölçeği büyüt. Çukur modu göz, burun gibi çıkıntılar içindir.</p>
-        </>
-      )}
-      {tool === 'brush' && (
-        <NumberField label="Yarıçap" value={brushRadius} min={0.2} max={50} step={0.1} unit="mm" onChange={(v) => set({ brushRadius: v })} />
-      )}
-      <p className="hint">Shift: sil · Sağ sürükle: döndür · Orta / Ctrl+sağ: kaydır · Shift+sağ sürükle: eşik · [ ]: fırça boyu</p>
-      <div className="row">
-        <NumberField
-          label={smoothRadius > 0 ? 'Yumuşatma' : 'Yumuşatma (oto)'}
-          value={smoothRadius > 0 ? smoothRadius : auto}
-          min={0.1}
-          max={10}
-          step={0.1}
-          unit="mm"
-          onChange={(v) => set({ smoothRadius: v })}
-        />
-      </div>
-      <button type="button" onClick={smoothActiveRegion} title="Aktif slotun sınırını düzgün bir eğriye oturtur; alanı korur (S). Yarıçap büyüdükçe daha düz.">
-        Sınırı yumuşat
-      </button>
-      <div className="row">
-        <NumberField label="Gap alanı" value={gapArea} min={0.1} max={200} step={0.1} unit="mm²" onChange={(v) => set({ gapArea: v })} />
-      </div>
-      <button type="button" onClick={gapFillSelected}>
-        Gap Fill
-      </button>
     </section>
   );
 }

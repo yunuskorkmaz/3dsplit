@@ -110,6 +110,231 @@ export function smoothRegionBoundary(
   return { labels, positions };
 }
 
+/**
+ * Yumuşatma fırçası: `center` etrafında `radius` içindeki bölge sınırını
+ * yerinde düzleştirir. Mesh'in `labels` ve `positions` dizilerini değiştirir,
+ * etkilenen üçgenleri döndürür.
+ *
+ * Seviye kümesi yaklaşımı: fırça altındaki köşelere sınıra işaretli uzaklık
+ * (içeride +) verilir, bu alan yüzey üzerinde 2G − G∘G süzgeciyle
+ * yumuşatılır (G: Gauss; bu süzgeç bölgeyi büzmez, sadece küçük
+ * girinti/çıkıntıları siler). Yeni sınır alanın sıfır çizgisidir: üçgenler
+ * işaretine göre etiketlenir, sınır köşeleri sıfır çizgisine kaydırılır.
+ * Etki fırça merkezinden kenara doğru azalır.
+ */
+export function smoothBoundaryAt(
+  mesh: LabeledMesh,
+  slot: number,
+  center: V3,
+  radius: number,
+  strength: number,
+  accept: (t: number) => boolean,
+  outsideLabel: (t: number) => number,
+): number[] {
+  const { labels, positions: pos, indices: idx } = mesh;
+  const triCount = labels.length;
+  const vCount = pos.length / 3;
+  const reach2 = (radius * 1.5) ** 2;
+  const dist2 = (v: number) => (pos[3 * v] - center[0]) ** 2 + (pos[3 * v + 1] - center[1]) ** 2 + (pos[3 * v + 2] - center[2]) ** 2;
+  // fırça altındaki üçgenler ve köşeler (yerel numaralı)
+  const near: number[] = [];
+  for (let t = 0; t < triCount; t++) if (dist2(idx[3 * t]) <= reach2) near.push(t);
+  if (!near.length) return [];
+  const local = new Map<number, number>();
+  const verts: number[] = [];
+  for (const t of near) {
+    for (let k = 0; k < 3; k++) {
+      const v = idx[3 * t + k];
+      if (!local.has(v)) {
+        local.set(v, verts.length);
+        verts.push(v);
+      }
+    }
+  }
+  const n = verts.length;
+  const { start, list } = vertexTriangles(idx, vCount);
+  // köşe tarafı: tüm üçgenleri bölgedeyse +1, hiçbiri değilse -1, karışıksa sınır (0)
+  const side = new Int8Array(n);
+  let anyBoundary = false;
+  for (let i = 0; i < n; i++) {
+    const v = verts[i];
+    let inS = 0;
+    let out = 0;
+    for (let j = start[v]; j < start[v + 1]; j++) (labels[list[j]] === slot ? inS++ : out++);
+    side[i] = inS && out ? 0 : inS ? 1 : -1;
+    if (side[i] === 0 && dist2(v) <= radius * radius) anyBoundary = true;
+  }
+  if (!anyBoundary) return [];
+  // yerel komşuluk (fırça üçgenlerinin kenarları)
+  const nbr: number[][] = Array.from({ length: n }, () => []);
+  for (const t of near) {
+    for (let k = 0; k < 3; k++) {
+      const a = local.get(idx[3 * t + k]) as number;
+      const b = local.get(idx[3 * t + ((k + 1) % 3)]) as number;
+      nbr[a].push(b);
+      nbr[b].push(a);
+    }
+  }
+  const P = (i: number): V3 => [pos[3 * verts[i]], pos[3 * verts[i] + 1], pos[3 * verts[i] + 2]];
+  const len = (i: number, j: number) => {
+    const a = P(i);
+    const b = P(j);
+    return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  };
+  // işaretli uzaklık: sınır köşelerinden Dijkstra (küçük kümede basit kuyrukla)
+  const phi = new Float64Array(n).fill(Infinity);
+  const queue: number[] = [];
+  for (let i = 0; i < n; i++) {
+    if (side[i] === 0) {
+      phi[i] = 0;
+      queue.push(i);
+    }
+  }
+  let edgeSum = 0;
+  let edgeCount = 0;
+  for (let qi = 0; qi < queue.length; qi++) {
+    const i = queue[qi];
+    for (const j of nbr[i]) {
+      const d = len(i, j);
+      edgeSum += d;
+      edgeCount++;
+      if (phi[i] + d < phi[j]) {
+        phi[j] = phi[i] + d;
+        queue.push(j);
+      }
+    }
+  }
+  const meanEdge = edgeCount ? edgeSum / edgeCount : radius / 5;
+  for (let i = 0; i < n; i++) {
+    if (!Number.isFinite(phi[i])) phi[i] = radius;
+    if (side[i] < 0) phi[i] = -phi[i];
+  }
+  // Gauss: komşu ortalaması, (σ / kenar)² adım
+  const sigma = radius * 0.5;
+  const steps = Math.min(80, Math.max(1, Math.round((sigma / meanEdge) ** 2)));
+  const blur = (src: Float64Array) => {
+    let cur = src.slice();
+    let next = new Float64Array(n);
+    for (let it = 0; it < steps; it++) {
+      for (let i = 0; i < n; i++) {
+        let sum = cur[i];
+        for (const j of nbr[i]) sum += cur[j];
+        next[i] = sum / (1 + nbr[i].length);
+      }
+      [cur, next] = [next, cur];
+    }
+    return cur;
+  };
+  const g = blur(phi);
+  const gg = blur(g);
+  const k = Math.min(1, strength);
+  const w = (i: number) => {
+    const d = Math.sqrt(dist2(verts[i]));
+    if (d >= radius) return 0;
+    const x = 1 - d / radius;
+    return x * x * (3 - 2 * x);
+  };
+  const phiN = new Float64Array(n);
+  for (let i = 0; i < n; i++) phiN[i] = phi[i] + k * w(i) * (2 * g[i] - gg[i] - phi[i]);
+
+  // yeniden etiketleme: fırça içindeki üçgenler sıfır çizgisinin hangi tarafında
+  const changed = new Set<number>();
+  for (const t of near) {
+    const a = local.get(idx[3 * t]) as number;
+    const b = local.get(idx[3 * t + 1]) as number;
+    const c = local.get(idx[3 * t + 2]) as number;
+    if (w(a) + w(b) + w(c) === 0) continue;
+    const inside = phiN[a] + phiN[b] + phiN[c] > 0;
+    if (inside && labels[t] !== slot && accept(t)) {
+      labels[t] = slot;
+      changed.add(t);
+    } else if (!inside && labels[t] === slot) {
+      labels[t] = outsideLabel(t);
+      changed.add(t);
+    }
+  }
+  // sınır köşelerini sıfır çizgisine kaydır (alanın eğimi boyunca, teğet düzlemde)
+  const triNormal = (t: number): V3 => {
+    const a = 3 * idx[3 * t];
+    const b = 3 * idx[3 * t + 1];
+    const c = 3 * idx[3 * t + 2];
+    return cross([pos[b] - pos[a], pos[b + 1] - pos[a + 1], pos[b + 2] - pos[a + 2]], [pos[c] - pos[a], pos[c + 1] - pos[a + 1], pos[c + 2] - pos[a + 2]]);
+  };
+  for (let i = 0; i < n; i++) {
+    if (w(i) === 0) continue;
+    const v = verts[i];
+    let inS = 0;
+    let out = 0;
+    const seen = new Set<number>();
+    for (let j = start[v]; j < start[v + 1]; j++) {
+      const l = labels[list[j]];
+      seen.add(l);
+      l === slot ? inS++ : out++;
+    }
+    if (!inS || !out || seen.size > 2) continue;
+    // eğim: komşulara göre en küçük kareler
+    const p = P(i);
+    let gx = 0;
+    let gy = 0;
+    let gz = 0;
+    let norm = 0;
+    let minEdge = Infinity;
+    for (const j of nbr[i]) {
+      const q = P(j);
+      const dx = q[0] - p[0];
+      const dy = q[1] - p[1];
+      const dz = q[2] - p[2];
+      const d2 = dx * dx + dy * dy + dz * dz;
+      const df = phiN[j] - phiN[i];
+      gx += (df * dx) / d2;
+      gy += (df * dy) / d2;
+      gz += (df * dz) / d2;
+      norm++;
+      minEdge = Math.min(minEdge, Math.sqrt(d2));
+    }
+    if (!norm) continue;
+    const before: V3[] = [];
+    let nv: V3 = [0, 0, 0];
+    for (let j = start[v]; j < start[v + 1]; j++) {
+      const tn = triNormal(list[j]);
+      before.push(tn);
+      nv = [nv[0] + tn[0], nv[1] + tn[1], nv[2] + tn[2]];
+    }
+    const nl = Math.hypot(...nv) || 1;
+    nv = [nv[0] / nl, nv[1] / nl, nv[2] / nl];
+    let grad: V3 = [gx / norm, gy / norm, gz / norm];
+    const gn = dot(grad, nv);
+    grad = [grad[0] - gn * nv[0], grad[1] - gn * nv[1], grad[2] - gn * nv[2]];
+    const g2 = dot(grad, grad);
+    if (g2 < 1e-12) continue;
+    // köşeyi, alanın sıfır olduğu noktaya doğru taşı
+    let d: V3 = [(-phiN[i] * grad[0]) / g2, (-phiN[i] * grad[1]) / g2, (-phiN[i] * grad[2]) / g2];
+    const dl = Math.hypot(...d);
+    const maxMove = 0.45 * minEdge;
+    if (dl > maxMove) d = [(d[0] * maxMove) / dl, (d[1] * maxMove) / dl, (d[2] * maxMove) / dl];
+    pos[3 * v] = p[0] + d[0];
+    pos[3 * v + 1] = p[1] + d[1];
+    pos[3 * v + 2] = p[2] + d[2];
+    let ok = true;
+    let m = 0;
+    for (let j = start[v]; j < start[v + 1] && ok; j++, m++) {
+      const b0 = before[m];
+      const b1 = triNormal(list[j]);
+      const l0 = Math.hypot(...b0);
+      const l1 = Math.hypot(...b1);
+      if (l1 < l0 * 0.3 || dot(b0, b1) / (l0 * l1 || 1) < 0.9) ok = false;
+    }
+    if (!ok) {
+      pos[3 * v] = p[0];
+      pos[3 * v + 1] = p[1];
+      pos[3 * v + 2] = p[2];
+      continue;
+    }
+    for (let j = start[v]; j < start[v + 1]; j++) changed.add(list[j]);
+  }
+  return [...changed];
+}
+
 type V3 = [number, number, number];
 
 function sub(a: V3, b: V3): V3 {
@@ -248,6 +473,29 @@ class SegmentIndex {
  * Bölge sınırındaki köşeleri eğrinin en yakın noktasına doğru, teğet
  * düzlemde ve üçgenleri ters çevirmeden kaydırır.
  */
+const vertexTriCache = new WeakMap<Uint32Array, { start: Uint32Array; list: Uint32Array }>();
+
+/** Köşe -> üçgenler (CSR). İndeks dizisi başına önbellekli (fırça darbeleri boyunca değişmez). */
+function vertexTriangles(idx: Uint32Array, vCount: number): { start: Uint32Array; list: Uint32Array } {
+  let c = vertexTriCache.get(idx);
+  if (!c || c.start.length !== vCount + 1) {
+    const start = new Uint32Array(vCount + 1);
+    for (let i = 0; i < idx.length; i++) start[idx[i] + 1]++;
+    for (let v = 0; v < vCount; v++) start[v + 1] += start[v];
+    const fill = start.slice(0, vCount);
+    const list = new Uint32Array(idx.length);
+    for (let i = 0; i < idx.length; i++) list[fill[idx[i]]++] = Math.floor(i / 3);
+    c = { start, list };
+    vertexTriCache.set(idx, c);
+  }
+  return c;
+}
+
+/**
+ * Bölge sınırındaki köşeleri eğrinin en yakın noktasına doğru, teğet
+ * düzlemde ve üçgenleri ters çevirmeden kaydırır. `tris` verilirse sadece
+ * o üçgenlerin köşelerine bakılır (fırça). Kaydırılan köşeleri döndürür.
+ */
 function snapBoundaryToCurves(
   mesh: LabeledMesh,
   adj: Int32Array,
@@ -255,35 +503,32 @@ function snapBoundaryToCurves(
   index: SegmentIndex,
   band: number,
   offset: number,
-): void {
+  opts: { tris?: ArrayLike<number>; iterations?: number } = {},
+): number[] {
   const { indices: idx, labels } = mesh;
   const pos = mesh.positions;
   const vCount = pos.length / 3;
   const triCount = labels.length;
-  const onBoundary = new Uint8Array(vCount);
-  for (let t = 0; t < triCount; t++) {
+  const onBoundary = new Set<number>();
+  const scan = (t: number) => {
     for (let e = 0; e < 3; e++) {
       const n = adj[3 * t + e];
       if (n < 0 || (labels[t] === slot) === (labels[n] === slot)) continue;
-      onBoundary[idx[3 * t + e]] = 1;
-      onBoundary[idx[3 * t + ((e + 1) % 3)]] = 1;
+      onBoundary.add(idx[3 * t + e]);
+      onBoundary.add(idx[3 * t + ((e + 1) % 3)]);
     }
-  }
-  // köşe -> üçgenler
-  const start = new Uint32Array(vCount + 1);
-  for (let i = 0; i < idx.length; i++) start[idx[i] + 1]++;
-  for (let v = 0; v < vCount; v++) start[v + 1] += start[v];
-  const fill = start.slice(0, vCount);
-  const list = new Uint32Array(idx.length);
-  for (let i = 0; i < idx.length; i++) list[fill[idx[i]]++] = Math.floor(i / 3);
+  };
+  if (opts.tris) for (let i = 0; i < opts.tris.length; i++) scan(opts.tris[i]);
+  else for (let t = 0; t < triCount; t++) scan(t);
+  const { start, list } = vertexTriangles(idx, vCount);
   const verts: number[] = [];
-  for (let v = 0; v < vCount; v++) {
-    if (!onBoundary[v]) continue;
+  for (const v of onBoundary) {
     const seen = new Set<number>();
     for (let i = start[v]; i < start[v + 1]; i++) seen.add(labels[list[i]]);
     // üç bölgenin buluştuğu köşe sabit kalır
     if (seen.size <= 2) verts.push(v);
   }
+  const moved = new Set<number>();
   const triNormal = (t: number): V3 => {
     const a = 3 * idx[3 * t];
     const b = 3 * idx[3 * t + 1];
@@ -292,7 +537,7 @@ function snapBoundaryToCurves(
     const w: V3 = [pos[c] - pos[a], pos[c + 1] - pos[a + 1], pos[c + 2] - pos[a + 2]];
     return cross(u, w);
   };
-  for (let it = 0; it < 10; it++) {
+  for (let it = 0; it < (opts.iterations ?? 10); it++) {
     for (const v of verts) {
       const p: V3 = [pos[3 * v], pos[3 * v + 1], pos[3 * v + 2]];
       const hit = index.closest(p, band);
@@ -338,7 +583,10 @@ function snapBoundaryToCurves(
         pos[3 * v] = p[0];
         pos[3 * v + 1] = p[1];
         pos[3 * v + 2] = p[2];
+      } else if (d[0] || d[1] || d[2]) {
+        moved.add(v);
       }
     }
   }
+  return [...moved];
 }

@@ -439,8 +439,18 @@ export class Viewport {
     return box.isEmpty() ? 100 : box.getSize(new THREE.Vector3()).length();
   }
 
+  private userXray = false;
+
+  /** B7: kullanıcının açtığı X-ray (önizlemedeki yarı saydamlıktan bağımsız). */
+  setUserXray(on: boolean): void {
+    this.userXray = on;
+    this.setXray(on);
+    this.requestRender();
+  }
+
   /** Önizlemede iç hacimler görünsün diye parçalar yarı saydam çizilir. */
   private setXray(on: boolean): void {
+    on = on || this.userXray;
     for (const p of this.parts.values()) {
       const m = p.mesh.material;
       m.transparent = on;

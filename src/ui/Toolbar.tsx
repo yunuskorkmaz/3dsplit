@@ -56,6 +56,7 @@ export function ToolOptions() {
   const selectedPin = useStore((s) => s.selectedPin);
   const cut = useStore((s) => s.cut);
   const mirror = useStore((s) => s.mirror);
+  const xray = useStore((s) => s.xray);
   useStore((s) => s.parts);
   const paintTool = tool === 'smart' || tool === 'brush' || tool === 'erase' || tool === 'smooth' || tool === 'bucket';
   const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
@@ -117,7 +118,17 @@ export function ToolOptions() {
           />
         </>
       )}
-      {(tool === 'brush' || tool === 'erase') && radius}
+      {(tool === 'brush' || tool === 'erase') && (
+        <>
+          {radius}
+          <Toggle
+            label="X-ray"
+            checked={xray}
+            title="Model yarı saydam; fırça küre içindeki arka ve gizli yüzleri de boyar"
+            onChange={(v) => set({ xray: v })}
+          />
+        </>
+      )}
       {tool === 'smooth' && (
         <>
           {radius}

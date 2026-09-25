@@ -96,6 +96,8 @@ export interface AppState {
   pins: PinPlacement[];
   /** Pim aracında seçili pim (-1: yok). */
   selectedPin: number;
+  /** B7: X-ray: model yarı saydam, fırça/silgi küredeki tüm üçgenleri boyar (arka yüzler dahil). */
+  xray: boolean;
   /** E1: kamera düzeni ve ters yakınlaştırma (tarayıcıda hatırlanır). */
   camera: { mode: 'default' | 'blender'; invertZoom: boolean };
   /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
@@ -149,6 +151,7 @@ export const useStore = create<AppState>(() => ({
   selectedPin: -1,
   mirror: { enabled: false, axis: 0, offset: null },
   camera: loadCameraPrefs(),
+  xray: false,
   directionGizmo: false,
   preview: null,
   suggestion: null,

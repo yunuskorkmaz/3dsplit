@@ -25,7 +25,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C12 | Link all: kapalıyken her ada kendi ayarıyla (derinlik) | Aynı slotta farklı boyda bölgeler | [x] |
 | C11 | Snap pim (yapıştırıcısız, esnek dilli) | Faz 2 kalanı | [x] |
 | E1 | Kamera: ters yakınlaştırma, Blender tarzı (orta tuş döndür) seçeneği | Faz 1 kalanı | [x] |
-| B7 | X-ray boyama: arkadaki yüzleri de boya | Faz 3 | [ ] |
+| B7 | X-ray boyama: arkadaki yüzleri de boya | Faz 3 | [x] |
 | X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği | [ ] |
 | A2 | Voxel yedek onarım (kapanmayan mesh için) | A2'nin eksiği | [ ] |
 | E2 | Kısayolları özelleştirme | Faz 3 | [ ] |
@@ -88,7 +88,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | B4 | Bucket Fill | 1 | [x] | |
 | B5 | Gap Fill | 1 | [x] | |
 | B6 | Smooth sınır | 2 | [x] | Eğri tabanlı, alan koruyan (`src/core/smooth.ts`). Üçgenler kesilmez; sınır köşeleri eğriye kaydırılır |
-| B7 | Arka yüz / X-ray boyama | 3 | [ ] | |
+| B7 | Arka yüz / X-ray boyama | 3 | [x] | Fırça/Silgi seçeneği: model yarı saydam, küre içindeki tüm üçgenler |
 | B8 | Mirror boyama | 3 | [x] | Smart Fill, Fırça, Silgi, Kova, Yumuşat; düzlem X/Y/Z, konum varsayılan parçanın ortası |
 | B9 | Auto-paint | 3 | [ ] | |
 
@@ -168,3 +168,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | D5: kesim hatasında sorunlu bölge | `56e121d` |
 | 2026-09-25 | C12: Link all | `b2e94df` |
 | 2026-09-25 | C11: snap pim | `ba96195` |
+| 2026-09-25 | E1: kamera düzeni, ters yakınlaştırma | `52a2667` |

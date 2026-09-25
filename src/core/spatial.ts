@@ -52,6 +52,30 @@ export class TriangleGrid {
     return this.coord(x, 0) + this.dims[0] * (this.coord(y, 1) + this.dims[1] * this.coord(z, 2));
   }
 
+  /** Ağırlık merkezi `p` merkezli `radius` küresinin içinde kalan üçgenler (X-ray fırçası). */
+  within(p: Vec3, radius: number): number[] {
+    const c = this.centroids;
+    const r2 = radius * radius;
+    const lo = [0, 1, 2].map((k) => this.coord(p[k] - radius, k));
+    const hi = [0, 1, 2].map((k) => this.coord(p[k] + radius, k));
+    const out: number[] = [];
+    for (let z = lo[2]; z <= hi[2]; z++) {
+      for (let y = lo[1]; y <= hi[1]; y++) {
+        for (let x = lo[0]; x <= hi[0]; x++) {
+          const cell = x + this.dims[0] * (y + this.dims[1] * z);
+          for (let i = this.start[cell]; i < this.start[cell + 1]; i++) {
+            const t = this.items[i];
+            const dx = c[3 * t] - p[0];
+            const dy = c[3 * t + 1] - p[1];
+            const dz = c[3 * t + 2] - p[2];
+            if (dx * dx + dy * dy + dz * dz <= r2) out.push(t);
+          }
+        }
+      }
+    }
+    return out;
+  }
+
   /** `p`'ye en yakın üçgen; `maxDist` içinde yoksa -1. */
   nearest(p: Vec3, maxDist = Infinity): number {
     const c = this.centroids;

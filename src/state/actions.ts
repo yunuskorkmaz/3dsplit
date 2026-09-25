@@ -269,10 +269,12 @@ export function brushAt(partId: string, tri: number, point: Vec3, erase: boolean
   const part = partById(partId);
   if (!part) return;
   const topo = topologyOf(part.mesh);
-  const tris = brushSelect(topo.adj, topo.centroids, tri, point, get().brushRadius);
-  applyLabels(part, tris, paintLabel(erase));
+  const { brushRadius, xray } = get();
+  // X-ray: yüzey boyunca değil, küre içindeki her üçgen (arka/gizli yüzler dahil)
+  const select = (t: number, p: Vec3) => (xray ? gridOf(part.mesh).within(p, brushRadius) : brushSelect(topo.adj, topo.centroids, t, p, brushRadius));
+  applyLabels(part, select(tri, point), paintLabel(erase));
   const m = mirrored(part, point);
-  if (m) applyLabels(part, brushSelect(topo.adj, topo.centroids, m.tri, m.point, get().brushRadius), paintLabel(erase));
+  if (m) applyLabels(part, select(m.tri, m.point), paintLabel(erase));
 }
 
 export function bucketAt(partId: string, tri: number, erase: boolean): void {

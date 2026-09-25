@@ -231,6 +231,12 @@ export function ViewportHost() {
     vpRef.current?.setErrorLoops(errorLoops);
   }, [errorLoops]);
 
+  // B7: X-ray
+  const xray = useStore((s) => s.xray);
+  useEffect(() => {
+    vpRef.current?.setUserXray(xray);
+  }, [xray, parts]);
+
   // E1: kamera düzeni
   const camera = useStore((s) => s.camera);
   useEffect(() => {

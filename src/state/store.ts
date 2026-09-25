@@ -51,6 +51,8 @@ export interface CutSettings {
   pinDepthClearance: number;
   /** X32: pim ucu pahı, mm. */
   pinChamfer: number;
+  /** X33: pim yarıçapı ve boyu kesitten hesaplansın. */
+  pinAuto: boolean;
 }
 
 export interface Message {
@@ -168,6 +170,7 @@ export const useStore = create<AppState>(() => ({
     pinOnPart: true,
     pinDepthClearance: 0.3,
     pinChamfer: 0.4,
+    pinAuto: true,
   },
   pins: [],
   selectedPin: -1,

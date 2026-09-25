@@ -373,8 +373,16 @@ export function CutPanel() {
               <option value="snap">Snap (yapıştırıcısız)</option>
             </select>
           </label>
-          <NumberField label="Pim yarıçapı" value={cut.pinRadius} min={0.5} max={20} step={0.1} unit="mm" onChange={(v) => update({ pinRadius: v })} />
-          <NumberField label="Pim boyu" value={cut.pinLength} min={1} max={60} step={0.5} unit="mm" onChange={(v) => update({ pinLength: v })} />
+          <label className="field" title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Pim aracında tek tek boyut verilen pimler hariç">
+            <input type="checkbox" checked={cut.pinAuto} onChange={(e) => update({ pinAuto: e.target.checked })} />
+            <span>Boyut kesitten (otomatik)</span>
+          </label>
+          {!cut.pinAuto && (
+            <>
+              <NumberField label="Pim yarıçapı" value={cut.pinRadius} min={0.5} max={20} step={0.1} unit="mm" onChange={(v) => update({ pinRadius: v })} />
+              <NumberField label="Pim boyu" value={cut.pinLength} min={1} max={60} step={0.5} unit="mm" onChange={(v) => update({ pinLength: v })} />
+            </>
+          )}
           {cut.pinShape !== 'snap' && (
             <NumberField
               label="Uç pahı"

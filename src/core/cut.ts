@@ -27,6 +27,12 @@ export interface PinOptions {
    * sarkmaz. Delik pahlanmaz. Snap pimde kullanılmaz.
    */
   chamfer?: number;
+  /**
+   * X33: yarıçap ve boy kesitten hesaplanır (kendi boyutu verilmiş pimler
+   * hariç): yarıçap, pim merkezinden kesim halkasına en kısa uzaklığın ve
+   * adadaki pim başına düşen alanın payı; boy yarıçapın 4 katı.
+   */
+  auto?: boolean;
 }
 
 /** Tek bir pimin yeri ve (isteğe bağlı) kendine özgü boyutu/ekseni. */
@@ -756,9 +762,50 @@ function pinCenters(
     // eksen gövdeye doğru bakmalı (kapak normalinin tersi yönde)
     let axis = pin.axis ? normalize(pin.axis) : scale(n, -1);
     if (dot(axis, n) > 0) axis = scale(axis, -1);
-    const spec = { ...base, radius: pin.radius ?? base.radius, length: pin.length ?? base.length };
+    let { radius, length } = base;
+    if (base.auto) {
+      const shared = raw.filter((r) => r.island === island).length;
+      ({ radius, length } = autoPinSize(positions, island, center, shared));
+    }
+    const spec = { ...base, radius: pin.radius ?? radius, length: pin.length ?? length };
     return { island, center, axis, spec };
   });
+}
+
+/**
+ * X33: kesite göre pim boyutu. Kesim halkasına en yakın uzaklığın %35'i
+ * (pim + boşluk + duvar sığsın) ve pim başına düşen kesit alanının eşdeğer
+ * yarıçapının %30'u; küçüğü alınır, 0.8–6 mm'ye sınırlanır.
+ */
+export function autoPinSize(positions: Float32Array, island: Island, center: Vec3, pinsOnIsland = 1): { radius: number; length: number } {
+  const n = island.capNormal;
+  let inner = Infinity;
+  const loop = island.mainLoop;
+  for (let i = 0; i < loop.length; i++) {
+    const a = vertexAt(positions, loop[i]);
+    const b = vertexAt(positions, loop[(i + 1) % loop.length]);
+    // kapak düzlemine izdüşümde merkezin kenar parçasına uzaklığı
+    const pa = sub(a, scale(n, dot(sub(a, center), n)));
+    const pb = sub(b, scale(n, dot(sub(b, center), n)));
+    const ab = sub(pb, pa);
+    const s = Math.max(0, Math.min(1, dot(sub(center, pa), ab) / (dot(ab, ab) || 1e-12)));
+    inner = Math.min(inner, Math.hypot(...sub(center, add(pa, scale(ab, s)))));
+  }
+  // Newell: halka alanı
+  let nx = 0;
+  let ny = 0;
+  let nz = 0;
+  for (let i = 0; i < loop.length; i++) {
+    const a = vertexAt(positions, loop[i]);
+    const b = vertexAt(positions, loop[(i + 1) % loop.length]);
+    nx += (a[1] - b[1]) * (a[2] + b[2]);
+    ny += (a[2] - b[2]) * (a[0] + b[0]);
+    nz += (a[0] - b[0]) * (a[1] + b[1]);
+  }
+  const area = Math.hypot(nx, ny, nz) / 2;
+  const equiv = Math.sqrt(area / (Math.PI * Math.max(1, pinsOnIsland)));
+  const radius = Math.round(Math.min(6, Math.max(0.8, Math.min(0.35 * inner, 0.3 * equiv))) * 10) / 10;
+  return { radius, length: Math.round(Math.min(24, Math.max(3, 4 * radius)) * 2) / 2 };
 }
 
 /** `origin + s*dir` doğrusunun kapak üçgenleriyle kesiştiği nokta. */

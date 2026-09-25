@@ -160,6 +160,25 @@ describe('kesim', () => {
     expect(volume(ch.body)).toBeCloseTo(volume(flat.body), 1);
   });
 
+  it('X33: otomatik pim boyutu kesite göre', () => {
+    const big = previewCut(capRegion, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, auto: true } });
+    const small = previewCut(patch, { ...baseOpts, mode: 'keys', pin: { ...baseOpts.pin, auto: true } });
+    const size = (m: { positions: Float32Array }) => {
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (let i = 0; i < m.positions.length; i += 3) {
+        lo = Math.min(lo, m.positions[i]);
+        hi = Math.max(hi, m.positions[i]);
+      }
+      return hi - lo;
+    };
+    // 20 mm kesit: 0.35·10 = 3.5 ile 0.3·√(400/π)=3.4 → r≈3.4; 8 mm yama: r = 0.3·√(64/π) ≈ 1.4
+    expect(size(big.pins[0]) / 2).toBeGreaterThan(3);
+    expect(size(big.pins[0]) / 2).toBeLessThan(3.8);
+    expect(size(small.pins[0]) / 2).toBeGreaterThan(1.1);
+    expect(size(small.pins[0]) / 2).toBeLessThan(1.8);
+  });
+
   it('Keys: pim başına boyut ve eğik eksen', () => {
     const fast = cutRegion(capRegion, { ...baseOpts, mode: 'fast' });
     const r = cutRegion(capRegion, {

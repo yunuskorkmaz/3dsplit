@@ -424,11 +424,14 @@ function neighborLabel(adj: Int32Array, labels: Uint16Array, t: number, exclude:
 
 // ---------- yumuşatma fırçası ----------
 
-let smoothStroke: { partId: string; before: Part[] } | null = null;
+/** Açık yumuşatma darbesi: mesh yerinde değişir, darbe başındaki hali geri alma farkı için saklanır. */
+let smoothStroke: { partId: string; mesh: LabeledMesh; pos0: Float32Array; lab0: Uint16Array } | null = null;
 
 /**
- * Yumuşatma darbesi başlar: parçanın mesh'i kopyalanır (geri alma için eski
- * mesh korunur), darbe boyunca kopya yerinde değiştirilir.
+ * Yumuşatma darbesi başlar. Mesh kopyalanmaz: darbe boyunca yerinde değişir,
+ * sonunda sadece değişen köşe ve üçgenler geri alma kaydına yazılır. (Her
+ * darbede tam kopya saklamak ve ekran geometrisini baştan kurmak uzun
+ * oturumlarda belleği doldurup grafik bağlamını düşürüyordu.)
  */
 export function beginSmoothStroke(partId: string): boolean {
   const part = partById(partId);
@@ -438,24 +441,25 @@ export function beginSmoothStroke(partId: string): boolean {
     notify('warn', 'Yumuşatmak için sınırı düzeltilecek slotu seçin.');
     return false;
   }
-  const before = get().parts;
-  const mesh = { positions: new Float32Array(part.mesh.positions), indices: part.mesh.indices, labels: Uint16Array.from(part.mesh.labels) };
-  refreshGeometry(mesh, part.mesh);
   lastSmart = null;
-  set({ parts: before.map((p) => (p.id === partId ? { ...p, mesh } : p)), preview: null });
-  smoothStroke = { partId, before };
+  if (get().preview) set({ preview: null });
+  smoothStroke = {
+    partId,
+    mesh: part.mesh,
+    pos0: new Float32Array(part.mesh.positions),
+    lab0: Uint16Array.from(part.mesh.labels),
+  };
   return true;
 }
 
 export function smoothAt(point: Vec3): void {
   if (!smoothStroke) return;
-  const part = partById(smoothStroke.partId);
-  if (!part) return;
+  const { mesh, partId } = smoothStroke;
   const { activeSlot: slot, brushRadius, smoothStrength } = get();
-  const labels = part.mesh.labels;
-  const adj = topologyOf(part.mesh).adj;
+  const labels = mesh.labels;
+  const adj = topologyOf(mesh).adj;
   const tris = smoothBoundaryAt(
-    part.mesh,
+    mesh,
     slot,
     point,
     brushRadius,
@@ -463,18 +467,39 @@ export function smoothAt(point: Vec3): void {
     (t) => labels[t] === BASE_SLOT,
     (t) => neighborLabel(adj, labels, t, slot),
   );
-  if (tris.length) onGeometryChanged?.(part.id, tris);
+  if (tris.length) onGeometryChanged?.(partId, tris);
 }
 
 export function endSmoothStroke(): void {
   if (!smoothStroke) return;
-  const { partId, before } = smoothStroke;
+  const { partId, mesh, pos0, lab0 } = smoothStroke;
   smoothStroke = null;
-  const part = partById(partId);
-  if (!part) return;
-  refreshGeometry(part.mesh);
+  const verts: number[] = [];
+  for (let v = 0; v < pos0.length / 3; v++) {
+    if (pos0[3 * v] !== mesh.positions[3 * v] || pos0[3 * v + 1] !== mesh.positions[3 * v + 1] || pos0[3 * v + 2] !== mesh.positions[3 * v + 2]) {
+      verts.push(v);
+    }
+  }
+  const tris: number[] = [];
+  for (let t = 0; t < lab0.length; t++) if (lab0[t] !== mesh.labels[t]) tris.push(t);
+  refreshGeometry(mesh);
   onGeometryChanged?.(partId, null);
-  pushHistory({ kind: 'parts', before, after: get().parts });
+  if (!verts.length && !tris.length) return;
+  const pick = (src: Float32Array) => {
+    const out = new Float32Array(verts.length * 3);
+    verts.forEach((v, i) => out.set(src.subarray(3 * v, 3 * v + 3), 3 * i));
+    return out;
+  };
+  pushHistory({
+    kind: 'geometry',
+    mesh,
+    verts: Uint32Array.from(verts),
+    posBefore: pick(pos0),
+    posAfter: pick(mesh.positions),
+    tris: Uint32Array.from(tris),
+    labelsBefore: Uint16Array.from(tris, (t) => lab0[t]),
+    labelsAfter: Uint16Array.from(tris, (t) => mesh.labels[t]),
+  });
   set((s) => ({ paintVersion: s.paintVersion + 1 }));
 }
 
@@ -644,6 +669,27 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
     for (let i = 0; i < entry.tris.length; i++) entry.mesh.labels[entry.tris[i]] = values[i];
     const part = get().parts.find((p) => p.mesh === entry.mesh);
     if (part) onLabelsChanged?.(part.id, entry.tris);
+    set((s) => ({ paintVersion: s.paintVersion + 1 }));
+  } else if (entry.kind === 'geometry') {
+    const pos = reverse ? entry.posBefore : entry.posAfter;
+    const lab = reverse ? entry.labelsBefore : entry.labelsAfter;
+    entry.verts.forEach((v, i) => entry.mesh.positions.set(pos.subarray(3 * i, 3 * i + 3), 3 * v));
+    entry.tris.forEach((t, i) => {
+      entry.mesh.labels[t] = lab[i];
+    });
+    refreshGeometry(entry.mesh);
+    const part = get().parts.find((p) => p.mesh === entry.mesh);
+    if (part) {
+      // köşesi değişen üçgenler de yeniden yazılır
+      const touched = new Set<number>(entry.tris);
+      const moved = new Set<number>(entry.verts);
+      const idx = entry.mesh.indices;
+      for (let t = 0; t < idx.length / 3; t++) {
+        if (moved.has(idx[3 * t]) || moved.has(idx[3 * t + 1]) || moved.has(idx[3 * t + 2])) touched.add(t);
+      }
+      onGeometryChanged?.(part.id, [...touched]);
+      onGeometryChanged?.(part.id, null);
+    }
     set((s) => ({ paintVersion: s.paintVersion + 1 }));
   } else {
     const parts = reverse ? entry.before : entry.after;

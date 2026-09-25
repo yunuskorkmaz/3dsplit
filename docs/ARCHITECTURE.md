@@ -26,7 +26,7 @@ src/io        STL/OBJ/3MF içe aktarma, STL/3MF/ZIP dışa aktarma
 - `LabeledMesh`: `positions: Float32Array`, `indices: Uint32Array` (CCW, dışa bakan), `labels: Uint16Array` (üçgen başına slot).
 - Slot `0` taban (boyanmamış).
 - `Part`: store'daki parça; `mesh`, `visible`, `badge` (`source` / `new`), `colorSlot`.
-- Mesh'ler değiştirilemez kabul edilir; sadece `labels` boyamada yerinde değişir. Undo boyamada değişen üçgenlerin önceki/sonraki etiketini, kesimde parça listesinin önceki halini saklar.
+- Mesh'ler değiştirilemez kabul edilir; istisnalar: `labels` boyamada, `positions` yumuşatma fırçasında yerinde değişir (geri alma kaydı değişen öğeleri tutar). Undo boyamada değişen üçgenlerin önceki/sonraki etiketini, kesimde parça listesinin önceki halini saklar.
 - Etiketler boolean işlemlerden manifold `faceID` üzerinden geçer. Kesimle oluşan yeni yüzler geçici `CUT_FACE_ID` (0xfffe) alır, sonra parçanın slotuna veya tabana çevrilir. `0xffffffff` kullanılamaz: manifold onu "faceID yok" sayıyor.
 
 ## Kesim algoritmaları (`src/core/cut.ts`)
@@ -55,7 +55,7 @@ Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan at
 
 **Sınırı yumuşat (B6, `src/core/smooth.ts`).** Bölgenin sınır halkaları çıkarılır ve yay uzunluğu boyunca Gauss çekirdeğiyle (σ = yarıçap) düzgün bir eğriye çevrilir. Eğrinin `1.5 × yarıçap` yakınındaki her üçgen, eğriye işaretli uzaklığına göre (halka yönünde bölge solda) içe ya da dışa atanır. Gauss eğriyi büzdüğü için sınır, bölge alanı eskisine eşit olacak kadar dışa kaydırılır (alan dengesi); bu yüzden tekrar basmak bölgeyi daraltmaz. Kırıntılar ve delikler temizlenir, ardından yeni sınır köşeleri yüzey üzerinde (teğet düzlemde) eğriye çekilir; üçgeni ters çeviren veya %30'un altına incelten hareket geri alınır. Mesh konumları değiştiği için parça yeni mesh ile değiştirilir.
 
-**Yumuşatma fırçası (`smoothBoundaryAt`).** Fırça altındaki köşelere sınıra işaretli uzaklık verilir (içeride +). Alan yerel komşuluk grafiğinde 2G − G∘G süzgeciyle yumuşatılır (G: σ = yarıçap/2 Gauss; bu süzgeç büyük ölçekli biçimi koruduğu için bölge büzülmez), fırça merkezinden kenara azalan ağırlıkla karıştırılır. Üçgenler yeni alanın işaretine göre etiketlenir; sınır köşeleri alanın eğimi boyunca sıfır noktasına kaydırılır. Darbe boyunca mesh kopyası yerinde değişir, viewport sadece değişen üçgenleri günceller; darbe sonunda tek bir geri alma kaydı oluşur.
+**Yumuşatma fırçası (`smoothBoundaryAt`).** Fırça altındaki köşelere sınıra işaretli uzaklık verilir (içeride +). Alan yerel komşuluk grafiğinde 2G − G∘G süzgeciyle yumuşatılır (G: σ = yarıçap/2 Gauss; bu süzgeç büyük ölçekli biçimi koruduğu için bölge büzülmez), fırça merkezinden kenara azalan ağırlıkla karıştırılır. Üçgenler yeni alanın işaretine göre etiketlenir; sınır köşeleri alanın eğimi boyunca sıfır noktasına kaydırılır. Darbe boyunca parçanın mesh'i yerinde değişir (kopya yok), viewport sadece değişen üçgenleri günceller; darbe sonunda değişen köşe ve üçgenlerin önceki/sonraki değerleri tek bir `geometry` geri alma kaydına yazılır. Tam kopya saklamak uzun oturumlarda belleği doldurup grafik bağlamını düşürüyordu (X23).
 
 ## Arayüz
 

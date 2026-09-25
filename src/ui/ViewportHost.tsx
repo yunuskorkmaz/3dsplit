@@ -15,7 +15,7 @@ import {
   smartFillAt,
   smoothAt,
 } from '../state/actions';
-import { get, set, useStore } from '../state/store';
+import { get, notify, set, useStore } from '../state/store';
 import { type Hit, Viewport } from '../viewport/Viewport';
 
 function slotColor(label: number): THREE.Color {
@@ -148,6 +148,17 @@ export function ViewportHost() {
       },
       onHover(hit) {
         cursor(hit);
+      },
+      onContextLost() {
+        notify('error', 'Grafik bağlamı kayboldu (büyük ihtimalle bellek). Model yeniden çiziliyor; olmazsa projeyi kaydedip sayfayı yenileyin.');
+      },
+      onContextRestored() {
+        notify('info', 'Grafik bağlamı geri geldi, model yeniden çizildi.');
+        const st = get();
+        vp.sync(
+          st.parts.map((p) => ({ id: p.id, mesh: p.mesh, visible: p.visible, selected: p.id === st.selectedPartId })),
+          slotColor,
+        );
       },
       onBrushResize(deltaY) {
         set((s) => ({ brushRadius: Math.round(Math.min(50, Math.max(0.2, s.brushRadius * (deltaY > 0 ? 1 / 1.1 : 1.1))) * 100) / 100 }));

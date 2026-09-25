@@ -47,7 +47,18 @@ export interface Message {
 export type HistoryEntry =
   // boyama kaydı parça kimliğine değil mesh nesnesine bağlı: inceltme/kesim mesh'i değiştirse de kayıt kendi mesh'ine yazar
   | { kind: 'paint'; mesh: LabeledMesh; tris: Uint32Array; before: Uint16Array; after: Uint16Array }
-  | { kind: 'parts'; before: Part[]; after: Part[] };
+  | { kind: 'parts'; before: Part[]; after: Part[] }
+  // yumuşatma fırçası: mesh yerinde değişir, sadece değişen köşe ve üçgenler saklanır
+  | {
+      kind: 'geometry';
+      mesh: LabeledMesh;
+      verts: Uint32Array;
+      posBefore: Float32Array;
+      posAfter: Float32Array;
+      tris: Uint32Array;
+      labelsBefore: Uint16Array;
+      labelsAfter: Uint16Array;
+    };
 
 const DEFAULT_COLORS = ['#b0b0b0', '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c', '#34495e', '#ff66cc'];
 

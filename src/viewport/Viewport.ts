@@ -30,6 +30,9 @@ export interface PointerHandlers {
   onHover(hit: Hit | null): void;
   /** Alt + tekerlek: fırça boyutu (deltaY > 0 küçült). */
   onBrushResize(deltaY: number): void;
+  /** Grafik bağlamı düştü / geri geldi (bellek yetmezliği vb.). */
+  onContextLost(): void;
+  onContextRestored(): void;
 }
 
 interface PartObject {
@@ -96,6 +99,17 @@ export class Viewport {
     el.addEventListener('pointermove', this.onPointerMove);
     el.addEventListener('pointerup', this.onPointerUp);
     el.addEventListener('contextmenu', (e) => e.preventDefault());
+    // bağlam düşerse varsayılan davranışı engelle ki tarayıcı geri getirebilsin
+    el.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      this.handlers.onContextLost();
+    });
+    el.addEventListener('webglcontextrestored', () => {
+      // GPU kaynakları gitti: parçalar bir sonraki sync'te baştan kurulur
+      this.parts.forEach((p) => this.scene.remove(p.mesh));
+      this.parts.clear();
+      this.handlers.onContextRestored();
+    });
     // Alt + tekerlek fırça boyutunu değiştirir; yakınlaştırmaya gitmesin
     el.addEventListener(
       'wheel',

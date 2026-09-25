@@ -148,6 +148,7 @@ export function CutPanel() {
   const tool = useStore((s) => s.tool);
   const pinCount = useStore((s) => s.pins.length);
   const directionGizmo = useStore((s) => s.directionGizmo);
+  const suggestion = useStore((s) => s.suggestion);
   const previewOn = useStore((s) => s.preview !== null);
   const activeSlot = useStore((s) => s.activeSlot);
   const slotName = useStore((s) => s.slots.find((x) => x.id === s.activeSlot)?.name);
@@ -163,6 +164,17 @@ export function CutPanel() {
         ))}
       </div>
       <p className="hint">{MODES.find((m) => m.id === cut.mode)?.hint}</p>
+      {suggestion && (
+        <div className={`suggestion ${suggestion.mode === cut.mode ? 'ok' : ''}`}>
+          {suggestion.mode === cut.mode ? '✓ ' : 'Öneri: '}
+          <b>{suggestion.mode === 'keys' ? 'Keys' : 'Socket'}</b> — {suggestion.reason}
+          {suggestion.mode !== cut.mode && (
+            <button type="button" onClick={() => update({ mode: suggestion.mode })}>
+              Uygula
+            </button>
+          )}
+        </div>
+      )}
       {cut.mode === 'socket' && (
         <>
           <NumberField label="Derinlik" value={cut.depth} min={0.4} max={30} step={0.1} unit="mm" onChange={(v) => update({ depth: v })} />

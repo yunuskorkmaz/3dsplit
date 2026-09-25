@@ -639,6 +639,29 @@ function cutTarget(): Part | null {
   return part;
 }
 
+let suggestTimer: ReturnType<typeof setTimeout> | null = null;
+let suggestSeq = 0;
+
+/** X5: boyama durulunca aktif slot bölgesi için kesim modu önerisini (Worker'da) yeniler. */
+export function scheduleSuggestion(): void {
+  if (suggestTimer) clearTimeout(suggestTimer);
+  suggestTimer = setTimeout(async () => {
+    const part = selectedPart();
+    const slot = get().activeSlot;
+    const seq = ++suggestSeq;
+    if (!part || slot === BASE_SLOT || !part.mesh.labels.includes(slot)) {
+      set({ suggestion: null });
+      return;
+    }
+    try {
+      const s = await geometry.suggest(part.mesh, slot);
+      if (seq === suggestSeq) set({ suggestion: s });
+    } catch {
+      if (seq === suggestSeq) set({ suggestion: null });
+    }
+  }, 400);
+}
+
 export async function togglePreview(): Promise<void> {
   if (get().preview) return set({ preview: null });
   const part = cutTarget();

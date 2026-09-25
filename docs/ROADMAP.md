@@ -20,7 +20,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | # | İş | Neden | Durum |
 | --- | --- | --- | --- |
 | B8 | Mirror boyama: simetri düzlemi (X/Y/Z + konum), boyama araçları aynı anda karşı tarafa da uygulanır | Göz, kulak, kaş gibi çift özellikler | [x] |
-| X5 | Kesim modu önerisi: bölge kalınlığına göre Keys/Socket öner | Dokümandaki karar ağacı | [ ] |
+| X5 | Kesim modu önerisi: bölge kalınlığına göre Keys/Socket öner | Dokümandaki karar ağacı | [x] |
 | D5 | Kesim hatasında sorunlu bölgeyi göster | Hata mesajı nereye bakılacağını söylemiyor | [ ] |
 | C12 | Link all: kapalıyken her ada kendi ayarıyla (derinlik) | Aynı slotta farklı boyda bölgeler | [ ] |
 | C11 | Snap pim (yapıştırıcısız, esnek dilli) | Faz 2 kalanı | [ ] |
@@ -131,7 +131,6 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | # | İş | Neden |
 | --- | --- | --- |
 | X4 | Keys için düzlemsel kesim yedeği: sınır halkası çok eğriyse en uygun düzlemle kes | Eğri halkada kapak kendini kesebilir |
-| X5 | Kesim modu önerisi: bölge kalınlığına göre Keys/Socket öner | Dokümandaki karar ağacı |
 | X6 | Pim yerleştirmede duvar kalınlığı kontrolü, uyarıyı pim üzerinde göster | İnce duvarda kırılma riski |
 | X7 | 1–2M üçgen performansı: komşuluk ve kaynaştırma için Map yerine sıralama tabanlı yapı | Büyük modellerde yavaşlık |
 | X8 | Playwright smoke testi | Arayüz regresyonları |
@@ -164,3 +163,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X7: 1–2M üçgen performansı | `4ca0cd5` |
 | 2026-09-25 | X24: Worker manifold önbelleği | `4b2b740` |
 | 2026-09-25 | X8: Playwright smoke testi | `ac8bc4e` |
+| 2026-09-25 | B8: ayna boyama | `02b45c3` |

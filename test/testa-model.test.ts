@@ -63,3 +63,38 @@ describe.skipIf(!existsSync(FILE))('testa.stl', () => {
     });
   }
 });
+
+describe.skipIf(!existsSync(FILE))('testa.stl kesim önerisi', () => {
+  it('göz/burun Socket, kulak Keys', async () => {
+    const { suggestCutMode } = await import('../src/core/cut');
+    await initKernel();
+    const buf = readFileSync(FILE);
+    const n = buf.readUInt32LE(80);
+    const pos = new Float32Array(n * 9);
+    for (let t = 0; t < n; t++) for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
+    const man = toManifold(repairMesh(pos).mesh);
+    const mesh = fromManifold(man, 0);
+    man.delete();
+    const adj = buildAdjacency(mesh);
+    const { normals, areas } = faceNormalsAndAreas(mesh);
+    const c = faceCentroids(mesh);
+    const edge = meanEdgeLength(mesh);
+    const check = (p: number[]) => {
+      mesh.labels.fill(0);
+      let seed = 0;
+      let bd = Infinity;
+      for (let t = 0; t < areas.length; t++) {
+        const d = Math.hypot(c[3 * t] - p[0], c[3 * t + 1] - p[1], c[3 * t + 2] - p[2]);
+        if (d < bd) {
+          bd = d;
+          seed = t;
+        }
+      }
+      for (const t of chooseSmartScale(adj, normals, c, areas, seed, edge, { maxAngleDeg: 20, concaveOnly: true }).tris) mesh.labels[t] = 1;
+      return suggestCutMode(mesh, 1)?.mode;
+    };
+    expect(check([30.4, 14, 44.7])).toBe('socket');
+    expect(check([45.1, 2.2, 43.2])).toBe('socket');
+    expect(check([56, 62, 82])).toBe('keys');
+  }, 120000);
+});

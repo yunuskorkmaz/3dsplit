@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { importFiles, redo, togglePreview, undo } from '../state/actions';
-import { get, set } from '../state/store';
+import { importFiles, redo, scheduleSuggestion, togglePreview, undo } from '../state/actions';
+import { get, set, useStore } from '../state/store';
 import { CutPanel, FilePanel, PartsPanel, SlotPanel, StatusBar } from './Panels';
 import { ToolBar, ToolOptions, TOOLS } from './Toolbar';
 import { ViewportHost } from './ViewportHost';
@@ -38,8 +38,20 @@ function useShortcuts() {
   }, []);
 }
 
+/** Boyama, slot veya parça değişince kesim modu önerisini yenile. */
+function useSuggestion() {
+  const paintVersion = useStore((s) => s.paintVersion);
+  const activeSlot = useStore((s) => s.activeSlot);
+  const selectedPartId = useStore((s) => s.selectedPartId);
+  const parts = useStore((s) => s.parts);
+  useEffect(() => {
+    scheduleSuggestion();
+  }, [paintVersion, activeSlot, selectedPartId, parts]);
+}
+
 export function App() {
   useShortcuts();
+  useSuggestion();
   return (
     <div
       className="app"

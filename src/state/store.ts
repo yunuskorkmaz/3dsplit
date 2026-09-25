@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CutMode, CutPreview, PinPlacement, PinShape } from '../core/cut';
+import type { CutMode, CutPreview, CutSuggestion, PinPlacement, PinShape } from '../core/cut';
 import type { LabeledMesh, Vec3 } from '../core/types';
 
 export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin';
@@ -97,6 +97,8 @@ export interface AppState {
   /** Socket yön gizmosu açık mı. */
   directionGizmo: boolean;
   preview: CutPreview | null;
+  /** X5: aktif slot bölgesi için kesim modu önerisi. */
+  suggestion: CutSuggestion | null;
   busy: string | null;
   messages: Message[];
   /** Etiketler yerinde değiştiği için yeniden boyamayı tetikleyen sayaç. */
@@ -138,6 +140,7 @@ export const useStore = create<AppState>(() => ({
   mirror: { enabled: false, axis: 0, offset: null },
   directionGizmo: false,
   preview: null,
+  suggestion: null,
   busy: null,
   messages: [],
   paintVersion: 0,

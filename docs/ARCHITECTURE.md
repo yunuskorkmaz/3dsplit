@@ -49,6 +49,8 @@ Büyütme (clearance): `V`'nin yana 8 yönde ve `−d` yönünde clearance kadar
 
 **Duvar kontrolü (X6, önizlemede).** Her yuva (pim yuvası veya tapa yuvası) clearance + en az duvar kadar büyütülür, yuvanın yüzeye açılan ağzı kesim yüzeyinin `minWall + halkanın düzlemden sapması` altından kırpılır, kalan kısım yuvayı içeren katıdan çıkarılır. Artan hacim duvarın ince kaldığı yerdir; önizlemede kırmızı çizilir ve uyarı verilir.
 
+**Kesim modu önerisi (X5, `suggestCutMode`).** En büyük adanın kesim halkası alanından eşdeğer yarıçap r, bölge + düz kapak hacminden ortalama çıkıntı yüksekliği h = hacim / kesit hesaplanır. r ≥ 4 mm ve h ≥ 0.8·r ise Keys (kulak, kol, kafa), değilse Socket (göz, kaş, burun). Boyama durulunca Worker'da hesaplanır, kesim panelinde "Uygula" ile seçilir.
+
 ## Smart Fill (`src/core/paint.ts`)
 
 Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan atasının normaliyle karşılaştırılır; komşu üçgen karşılaştırması yoğun mesh'te kıvrım birçok üçgene yayıldığı için eşiği hiç aşmıyor. "Sadece çukur kenarda dur" modunda eşiği aşan kıvrım, yerel kenar içbükeyse durdurur; tümsek tepelerinden geçilir (göz, kaş, burun gibi çıkıntılar tek tıkla seçilir). Ölçek otomatikte tıklanan özelliğe göre seçilir (X14): ortalama kenarın 3, 4, 6, 8, 12, 16 katı sırayla denenir; modelin %40'ından azını kaplayan ve sonraki iki ölçekten biriyle ±%25 benzer alan veren ilk ölçek alınır (testa.stl: göz/kaş/burun 1.3 mm, kulak 3.4 mm). Sonuçtaki küçük, aynı etiketli delikler kapatılır.

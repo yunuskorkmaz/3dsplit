@@ -1,5 +1,5 @@
 import type { Manifold } from 'manifold-3d';
-import { faceNormalsAndAreas } from './geometry';
+import { faceNormalsAndAreas, signedVolume } from './geometry';
 import { closeHoles } from './paint';
 import { CUT_FACE_ID, fromManifoldMapped, KernelError, kernel, modelManifold, Scope, toManifold } from './kernel';
 import { boundaryLoops, buildAdjacency, connectedComponents, extractTriangles } from './topology';
@@ -982,4 +982,57 @@ export function splitComponents(mesh: LabeledMesh): LabeledMesh[] {
     const { mesh: sub } = extractTriangles(mesh, tris);
     return { ...sub, labels: Uint16Array.from(tris, (t) => mesh.labels[t]) };
   });
+}
+
+export interface CutSuggestion {
+  mode: 'socket' | 'keys';
+  /** Kesit (kesim halkası) eşdeğer yarıçapı, mm. */
+  capRadius: number;
+  /** Ortalama çıkıntı yüksekliği (hacim / kesit alanı), mm. */
+  height: number;
+  reason: string;
+}
+
+/**
+ * X5: bölgenin biçimine göre kesim modu önerir. Kesit geniş ve çıkıntı
+ * kesitine göre uzunsa (kulak, kol, kafa) Keys; yüzeysel/sığ bölgelerde
+ * (göz, kaş, burun) Socket. Hacim, bölge + düz kapaktan hesaplanır (boolean yok).
+ */
+export function suggestCutMode(mesh: LabeledMesh, slot: number): CutSuggestion | null {
+  let islands: Island[];
+  try {
+    islands = findIslands(mesh, slot);
+  } catch {
+    return null;
+  }
+  // en büyük ada belirleyici
+  let best: { island: Island; area: number; volume: number } | null = null;
+  for (const island of islands) {
+    const idx: number[] = [];
+    for (const t of island.tris) idx.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
+    let capArea = 0;
+    try {
+      for (const loop of island.loops) {
+        const cap = triangulateLoop(mesh.positions, loop);
+        idx.push(...cap);
+        capArea += loopPlane(mesh.positions, loop).area;
+      }
+    } catch {
+      continue;
+    }
+    const volume = Math.abs(signedVolume({ positions: mesh.positions, indices: Uint32Array.from(idx) }));
+    if (!best || capArea > best.area) best = { island, area: capArea, volume };
+  }
+  if (!best || best.area <= 0) return null;
+  const capRadius = Math.sqrt(best.area / Math.PI);
+  const height = best.volume / best.area;
+  const keys = capRadius >= 4 && height >= capRadius * 0.8;
+  return {
+    mode: keys ? 'keys' : 'socket',
+    capRadius,
+    height,
+    reason: keys
+      ? `kalın çıkıntı (kesit ~${(2 * capRadius).toFixed(0)} mm, boy ~${height.toFixed(0)} mm): düz kesim + pim`
+      : `yüzeysel bölge (kesit ~${(2 * capRadius).toFixed(0)} mm, yükseklik ~${height.toFixed(1)} mm): tapa + yuva`,
+  };
 }

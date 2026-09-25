@@ -41,21 +41,25 @@ function buffersOf(meshes: LabeledMesh[]): ArrayBuffer[] {
 }
 
 const api = {
-  /** Yükleme: onarım + manifold doğrulaması. */
-  async prepare(positions: Float32Array, indices?: Uint32Array): Promise<PreparedMesh> {
+  /**
+   * Yükleme: onarım + manifold doğrulaması. `labels` verilirse (boyalı 3MF)
+   * onarımdan ve manifold'dan üçgen başına geçirilir.
+   */
+  async prepare(positions: Float32Array, indices?: Uint32Array, labels?: Uint16Array): Promise<PreparedMesh> {
     await ready;
-    const { mesh, report } = repairMesh(positions, indices);
+    const { mesh, report, source } = repairMesh(positions, indices);
+    const mapped = new Uint16Array(source.length);
+    if (labels) for (let t = 0; t < source.length; t++) mapped[t] = source[t] >= 0 ? labels[source[t]] : BASE_SLOT;
     let result: PreparedMesh;
     try {
-      const man = toManifold(mesh);
+      // faceID = etiket: manifold üçgen sırasını değiştirse de etiket üçgenle birlikte gider
+      const man = toManifold(mesh, mapped);
       const canonical = fromManifold(man, BASE_SLOT);
       man.delete();
-      canonical.labels.fill(BASE_SLOT);
       result = { mesh: canonical, report, manifold: true };
     } catch (e) {
-      const labels = new Uint16Array(mesh.indices.length / 3);
       result = {
-        mesh: { ...mesh, labels },
+        mesh: { ...mesh, labels: mapped },
         report,
         manifold: false,
         error: e instanceof KernelError ? e.message : String(e),

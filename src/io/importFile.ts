@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+import { parse3mf } from './threeMf';
 
 export interface ImportedObject {
   name: string;
@@ -9,6 +10,10 @@ export interface ImportedObject {
   positions: Float32Array;
   /** Yoksa positions üçgen çorbasıdır. */
   indices?: Uint32Array;
+  /** Boyalı 3MF: üçgen başına filament numarası (0: boyasız). */
+  labels?: Uint16Array;
+  /** Boyalı 3MF: filament renkleri (filament 1 = [0]). */
+  filamentColors?: string[];
 }
 
 export const ACCEPTED_EXTENSIONS = '.stl,.obj,.3mf,.3dsplit';
@@ -26,7 +31,21 @@ export async function importFile(file: File): Promise<ImportedObject[]> {
     return [mergeGroup(base, group)];
   }
   if (ext === '3mf') {
-    const group = new ThreeMFLoader().parse(await file.arrayBuffer());
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    try {
+      // kendi okuyucumuz: Bambu/Orca bileşenleri ve boya
+      const parsed = parse3mf(bytes);
+      return parsed.objects.map((o) => ({
+        name: o.name,
+        positions: o.positions,
+        indices: o.indices,
+        labels: o.paint,
+        filamentColors: parsed.filamentColors,
+      }));
+    } catch (e) {
+      console.warn('3MF okuyucu başarısız, three.js yükleyicisi deneniyor', e);
+    }
+    const group = new ThreeMFLoader().parse(bytes.buffer as ArrayBuffer);
     group.updateMatrixWorld(true);
     const out: ImportedObject[] = [];
     let i = 0;

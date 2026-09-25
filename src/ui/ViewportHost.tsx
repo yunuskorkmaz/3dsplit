@@ -41,6 +41,11 @@ function nearestPin(pins: [number, number, number][], p: [number, number, number
 
 let activeViewport: Viewport | null = null;
 
+/** Görünümü sığdır (araç çubuğu, Home tuşu). */
+export function fitView(): void {
+  activeViewport?.fitView();
+}
+
 /** Hedeften kameraya bakan yön; Socket yönünü "kameradan al" için. */
 export function cameraDirection(): [number, number, number] | null {
   return activeViewport ? activeViewport.viewDirection() : null;

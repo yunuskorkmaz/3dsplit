@@ -45,7 +45,8 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
     await busy(`${file.name} yükleniyor…`, async () => {
       const objects = await importFile(file);
       for (const obj of objects) {
-        const prepared = await geometry.prepare(obj.positions, obj.indices);
+        const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
+        if (obj.labels) ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []);
         const r = prepared.report;
         const fixes = [
           r.removedDegenerate && `${r.removedDegenerate} dejenere üçgen silindi`,
@@ -132,6 +133,23 @@ async function openProject(file: File): Promise<void> {
     });
     notify('info', `${file.name}: ${data.parts.length} parça açıldı.`);
   });
+}
+
+/** Boyalı 3MF'teki filament numaraları için slot açar; renkleri 3MF'ten alır. */
+function ensurePaintSlots(labels: Uint16Array, colors: string[]): void {
+  let max = 0;
+  for (let t = 0; t < labels.length; t++) if (labels[t] > max) max = labels[t];
+  if (!max) return;
+  const slots = [...get().slots];
+  for (let id = 1; id <= max; id++) {
+    const color = colors[id - 1];
+    const existing = slots.findIndex((s) => s.id === id);
+    if (existing < 0) slots.push({ id, name: `Filament ${id}`, color: color ?? nextSlotColor(id) });
+    else if (color) slots[existing] = { ...slots[existing], color };
+  }
+  slots.sort((a, b) => a.id - b.id);
+  set({ slots });
+  notify('info', `Boyalı 3MF: ${max} filament rengi slotlara aktarıldı.`);
 }
 
 function exportObjects(): ExportObject[] {
@@ -532,7 +550,32 @@ export function smoothAt(point: Vec3): void {
     );
     for (const t of more) tris.push(t);
   }
+  if (tris.length && !finiteAt(mesh, tris)) {
+    // güvenlik ağı: geçersiz konum oluştuysa darbeyi baştan geri al, ayrıntıyı kaydet
+    const stroke = smoothStroke;
+    if (stroke) {
+      mesh.positions.set(stroke.pos0);
+      mesh.labels.set(stroke.lab0);
+      smoothStroke = { ...stroke };
+      onGeometryChanged?.(partId, null);
+      onLabelsChanged?.(partId);
+    }
+    console.error('Yumuşatma geçersiz konum üretti', { point, brushRadius, smoothStrength, slot, tris: tris.length });
+    notify('error', 'Yumuşatma geçersiz bir sonuç üretti ve geri alındı. Tekrarlarsa bildirin (konsolda ayrıntı var).');
+    return;
+  }
   if (tris.length) onGeometryChanged?.(partId, tris);
+}
+
+function finiteAt(mesh: LabeledMesh, tris: ArrayLike<number>): boolean {
+  const { positions: p, indices: idx } = mesh;
+  for (let i = 0; i < tris.length; i++) {
+    for (let k = 0; k < 3; k++) {
+      const v = 3 * idx[3 * tris[i] + k];
+      if (!Number.isFinite(p[v]) || !Number.isFinite(p[v + 1]) || !Number.isFinite(p[v + 2])) return false;
+    }
+  }
+  return true;
 }
 
 export function endSmoothStroke(): void {

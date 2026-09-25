@@ -80,7 +80,7 @@ export function write3mfBambu(objects: ExportObject[], opts: { title?: string; b
     );
     rels.push(` <Relationship Target="${path}" Id="rel-${n}" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>`);
     objectXml.push(
-      `  <object id="${outerId}" p:UUID="${uuid(n, 2)}" type="model">\n   <components>\n    <component p:path="${path}" objectid="${innerId}" p:UUID="${uuid(n, 3)}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n   </components>\n  </object>`,
+      `  <object id="${outerId}" name="${esc(o.name)}" p:UUID="${uuid(n, 2)}" type="model">\n   <components>\n    <component p:path="${path}" objectid="${innerId}" p:UUID="${uuid(n, 3)}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n   </components>\n  </object>`,
     );
     const [tx, ty, tz] = placements[i];
     items.push(

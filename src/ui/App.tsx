@@ -3,7 +3,7 @@ import { importFiles, redo, scheduleSuggestion, togglePreview, undo } from '../s
 import { get, set, useStore } from '../state/store';
 import { CameraPanel, CutPanel, FilePanel, PartsPanel, SlotPanel, StatusBar } from './Panels';
 import { ToolBar, ToolOptions, TOOLS } from './Toolbar';
-import { ViewportHost } from './ViewportHost';
+import { fitView, ViewportHost } from './ViewportHost';
 
 function useShortcuts() {
   useEffect(() => {
@@ -19,6 +19,11 @@ function useShortcuts() {
         return;
       }
       if (mod) return;
+      if (e.key === 'Home') {
+        e.preventDefault();
+        fitView();
+        return;
+      }
       if (e.code === 'Space') {
         e.preventDefault();
         togglePreview();
@@ -70,7 +75,7 @@ export function App() {
         <ToolOptions />
         <div className="viewport-area">
           <ViewportHost />
-          <ToolBar />
+          <ToolBar onFit={fitView} />
           <StatusBar />
         </div>
       </main>

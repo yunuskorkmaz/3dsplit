@@ -95,13 +95,20 @@ export class Viewport {
     // sol: boşlukta döndür (model üstünde araç), sağ: her yerde döndür,
     // orta veya Ctrl/Cmd+sağ: kaydır, tekerlek: yakınlaştır
     this.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
-    this.controls.addEventListener('change', () => this.requestRender());
+    this.controls.addEventListener('change', () => {
+      this.updateClipping();
+      this.requestRender();
+    });
 
     const el = this.renderer.domElement;
     el.addEventListener('pointerdown', this.onPointerDown, { capture: true });
     el.addEventListener('pointermove', this.onPointerMove);
     el.addEventListener('pointerup', this.onPointerUp);
     el.addEventListener('contextmenu', (e) => e.preventDefault());
+    // boşluğa çift tık: görünümü sığdır
+    el.addEventListener('dblclick', (e) => {
+      if (!this.pick(e)) this.fitView();
+    });
     // bağlam düşerse varsayılan davranışı engelle ki tarayıcı geri getirebilsin
     el.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
@@ -265,19 +272,37 @@ export class Viewport {
     this.recolor(partId, colors, tris);
   }
 
+  /** Görünür parçaları ekrana sığdırır; kamera sınırlarını modelin boyutuna göre ayarlar. */
   fitView(): void {
     const box = new THREE.Box3();
     for (const p of this.parts.values()) if (p.mesh.visible) box.expandByObject(p.mesh);
+    if (box.isEmpty()) for (const p of this.parts.values()) box.expandByObject(p.mesh);
     if (box.isEmpty()) return;
     const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3()).length();
+    const size = box.getSize(new THREE.Vector3()).length() || 1;
+    this.sceneSize = size;
+    // kamera modelin içine girmesin ve çizim mesafesinin dışına çıkmasın (model "kaybolmasın")
+    this.controls.minDistance = size * 0.02;
+    this.controls.maxDistance = size * 10;
     this.controls.target.copy(center);
     this.camera.position.copy(center).add(new THREE.Vector3(0, -1, 0.6).normalize().multiplyScalar(size * 1.4));
-    this.camera.near = size / 1000;
-    this.camera.far = size * 20;
-    this.camera.updateProjectionMatrix();
     this.controls.update();
+    this.updateClipping();
     this.requestRender();
+  }
+
+  private sceneSize = 100;
+
+  /** Yakın/uzak kesme düzlemleri kamera uzaklığına göre: yakında ayrıntı kırpılmaz, uzakta model kesilmez. */
+  private updateClipping(): void {
+    const dist = this.camera.position.distanceTo(this.controls.target);
+    const near = Math.max(this.sceneSize / 10000, dist / 500);
+    const far = dist + this.sceneSize * 20;
+    if (Math.abs(this.camera.near - near) / near > 0.05 || this.camera.far !== far) {
+      this.camera.near = near;
+      this.camera.far = far;
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   /** Önizleme (Space): tapa hacimleri/kapaklar yarı saydam, pimler mavi. */

@@ -21,7 +21,7 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
 ];
 
 /** Viewport'un solundaki dikey araç çubuğu. */
-export function ToolBar() {
+export function ToolBar({ onFit }: { onFit: () => void }) {
   const tool = useStore((s) => s.tool);
   return (
     <div className="toolbar">
@@ -37,6 +37,10 @@ export function ToolBar() {
           <span className="key">{t.key}</span>
         </button>
       ))}
+      <button type="button" className="fit" onClick={onFit} title="Görünümü sığdır (Home veya boşluğa çift tık) — model kaybolursa geri getirir">
+        <span className="icon">⤢</span>
+        <span className="key">Home</span>
+      </button>
     </div>
   );
 }

@@ -75,3 +75,4 @@ main .tool-options { position: relative; min-height: 44px; display: flex; align-
 .suggestion { background: #2f6fd633; border: 1px solid #2f6fd6; border-radius: 4px; padding: 6px 8px; margin: 6px 0; font-size: 12px; }
 .suggestion.ok { background: #2e9e5b22; border-color: #2e9e5b; }
 .suggestion button { margin-left: 6px; padding: 1px 8px; }
+.toolbar button.fit { margin-top: 10px; }

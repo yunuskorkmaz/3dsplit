@@ -19,7 +19,14 @@ export interface RepairReport {
  * üçgen silme, yönelim düzeltme, delik kapama. Manifold garantisi vermez;
  * sonuç yine de kernel'de doğrulanmalı.
  */
-export function repairMesh(positions: Float32Array, indices?: Uint32Array): { mesh: MeshData; report: RepairReport } {
+/**
+ * `source`: çıktıdaki her üçgenin girdideki üçgen numarası (delik kapağı -1).
+ * Üçgen başına veriyi (ör. içe aktarılan boya) onarımdan geçirmek için.
+ */
+export function repairMesh(
+  positions: Float32Array,
+  indices?: Uint32Array,
+): { mesh: MeshData; report: RepairReport; source: Int32Array } {
   const inputTriangles = (indices ? indices.length : positions.length / 3) / 3;
   const welded = weldVertices(positions, indices);
   const cleaned = removeBadTriangles(welded);
@@ -28,10 +35,14 @@ export function repairMesh(positions: Float32Array, indices?: Uint32Array): { me
   const oriented = orientConsistently(cleaned.mesh, adj0);
   const filled = fillHoles(oriented.mesh, adj0);
   const adj = filled.holes ? buildAdjacency(filled.mesh) : adj0;
+  // yönelim sırayı değiştirmez; delik kapakları sona eklenir
+  const source = new Int32Array(filled.mesh.indices.length / 3).fill(-1);
+  source.set(cleaned.source);
   let nonManifoldEdges = 0;
   for (let i = 0; i < adj.length; i++) if (adj[i] === NON_MANIFOLD) nonManifoldEdges++;
   return {
     mesh: filled.mesh,
+    source,
     report: {
       inputTriangles,
       outputTriangles: filled.mesh.indices.length / 3,
@@ -44,10 +55,11 @@ export function repairMesh(positions: Float32Array, indices?: Uint32Array): { me
   };
 }
 
-function removeBadTriangles(mesh: MeshData): { mesh: MeshData; degenerate: number; duplicate: number } {
+function removeBadTriangles(mesh: MeshData): { mesh: MeshData; degenerate: number; duplicate: number; source: Int32Array } {
   const { positions: p, indices: idx } = mesh;
   const triCount = idx.length / 3;
   const keep = new Uint32Array(idx.length);
+  const source = new Int32Array(triCount);
   let kept = 0;
   const seen = new IntTripleTable(triCount);
   let degenerate = 0;
@@ -82,11 +94,12 @@ function removeBadTriangles(mesh: MeshData): { mesh: MeshData; degenerate: numbe
       duplicate++;
       continue;
     }
+    source[kept / 3] = t;
     keep[kept++] = a;
     keep[kept++] = b;
     keep[kept++] = c;
   }
-  return { mesh: { positions: p, indices: keep.slice(0, kept) }, degenerate, duplicate };
+  return { mesh: { positions: p, indices: keep.slice(0, kept) }, degenerate, duplicate, source: source.slice(0, kept / 3) };
 }
 
 function edgeDirection(idx: Uint32Array, t: number, a: number, b: number): number {

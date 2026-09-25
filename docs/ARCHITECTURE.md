@@ -74,7 +74,7 @@ Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan at
 
 ## Onarım (`src/core/repair.ts`)
 
-Köşe kaynaştırma → dejenere ve tekrarlı üçgen silme → yönelimi BFS ile eşitleme, bileşeni dışa baktırma → açık halkaları merkezden yelpazeyle kapama → manifold doğrulaması. Doğrulamadan geçmeyen parça `!` rozetiyle işaretlenir; boyanabilir ama kesim başarısız olabilir.
+Köşe kaynaştırma → dejenere ve tekrarlı üçgen silme → yönelimi BFS ile eşitleme, bileşeni dışa baktırma → açık halkaları merkezden yelpazeyle kapama → manifold doğrulaması. Doğrulamadan geçmezse voxel yedek onarım (`src/core/voxelRepair.ts`) devreye girer: yüzey ızgaraya işlenir, kapama yarıçapı (1–16 voksel) iç hacim oluşana kadar büyütülerek delikler kapatılır, dışarı taşırılıp içerisi bulunur; yüzeye yakın noktalarda uzaklık ve işaret en yakın orijinal üçgenden (mevcut yüzey korunur), delik bölgesinde voksel alanından alınır. `levelSet` ile kapalı yüzey çıkarılır, voksel yarısı kadar sapmayla sadeleştirilir, etiketler en yakın eski üçgenden aktarılır. Bu da başarısız olursa parça `!` rozetiyle işaretlenir.
 
 ## Performans
 

@@ -5,11 +5,14 @@ import type { Manifold } from 'manifold-3d';
 import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from '../core/kernel';
 import { refineMesh } from '../core/refine';
 import { type RepairReport, repairMesh } from '../core/repair';
+import { voxelRepair } from '../core/voxelRepair';
 import { BASE_SLOT, type LabeledMesh } from '../core/types';
 
 export interface PreparedMesh {
   mesh: LabeledMesh;
   report: RepairReport;
+  /** Temel onarım yetmediyse voxel onarım uygulandı (A2). */
+  voxel?: { voxelSize: number; closedGap: number };
   /** Kernel doğrulamasından geçti mi (kesim için gerekli). */
   manifold: boolean;
   error?: string;
@@ -58,12 +61,17 @@ const api = {
       man.delete();
       result = { mesh: canonical, report, manifold: true };
     } catch (e) {
-      result = {
-        mesh: { ...mesh, labels: mapped },
-        report,
-        manifold: false,
-        error: e instanceof KernelError ? e.message : String(e),
-      };
+      const error = e instanceof KernelError ? e.message : String(e);
+      // A2: temel onarım yetmedi, voxel yedek onarım
+      try {
+        const v = voxelRepair({ ...mesh, labels: mapped });
+        const man = toManifold(v.mesh, v.mesh.labels);
+        const canonical = fromManifold(man, BASE_SLOT);
+        man.delete();
+        result = { mesh: canonical, report, manifold: true, voxel: { voxelSize: v.voxelSize, closedGap: v.closedGap } };
+      } catch {
+        result = { mesh: { ...mesh, labels: mapped }, report, manifold: false, error };
+      }
     }
     return Comlink.transfer(result, buffersOf([result.mesh]));
   },
@@ -88,6 +96,16 @@ const api = {
   async suggest(mesh: LabeledMesh, slot: number) {
     await ready;
     return suggestCutMode(mesh, slot);
+  },
+
+  /** Elle voxel onarım (A2): her mesh'i kapalı yapar, ayrıntı voksel boyutu kadar kaybolur. */
+  async voxel(mesh: LabeledMesh, resolution: number) {
+    await ready;
+    const v = voxelRepair(mesh, resolution);
+    const man = toManifold(v.mesh, v.mesh.labels);
+    const out = fromManifold(man, BASE_SLOT);
+    man.delete();
+    return Comlink.transfer({ mesh: out, voxelSize: v.voxelSize, closedGap: v.closedGap }, buffersOf([out]));
   },
 
   async refine(mesh: LabeledMesh, edgeLength: number) {

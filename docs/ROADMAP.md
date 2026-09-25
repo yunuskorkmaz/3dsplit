@@ -28,7 +28,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | B7 | X-ray boyama: arkadaki yüzleri de boya | Faz 3 | [x] |
 | X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği | [x] |
 | X25 | Hata: yumuşatırken model yine kayboldu. Çekirdek 4500 rastgele darbede sağlam çıktı; kamera sınırsız yakınlaşıp modelin içine / uzak düzlemin ötesine gidebiliyordu. Kamera mesafe sınırı + dinamik kesme düzlemleri, Sığdır (Home, boşluğa çift tık), yumuşatmada geçersiz konum güvenlik ağı | Kullanıcı bildirdi | [x] |
-| A2 | Voxel yedek onarım (kapanmayan mesh için) | A2'nin eksiği | [ ] |
+| A2 | Voxel yedek onarım (kapanmayan mesh için) | A2'nin eksiği | [x] |
 | E2 | Kısayolları özelleştirme | Faz 3 | [ ] |
 | C7 | Socket: tam yüzey / sadece iç kısım seçeneği | Faz 3 | [ ] |
 | C6 | Socket: Ring Selection | Faz 3 | [ ] |
@@ -75,7 +75,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | # | Özellik | Faz | Durum | Not |
 | --- | --- | --- | --- | --- |
 | A1 | İçe aktarma: STL, OBJ, 3MF | 1 | [x] | 3MF: kendi okuyucu (Bambu/Orca bileşenleri, `paint_color` / `mmu_segmentation` boyası slotlara, filament renkleri) |
-| A2 | Otomatik onarım | 1 | [~] | Kaynaştırma, dejenere/tekrar silme, yönelim, delik kapama var. Voxel yedek onarım yok |
+| A2 | Otomatik onarım | 1 | [x] | Kaynaştırma, dejenere/tekrar silme, yönelim, delik kapama; kapanmazsa otomatik voxel onarım; elle "Voxel onar" |
 | A3 | Dışa aktarma: parça STL, çok nesneli 3MF, ZIP | 1 | [x] | "3MF": Bambu/Orca için renk başına filament numarası, plakaya dizili (Bambu Studio 2.8 CLI ile doğrulandı). Renkler dosyaya yazılamıyor, eşleme mesajla gösterilir. "3MF (genel)": düz |
 | A4 | Proje kaydetme | 2 | [x] | `.3dsplit` (zip: project.json + ikili mesh); İçe aktar ile açılır. Undo geçmişi kaydedilmez |
 
@@ -170,3 +170,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | C11: snap pim | `ba96195` |
 | 2026-09-25 | E1: kamera düzeni, ters yakınlaştırma | `52a2667` |
 | 2026-09-25 | B7: X-ray boyama | `6da26d6` |
+| 2026-09-25 | X9, X25: boyalı 3MF, kamera sınırları | `7e6ceb0` |

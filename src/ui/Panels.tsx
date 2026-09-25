@@ -18,6 +18,7 @@ import {
   setSocketDirection,
   selectPart,
   splitSelected,
+  voxelRepairSelected,
   togglePreview,
   toggleVisible,
   undo,
@@ -136,6 +137,13 @@ export function PartsPanel() {
       <div className="row">
         <button type="button" onClick={splitSelected} title="Kopuk parçaları ayrı nesnelere böl">
           Split
+        </button>
+        <button
+          type="button"
+          onClick={() => voxelRepairSelected()}
+          title="Bozuk (! rozetli) parçayı voksel ızgarasıyla yeniden kurar: her zaman kapalı, ince ayrıntı biraz yumuşar"
+        >
+          Voxel onar
         </button>
       </div>
       <NumberField label="Kenar" value={refineEdge} min={0.1} max={5} step={0.05} unit="mm" onChange={(v) => set({ refineEdge: v })} />

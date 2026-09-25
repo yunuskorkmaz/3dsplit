@@ -55,6 +55,12 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
           r.filledHoles && `${r.filledHoles} delik kapatıldı`,
         ].filter(Boolean);
         if (fixes.length) notify('info', `${obj.name}: ${fixes.join(', ')}.`);
+        if (prepared.voxel) {
+          notify(
+            'warn',
+            `${obj.name}: mesh bozuk olduğu için voxel onarım yapıldı (voksel ${prepared.voxel.voxelSize.toFixed(2)} mm; ${prepared.voxel.closedGap.toFixed(1)} mm'den küçük delikler kapandı, ince ayrıntı yumuşamış olabilir).`,
+          );
+        }
         if (!prepared.manifold) {
           notify('warn', `${obj.name}: onarım sonrası mesh kapalı değil, kesim çalışmayabilir. ${prepared.error ?? ''}`);
         }
@@ -826,6 +832,20 @@ export async function refineSelected(): Promise<void> {
     set({ parts: after, preview: null });
     pushHistory({ kind: 'parts', before, after });
     notify('info', `${part.name}: ${part.mesh.labels.length} → ${mesh.labels.length} üçgen.`);
+  });
+}
+
+/** A2: seçili parçayı voxel onarımla kapalı hale getirir (bozuk / "!" rozetli parçalar için). */
+export async function voxelRepairSelected(resolution = 200): Promise<void> {
+  const part = selectedPart();
+  if (!part) return notify('warn', 'Önce bir parça seçin.');
+  await busy('Voxel onarım…', async () => {
+    const r = await geometry.voxel(part.mesh, resolution);
+    const before = get().parts;
+    const after = before.map((p) => (p.id === part.id ? { ...p, mesh: r.mesh, manifold: true } : p));
+    set({ parts: after, preview: null });
+    pushHistory({ kind: 'parts', before, after });
+    notify('info', `${part.name}: voxel onarım (voksel ${r.voxelSize.toFixed(2)} mm), ${r.mesh.labels.length} üçgen.`);
   });
 }
 

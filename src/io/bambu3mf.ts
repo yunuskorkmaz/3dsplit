@@ -1,6 +1,7 @@
 import { strToU8, zipSync } from 'fflate';
 import { boundingBox } from '../core/geometry';
 import type { ExportObject } from './exportFile';
+import { arrangeOnPlate, minFootprint } from './layout';
 
 /**
  * Bambu Studio / OrcaSlicer'da parça başına filament atamasıyla açılan 3MF (A3).
@@ -19,7 +20,13 @@ import type { ExportObject } from './exportFile';
  */
 export function write3mfBambu(
   objects: ExportObject[],
-  opts: { title?: string; bedSize?: number; gap?: number } = {},
+  opts: {
+    title?: string;
+    bedSize?: number;
+    gap?: number;
+    /** Yerleştirme sonucu: parçalar plakaya sığdı mı. */
+    onLayout?: (r: { fits: boolean }) => void;
+  } = {},
 ): Uint8Array {
   const esc = (s: string) => s.replace(/[<>&"']/g, (c) => `&#${c.charCodeAt(0)};`);
   const bed = opts.bedSize ?? 256;
@@ -28,30 +35,14 @@ export function write3mfBambu(
   const colors = filamentColors(objects);
   const filamentOf = objects.map((o) => colors.indexOf(o.color.toUpperCase()) + 1);
 
-  // plakaya dizme: satır satır, taban z=0, plakanın ortasına hizalı
+  // X46: plakaya dizme: en küçük izdüşüm için Z dönüşü + raf yerleştirme, taban z=0
   const boxes = objects.map((o) => boundingBox(o.mesh.positions));
-  const placements: [number, number, number][] = [];
-  let x = 0;
-  let y = 0;
-  let rowH = 0;
-  let maxW = 0;
-  const rowWidth = bed * 0.9;
-  for (const b of boxes) {
-    const w = b.max[0] - b.min[0];
-    const h = b.max[1] - b.min[1];
-    if (x > 0 && x + w > rowWidth) {
-      x = 0;
-      y += rowH + gap;
-      rowH = 0;
-    }
-    placements.push([x - b.min[0], y - b.min[1], -b.min[2]]);
-    x += w + gap;
-    maxW = Math.max(maxW, x - gap);
-    rowH = Math.max(rowH, h);
-  }
-  const totalH = y + rowH;
-  const ox = (bed - maxW) / 2;
-  const oy = (bed - totalH) / 2;
+  const { placements, fits } = arrangeOnPlate(
+    objects.map((o) => minFootprint(o.mesh.positions)),
+    bed,
+    gap,
+  );
+  opts.onLayout?.({ fits });
 
   const uuid = (a: number, b: number) =>
     `${a.toString(16).padStart(8, '0')}-${b.toString(16).padStart(4, '0')}-4000-8000-${(a * 7919 + b).toString(16).padStart(12, '0')}`;
@@ -89,9 +80,12 @@ export function write3mfBambu(
     objectXml.push(
       `  <object id="${outerId}" name="${esc(o.name)}" p:UUID="${uuid(n, 2)}" type="model">\n   <components>\n    <component p:path="${path}" objectid="${innerId}" p:UUID="${uuid(n, 3)}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n   </components>\n  </object>`,
     );
-    const [tx, ty, tz] = placements[i];
+    const { angle, offset } = placements[i];
+    const c = Math.cos(angle);
+    const sn = Math.sin(angle);
+    const tz = -boxes[i].min[2];
     items.push(
-      `  <item objectid="${outerId}" p:UUID="${uuid(n, 4)}" transform="1 0 0 0 1 0 0 0 1 ${fmt(tx + ox)} ${fmt(ty + oy)} ${fmt(tz)}" printable="1"/>`,
+      `  <item objectid="${outerId}" p:UUID="${uuid(n, 4)}" transform="${fmt(c)} ${fmt(sn)} 0 ${fmt(-sn)} ${fmt(c)} 0 0 0 1 ${fmt(offset[0])} ${fmt(offset[1])} ${fmt(tz)}" printable="1"/>`,
     );
     const name = esc(o.name);
     configObjects.push(

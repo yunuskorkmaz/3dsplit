@@ -36,7 +36,7 @@ Kaynak: benzer projeler taraması (OrcaSlicer/BambuStudio `CutUtils.cpp`, PrintS
 | X43 | Uçtan uca test: çizgi aracı, tolerans deneme parçası, yardım ve görünürlük akışı | Yeni araçların arayüz testi yoktu | [x] |
 | X44 | Çizgi aracında ayna: ayna açıksa karşı tarafta da aynı halka boyanır | Göz, yanak gibi çift bölgeler | [x] |
 | X45 | Keys: uzun/yassı kesitte birden fazla otomatik pim (kesitin uzun ekseni boyunca) | Tek pim uzun kesitte dönmeye izin veriyor | [x] |
-| X46 | Dışa aktarmada parçaları plakaya alan verimli yerleştirme (satır paketleme yerine raf/kutu paketleme, parçalar arası boşluk ayarı) | Çok parçalı figürlerde plaka taşması | [ ] |
+| X46 | Dışa aktarmada parçaları plakaya alan verimli yerleştirme (satır paketleme yerine raf/kutu paketleme, parçalar arası boşluk ayarı) | Çok parçalı figürlerde plaka taşması | [x] |
 
 Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un köşe eşiği ince üçgen oluşumunu zaten önlüyor), CGAL SDF segmentasyonu (lisans, boyut), three-bvh-csg (kapalı çıktı garanti etmiyor).
 
@@ -217,5 +217,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | X42: yumuşatma fırçasında yüzeyde yayılan aday üçgenler | `8709fae` |
 | 2026-09-25 | X43: uçtan uca test: çizgi aracı, deneme parçası, ayrık görünüm | `723e41f` |
 | 2026-09-25 | X44: çizgi aracında ayna | `b43441e` |
+| 2026-09-25 | X45: uzun kesitte birden fazla otomatik pim | `5a1b674` |
 
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |

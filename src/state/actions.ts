@@ -206,7 +206,20 @@ export function export3mf(): void {
   const objs = exportObjects();
   if (!objs.length) return notify('warn', 'Dışa aktarılacak görünür parça yok.');
   const title = get().parts.find((p) => p.badge !== 'source')?.name ?? 'parts';
-  downloadBytes(write3mfBambu(objs, { title }), `${title}.3mf`, 'model/3mf');
+  downloadBytes(
+    write3mfBambu(objs, {
+      title,
+      onLayout: ({ fits }) => {
+        if (!fits)
+          notify(
+            'warn',
+            "Parçalar 256 mm plakaya sığmadı; slicer'da birden fazla plakaya dağıtın.",
+          );
+      },
+    }),
+    `${title}.3mf`,
+    'model/3mf',
+  );
   // renkler dosyaya yazılamıyor (bkz. bambu3mf.ts): eşlemeyi kullanıcıya göster
   const slots = get().slots;
   const mapping = filamentColors(objs).map((c, i) => {

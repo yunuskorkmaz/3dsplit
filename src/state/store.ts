@@ -97,6 +97,8 @@ export interface AppState {
   /** Socket yön gizmosu açık mı. */
   directionGizmo: boolean;
   preview: CutPreview | null;
+  /** D5: son kesim hatasının sorunlu sınır halkaları (kırmızı gösterilir). */
+  errorLoops: Vec3[][] | null;
   /** X5: aktif slot bölgesi için kesim modu önerisi. */
   suggestion: CutSuggestion | null;
   busy: string | null;
@@ -141,6 +143,7 @@ export const useStore = create<AppState>(() => ({
   directionGizmo: false,
   preview: null,
   suggestion: null,
+  errorLoops: null,
   busy: null,
   messages: [],
   paintVersion: 0,

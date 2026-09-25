@@ -226,7 +226,7 @@ function applyLabels(part: Part, tris: ArrayLike<number>, label: number): void {
     if (stroke && !stroke.before.has(t)) stroke.before.set(t, labels[t]);
     labels[t] = label;
   }
-  set((s) => ({ paintVersion: s.paintVersion + 1 }));
+  set((s) => ({ paintVersion: s.paintVersion + 1, errorLoops: null }));
   onLabelsChanged?.(part.id, tris);
 }
 
@@ -679,6 +679,12 @@ export async function runCut(): Promise<void> {
   const opts = cutOptions();
   await busy('Kesiliyor…', async () => {
     const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh));
+    if (!r.ok) {
+      set({ errorLoops: r.loops.length ? r.loops : null });
+      notify('error', r.loops.length ? `${r.error} Sorunlu sınır kırmızıyla gösterildi.` : r.error);
+      return;
+    }
+    set({ errorLoops: null });
     for (const w of r.warnings) notify('warn', w);
     const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Slot ${opts.slot}`;
     const newParts: Part[] = [

@@ -21,7 +21,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | --- | --- | --- | --- |
 | B8 | Mirror boyama: simetri düzlemi (X/Y/Z + konum), boyama araçları aynı anda karşı tarafa da uygulanır | Göz, kulak, kaş gibi çift özellikler | [x] |
 | X5 | Kesim modu önerisi: bölge kalınlığına göre Keys/Socket öner | Dokümandaki karar ağacı | [x] |
-| D5 | Kesim hatasında sorunlu bölgeyi göster | Hata mesajı nereye bakılacağını söylemiyor | [ ] |
+| D5 | Kesim hatasında sorunlu bölgeyi göster | Hata mesajı nereye bakılacağını söylemiyor | [x] |
 | C12 | Link all: kapalıyken her ada kendi ayarıyla (derinlik) | Aynı slotta farklı boyda bölgeler | [ ] |
 | C11 | Snap pim (yapıştırıcısız, esnek dilli) | Faz 2 kalanı | [ ] |
 | E1 | Kamera: ters yakınlaştırma, Blender tarzı (orta tuş döndür) seçeneği | Faz 1 kalanı | [ ] |
@@ -117,7 +117,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | D2 | Kaynak / yeni rozetleri | 1 | [x] | |
 | D3 | Split | 1 | [x] | |
 | D4 | Undo / redo | 2 | [x] | Boyama ve parça işlemleri |
-| D5 | Hata bildirimi | 2 | [~] | Mesajlar var; kesim başarısızsa durum değişmiyor. Hatalı bölgeyi gösterme yok |
+| D5 | Hata bildirimi | 2 | [x] | Kesim başarısızsa durum değişmez, sorunlu bölgenin sınırı kırmızı çizilir; hacimsiz sonuç da hata sayılır |
 
 ### E. Kullanım
 
@@ -164,3 +164,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X24: Worker manifold önbelleği | `4b2b740` |
 | 2026-09-25 | X8: Playwright smoke testi | `ac8bc4e` |
 | 2026-09-25 | B8: ayna boyama | `02b45c3` |
+| 2026-09-25 | X5: kesim modu önerisi | `25769a5` |

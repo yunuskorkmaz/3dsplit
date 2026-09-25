@@ -62,7 +62,14 @@ export interface CutPreview {
   warnings: string[];
 }
 
-export class CutError extends Error {}
+/** Kesim hatası. `loops`: sorunlu bölgenin sınır halkaları (arayüzde kırmızı gösterilir). */
+export class CutError extends Error {
+  loops?: Vec3[][];
+  constructor(message: string, loops?: Vec3[][]) {
+    super(message);
+    this.loops = loops;
+  }
+}
 
 /**
  * Modelin manifold'u (yüz kimliği = üçgen numarası). Worker aynı geometri
@@ -796,9 +803,30 @@ export function cutRegion(mesh: LabeledMesh, opts: CutOptions, model?: ModelProv
 
 function cutRegionImpl(mesh: LabeledMesh, opts: CutOptions): CutResult {
   const scope = new Scope();
-  const warnings: string[] = [];
   try {
+    const warnings: string[] = [];
     const islands = findIslands(mesh, opts.slot, warnings);
+    try {
+      const r = cutIslands(mesh, islands, opts, scope, warnings);
+      // hacimsiz parça (ör. yön bölgeye paralel) başarı sayılmaz
+      const parts = r.parts.filter((p) => Math.abs(signedVolume(p)) >= 1e-3);
+      if (parts.length < r.parts.length) r.warnings.push(`${r.parts.length - parts.length} hacimsiz parça atlandı.`);
+      if (!parts.length) throw new CutError('Kesim hacimli bir parça üretmedi (yön bölgeye paralel olabilir).');
+      return { ...r, parts };
+    } catch (e) {
+      // D5: hatanın hangi bölgede olduğunu göster
+      if (e instanceof CutError && !e.loops) {
+        e.loops = islands.flatMap((i) => i.loops.map((loop) => loop.map((v) => vertexAt(mesh.positions, v))));
+      }
+      throw e;
+    }
+  } finally {
+    scope.dispose();
+  }
+}
+
+function cutIslands(mesh: LabeledMesh, islands: Island[], opts: CutOptions, scope: Scope, warnings: string[]): CutResult {
+  {
     if (opts.mode === 'socket') return socketCut(mesh, islands, opts, scope, warnings);
 
     const split = capSplit(mesh, islands);
@@ -837,8 +865,6 @@ function cutRegionImpl(mesh: LabeledMesh, opts: CutOptions): CutResult {
       parts: parts.map((p) => partFrom(p, mesh.labels, opts.slot)),
       warnings,
     };
-  } finally {
-    scope.dispose();
   }
 }
 
@@ -934,7 +960,7 @@ function capSocketCutWith(mesh: LabeledMesh, islands: Island[], opts: CutOptions
       part = scope.keep(part.add(scope.keep(vol.intersect(model))));
       holes.push(growVolume(vol, dir, opts.clearance, scope));
     }
-    if (part.volume() <= 0) throw new CutError('Tapa hacmi boş çıktı.');
+    if (part.volume() < 1e-3) throw new CutError('Tapa hacmi boş çıktı.');
     parts.push(partFrom(part, mesh.labels, opts.slot));
   });
   const allHoles = holes.length === 1 ? holes[0] : scope.keep(kernel().Manifold.union(holes));

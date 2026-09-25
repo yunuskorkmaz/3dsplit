@@ -61,6 +61,7 @@ export class Viewport {
   private gizmo: TransformControls;
   private onDirectionChange: ((dir: Vec3) => void) | null = null;
   private mirrorPlane: THREE.Mesh | null = null;
+  private errorLines = new THREE.Group();
 
   constructor(
     private container: HTMLElement,
@@ -77,6 +78,7 @@ export class Viewport {
     this.camera.add(key);
     this.scene.add(this.camera);
     this.scene.add(this.overlay);
+    this.scene.add(this.errorLines);
 
     this.brushCursor = new THREE.Mesh(
       new THREE.RingGeometry(0.95, 1, 48),
@@ -358,6 +360,22 @@ export class Viewport {
       this.gizmo.size = 0.8;
     } else {
       this.gizmo.detach();
+    }
+    this.requestRender();
+  }
+
+  /** D5: kesim hatasında sorunlu sınır halkaları, her şeyin üstünde kırmızı. */
+  setErrorLoops(loops: Vec3[][] | null): void {
+    for (const c of [...this.errorLines.children]) {
+      this.errorLines.remove(c);
+      if (c instanceof THREE.Line) c.geometry.dispose();
+    }
+    const mat = new THREE.LineBasicMaterial({ color: '#ff3030', depthTest: false });
+    for (const loop of loops ?? []) {
+      const g = new THREE.BufferGeometry().setFromPoints(loop.map((p) => new THREE.Vector3(...p)));
+      const line = new THREE.LineLoop(g, mat);
+      line.renderOrder = 7;
+      this.errorLines.add(line);
     }
     this.requestRender();
   }

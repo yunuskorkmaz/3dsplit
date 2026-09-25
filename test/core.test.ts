@@ -208,6 +208,22 @@ describe('kesim', () => {
     expect(edge.warnings.some((w) => w.includes('ince'))).toBe(true);
   });
 
+  it('kesim hatası sorunlu bölgenin sınır halkasını taşır', async () => {
+    const { CutError } = await import('../src/core/cut');
+    // yan yüz, yan yüze paralel yönde socket: hacim üretilemez
+    const side = labelWhere(cube, 1, (x) => x > 9.99);
+    let err: unknown;
+    try {
+      cutRegion(side, { ...baseOpts, mode: 'socket', direction: [0, 0, 1] });
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(CutError);
+    const loops = (err as InstanceType<typeof CutError>).loops ?? [];
+    expect(loops.length).toBe(1);
+    expect(loops[0].every((p) => Math.abs(p[0] - 10) < 1e-3)).toBe(true);
+  });
+
   it('boş slot hata verir', () => {
     expect(() => cutRegion(capRegion, { ...baseOpts, slot: 5 })).toThrow();
   });

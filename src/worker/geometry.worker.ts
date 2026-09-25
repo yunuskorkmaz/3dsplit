@@ -1,6 +1,6 @@
 import * as Comlink from 'comlink';
 import wasmUrl from 'manifold-3d/manifold.wasm?url';
-import { type CutOptions, cutRegion, previewCut, splitComponents, suggestCutMode } from '../core/cut';
+import { CutError, type CutOptions, cutRegion, previewCut, splitComponents, suggestCutMode } from '../core/cut';
 import type { Manifold } from 'manifold-3d';
 import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from '../core/kernel';
 import { refineMesh } from '../core/refine';
@@ -64,10 +64,16 @@ const api = {
     return Comlink.transfer(result, buffersOf([result.mesh]));
   },
 
+  /** Kesim hatası Error olarak değil veri olarak döner: Comlink hata nesnesinin ek alanlarını (sorunlu halkalar) taşımıyor. */
   async cut(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {
     await ready;
-    const r = cutRegion(mesh, opts, modelProvider(mesh, geomKey));
-    return Comlink.transfer(r, buffersOf([r.body, ...r.parts]));
+    try {
+      const r = cutRegion(mesh, opts, modelProvider(mesh, geomKey));
+      return Comlink.transfer({ ok: true as const, ...r }, buffersOf([r.body, ...r.parts]));
+    } catch (e) {
+      if (e instanceof CutError) return { ok: false as const, error: e.message, loops: e.loops ?? [] };
+      throw e;
+    }
   },
 
   async preview(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {

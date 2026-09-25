@@ -225,6 +225,12 @@ export function ViewportHost() {
     vp.showDirection(frame?.center ?? null, direction ?? frame?.normal ?? [0, 0, 1], directionGizmo, (d) => setSocketDirection(d));
   }, [cutMode, direction, directionGizmo, preview, activeSlot, selectedPartId, paintVersion, tool, pins, selectedPin]);
 
+  // D5: kesim hatasının sorunlu halkaları
+  const errorLoops = useStore((s) => s.errorLoops);
+  useEffect(() => {
+    vpRef.current?.setErrorLoops(errorLoops);
+  }, [errorLoops]);
+
   // ayna düzlemi
   const mirror = useStore((s) => s.mirror);
   useEffect(() => {

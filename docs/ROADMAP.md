@@ -29,7 +29,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X9 | Boyalı 3MF içe aktarma (Bambu/Orca `paint_color`) | A1'in eksiği | [x] |
 | X25 | Hata: yumuşatırken model yine kayboldu. Çekirdek 4500 rastgele darbede sağlam çıktı; kamera sınırsız yakınlaşıp modelin içine / uzak düzlemin ötesine gidebiliyordu. Kamera mesafe sınırı + dinamik kesme düzlemleri, Sığdır (Home, boşluğa çift tık), yumuşatmada geçersiz konum güvenlik ağı | Kullanıcı bildirdi | [x] |
 | A2 | Voxel yedek onarım (kapanmayan mesh için) | A2'nin eksiği | [x] |
-| E2 | Kısayolları özelleştirme | Faz 3 | [ ] |
+| E2 | Kısayolları özelleştirme | Faz 3 | [x] |
 | C7 | Socket: tam yüzey / sadece iç kısım seçeneği | Faz 3 | [ ] |
 | C6 | Socket: Ring Selection | Faz 3 | [ ] |
 | B9 | Auto-paint: açılışta özellik önerisi | Faz 3 | [ ] |
@@ -125,7 +125,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | # | Özellik | Faz | Durum | Not |
 | --- | --- | --- | --- | --- |
 | E1 | Kamera modları | 1 | [x] | Varsayılan (sağ döndür, orta kaydır) ve Blender (orta döndür, Shift+orta kaydır); ters yakınlaştırma; tarayıcıda hatırlanır |
-| E2 | Özelleştirilebilir kısayollar | 3 | [~] | Sabit kısayollar: F, B, E, S, G, P, 0–9, Space, [ ], Alt+tekerlek |
+| E2 | Özelleştirilebilir kısayollar | 3 | [x] | Sol panelde Kısayollar: araçlar, önizleme, sığdır, fırça boyu; çakışmada yer değiştirir, tarayıcıda hatırlanır. Sabit: Ctrl/Cmd+Z, 0–9, Alt+tekerlek |
 
 ## Sonraki sprintler için bekleyen ek işler
 
@@ -171,3 +171,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | E1: kamera düzeni, ters yakınlaştırma | `52a2667` |
 | 2026-09-25 | B7: X-ray boyama | `6da26d6` |
 | 2026-09-25 | X9, X25: boyalı 3MF, kamera sınırları | `7e6ceb0` |
+| 2026-09-25 | A2: voxel yedek onarım | `bdf60b0` |

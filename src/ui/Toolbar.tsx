@@ -8,6 +8,7 @@ import {
   setSmartOptions,
   smoothActiveRegion,
 } from '../state/actions';
+import { useKeymap } from '../state/keymap';
 import { set, type Tool, useStore } from '../state/store';
 import { NumberField, Toggle } from './fields';
 
@@ -23,6 +24,7 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
 /** Viewport'un solundaki dikey araç çubuğu. */
 export function ToolBar({ onFit }: { onFit: () => void }) {
   const tool = useStore((s) => s.tool);
+  const keys = useKeymap((s) => s.map);
   return (
     <div className="toolbar">
       {TOOLS.map((t) => (
@@ -31,15 +33,15 @@ export function ToolBar({ onFit }: { onFit: () => void }) {
           type="button"
           className={tool === t.id ? 'active' : ''}
           onClick={() => set({ tool: t.id })}
-          title={`${t.label} (${t.key}) — ${t.hint}`}
+          title={`${t.label} (${keys[`tool.${t.id}`]}) — ${t.hint}`}
         >
           <span className="icon">{t.icon}</span>
-          <span className="key">{t.key}</span>
+          <span className="key">{keys[`tool.${t.id}`]}</span>
         </button>
       ))}
-      <button type="button" className="fit" onClick={onFit} title="Görünümü sığdır (Home veya boşluğa çift tık) — model kaybolursa geri getirir">
+      <button type="button" className="fit" onClick={onFit} title={`Görünümü sığdır (${keys.fit} veya boşluğa çift tık) — model kaybolursa geri getirir`}>
         <span className="icon">⤢</span>
-        <span className="key">Home</span>
+        <span className="key">{keys.fit}</span>
       </button>
     </div>
   );

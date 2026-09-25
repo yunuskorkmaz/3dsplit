@@ -1,0 +1,97 @@
+import { create } from 'zustand';
+
+/** Kısayol atanabilen komutlar (E2). Geri al/yinele (Ctrl/Cmd+Z) ve slot seçimi (0–9) sabittir. */
+export type Command =
+  | 'tool.smart'
+  | 'tool.brush'
+  | 'tool.erase'
+  | 'tool.smooth'
+  | 'tool.bucket'
+  | 'tool.pin'
+  | 'preview'
+  | 'fit'
+  | 'brush.smaller'
+  | 'brush.larger';
+
+export const COMMANDS: { id: Command; label: string }[] = [
+  { id: 'tool.smart', label: 'Smart Fill' },
+  { id: 'tool.brush', label: 'Fırça' },
+  { id: 'tool.erase', label: 'Silgi' },
+  { id: 'tool.smooth', label: 'Yumuşat' },
+  { id: 'tool.bucket', label: 'Kova' },
+  { id: 'tool.pin', label: 'Pim' },
+  { id: 'preview', label: 'Önizleme' },
+  { id: 'fit', label: 'Görünümü sığdır' },
+  { id: 'brush.smaller', label: 'Fırça küçült' },
+  { id: 'brush.larger', label: 'Fırça büyüt' },
+];
+
+export const DEFAULT_KEYMAP: Record<Command, string> = {
+  'tool.smart': 'F',
+  'tool.brush': 'B',
+  'tool.erase': 'E',
+  'tool.smooth': 'S',
+  'tool.bucket': 'G',
+  'tool.pin': 'P',
+  preview: 'Space',
+  fit: 'Home',
+  'brush.smaller': '[',
+  'brush.larger': ']',
+};
+
+/** Klavye olayının kısayol adı: tek karakterler büyük harf, boşluk "Space". */
+export function keyName(e: { key: string }): string {
+  if (e.key === ' ') return 'Space';
+  return e.key.length === 1 ? e.key.toUpperCase() : e.key;
+}
+
+/** Atanamayan tuşlar: sabit kısayollar ve değiştirici tuşlar. */
+export function isReservedKey(key: string): boolean {
+  return /^[0-9]$/.test(key) || ['Shift', 'Control', 'Alt', 'Meta', 'Escape', 'Tab', 'CapsLock'].includes(key);
+}
+
+/** Kısayol yakalama sırasında (Kısayollar panelinde "Değiştir") genel kısayollar susar. */
+export const shortcutCapture = { active: false };
+
+const STORAGE_KEY = '3dsplit.keymap';
+
+function load(): Record<Command, string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...DEFAULT_KEYMAP, ...JSON.parse(raw) };
+  } catch {
+    // depolama kapalı: varsayılan
+  }
+  return { ...DEFAULT_KEYMAP };
+}
+
+export const useKeymap = create<{ map: Record<Command, string> }>(() => ({ map: load() }));
+
+function save(map: Record<Command, string>): void {
+  useKeymap.setState({ map });
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // depolama kapalı: sadece bu oturum
+  }
+}
+
+/** Komuta tuş atar; tuş başka komuttaysa ikisi yer değiştirir. Değişen diğer komutu döndürür. */
+export function assignKey(command: Command, key: string): Command | null {
+  const map = { ...useKeymap.getState().map };
+  const other = (Object.keys(map) as Command[]).find((c) => c !== command && map[c] === key) ?? null;
+  if (other) map[other] = map[command];
+  map[command] = key;
+  save(map);
+  return other;
+}
+
+export function resetKeymap(): void {
+  save({ ...DEFAULT_KEYMAP });
+}
+
+/** Tuşun bağlı olduğu komut. */
+export function commandFor(key: string): Command | null {
+  const map = useKeymap.getState().map;
+  return (Object.keys(map) as Command[]).find((c) => map[c] === key) ?? null;
+}

@@ -76,3 +76,9 @@ main .tool-options { position: relative; min-height: 44px; display: flex; align-
 .suggestion.ok { background: #2e9e5b22; border-color: #2e9e5b; }
 .suggestion button { margin-left: 6px; padding: 1px 8px; }
 .toolbar button.fit { margin-top: 10px; }
+h3.collapsible { cursor: pointer; user-select: none; }
+ul.keymap { list-style: none; padding: 0; margin: 0 0 6px; }
+ul.keymap li { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+ul.keymap li span { flex: 1; }
+ul.keymap kbd { min-width: 44px; text-align: center; background: #2b2d31; border: 1px solid #44464d; border-radius: 3px; padding: 1px 6px; font-size: 11px; }
+ul.keymap button { padding: 1px 6px; font-size: 11px; }

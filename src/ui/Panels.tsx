@@ -253,7 +253,18 @@ export function CutPanel() {
       </div>
       <p className="hint">{MODES.find((m) => m.id === cut.mode)?.hint}</p>
       {cut.mode === 'socket' && (
-        <NumberField label="Derinlik" value={cut.depth} min={0.4} max={30} step={0.1} unit="mm" onChange={(v) => update({ depth: v })} />
+        <>
+          <NumberField label="Derinlik" value={cut.depth} min={0.4} max={30} step={0.1} unit="mm" onChange={(v) => update({ depth: v })} />
+          <NumberField
+            label="Squeeze"
+            value={Math.round(cut.squeeze * 100)}
+            min={0}
+            max={90}
+            step={5}
+            unit="%"
+            onChange={(v) => update({ squeeze: v / 100 })}
+          />
+        </>
       )}
       {cut.mode !== 'fast' && (
         <NumberField label="Clearance" value={cut.clearance} min={0} max={1} step={0.05} unit="mm" onChange={(v) => update({ clearance: v })} />

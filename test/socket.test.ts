@@ -38,6 +38,14 @@ describe('çıkıntı socket', () => {
     expect(r.body.labels.includes(1)).toBe(false);
   });
 
+  it('squeeze tapa tabanını daraltır (kesik piramit)', () => {
+    const r = cutRegion(boss, { ...opts, squeeze: 0.5 });
+    // daralma hacmin üstünden (yüzey + eps=1) tabana (-3) doğrusal: 6 -> 3 mm.
+    // Yüzey seviyesinde genişlik 6 - 3/4 = 5.25; gövdedeki kısım 3/3 * (5.25² + 9 + 5.25*3)
+    const a1 = 5.25 * 5.25;
+    expect(signedVolume(r.parts[0])).toBeCloseTo(144 + (a1 + 9 + Math.sqrt(a1 * 9)), 0);
+  });
+
   it('önizleme tapa prizmasını döndürür', () => {
     const p = previewCut(boss, opts);
     expect(p.volumes.length).toBe(1);

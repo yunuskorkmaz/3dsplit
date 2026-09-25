@@ -27,6 +27,8 @@ export interface CutSettings {
   mode: CutMode;
   depth: number;
   clearance: number;
+  /** Socket squeeze, 0..0.9 */
+  squeeze: number;
   pinShape: PinShape;
   pinRadius: number;
   pinLength: number;
@@ -89,6 +91,7 @@ export const useStore = create<AppState>(() => ({
     mode: 'socket',
     depth: 3,
     clearance: 0.2,
+    squeeze: 0,
     pinShape: 'cylinder',
     pinRadius: 2,
     pinLength: 8,

@@ -24,7 +24,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | X11 | Smart Fill yoğun mesh'te tüm modele yayılıyordu: ölçekli açı karşılaştırması, "sadece çukur kenarda dur" modu, seçimdeki küçük deliklerin kapanması, yayılma uyarısı | [x] |
 | X15 | Tırtıklı/kavisli sınırda kapak üretilemiyordu (kulak Keys, kaş Socket): izdüşümü kendini kesen halka yumuşatılıp gerekirse çembere eşlenerek üçgenlenir; pim kapağın alan merkezinde | [x] |
 | X12 | Socket çıkıntılarda (burun, göz) hızlı ve sağlam: kapakla ayır + kapak prizması tapa; bölge içi delikler kesime katılır; yedek yöntem sadece sorunlu üçgenlerde prizma | [x] |
-| C5 | Socket Squeeze: tapa tabanı içe daraltılır, yandan taşma önlenir | [ ] |
+| C5 | Socket Squeeze: tapa tabanı içe daraltılır, yandan taşma önlenir | [x] |
 | C4 | Socket yönü: önizlemede ok, gizmo ile döndürme; "kameradan al" ve "otomatik" | [ ] |
 | X3 | Pim düzenleme: pime tıklayıp silme, sürükleyip taşıma | [ ] |
 | A4 | Proje kaydetme / açma (`.3dsplit`): parçalar, etiketler, slotlar | [ ] |
@@ -62,7 +62,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | C2 | Fast | 1 | [x] | Sınır halkasından düz kapak; boolean yok |
 | C3 | Socket: Depth | 1 | [x] | Düz yamada süpürme, çıkıntıda kapak prizması (X12), alttan oyuk bölgede süpürme + prizma |
 | C4 | Socket: gizmo yönü | 2 | [ ] | Sprint 1 |
-| C5 | Socket: Squeeze | 2 | [ ] | Sprint 1 |
+| C5 | Socket: Squeeze | 2 | [x] | Taban yüzde olarak daralır; yedek (prizma) yolunda uygulanmaz |
 | C6 | Socket: Ring Selection | 3 | [ ] | |
 | C7 | Socket: full surface | 3 | [ ] | |
 | C8 | Keys: pim yerleştirme | 1 | [~] | Tıklayarak konuyor, kapak yüzeyine izdüşüyor. Taşıma/silme yok (X3), gizmo yok |
@@ -110,3 +110,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X1: fırça darbesi ara noktaları | `1c1247b` |
 | 2026-09-25 | X2: mesh inceltme | `4d01418` |
 | 2026-09-25 | X11, X12: yoğun mesh'te Smart Fill, çıkıntı socket'i | `bfb879b` |
+| 2026-09-25 | X15: kendini kesen kapak izdüşümleri, pim merkezi | `a2c5c3b` |

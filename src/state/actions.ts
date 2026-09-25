@@ -260,6 +260,7 @@ function cutOptions(): CutOptions {
     slot: activeSlot,
     depth: cut.mode === 'socket' ? cut.depth : 0,
     clearance: cut.clearance,
+    squeeze: cut.mode === 'socket' ? cut.squeeze : 0,
     pin: { shape: cut.pinShape, radius: cut.pinRadius, length: cut.pinLength, onPart: cut.pinOnPart },
     pinPoints: cut.mode === 'keys' ? pinPoints : undefined,
   };

@@ -32,7 +32,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | E2 | Kısayolları özelleştirme | Faz 3 | [x] |
 | C7 | Socket: tam yüzey / sadece iç kısım seçeneği | Faz 3 | [x] |
 | C6 | Socket: Ring Selection | Faz 3 | [ ] |
-| B9 | Auto-paint: açılışta özellik önerisi | Faz 3 | [ ] |
+| B9 | Auto-paint: açılışta özellik önerisi | Faz 3 | [x] |
 
 ## Sprint 2 — seçim kalitesi ve sonrası (bitti)
 
@@ -91,7 +91,7 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | B6 | Smooth sınır | 2 | [x] | Eğri tabanlı, alan koruyan (`src/core/smooth.ts`). Üçgenler kesilmez; sınır köşeleri eğriye kaydırılır |
 | B7 | Arka yüz / X-ray boyama | 3 | [x] | Fırça/Silgi seçeneği: model yarı saydam, küre içindeki tüm üçgenler |
 | B8 | Mirror boyama | 3 | [x] | Smart Fill, Fırça, Silgi, Kova, Yumuşat; düzlem X/Y/Z, konum varsayılan parçanın ortası |
-| B9 | Auto-paint | 3 | [ ] | |
+| B9 | Auto-paint | 3 | [x] | "Çıkıntıları öner": en tümsek noktalardan otomatik ölçekli Smart Fill, her çıkıntı yeni slota (testa: kulaklar, gözler, kaşlar, burun, ağız, çene) |
 
 ### C. Kesim
 
@@ -173,3 +173,4 @@ Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill 
 | 2026-09-25 | X9, X25: boyalı 3MF, kamera sınırları | `7e6ceb0` |
 | 2026-09-25 | A2: voxel yedek onarım | `bdf60b0` |
 | 2026-09-25 | E2: özelleştirilebilir kısayollar | `fae5279` |
+| 2026-09-25 | C7: Socket ayak payı | `8e00bd2` |

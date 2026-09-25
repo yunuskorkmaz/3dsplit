@@ -14,6 +14,7 @@ import {
   renamePart,
   runCut,
   activeIslands,
+  autoSuggestFeatures,
   saveProject,
   setSocketDirection,
   selectPart,
@@ -170,9 +171,14 @@ export function SlotPanel() {
           </li>
         ))}
       </ul>
-      <button type="button" onClick={addSlot}>
-        + Slot
-      </button>
+      <div className="row">
+        <button type="button" onClick={addSlot}>
+          + Slot
+        </button>
+        <button type="button" onClick={autoSuggestFeatures} title="Göz, burun, kaş, kulak gibi çıkıntıları bulup her birini yeni slota boyar (tek Ctrl+Z ile geri alınır)">
+          Çıkıntıları öner
+        </button>
+      </div>
     </section>
   );
 }

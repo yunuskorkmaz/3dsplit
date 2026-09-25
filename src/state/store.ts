@@ -202,8 +202,10 @@ export function dismiss(id: number): void {
   set((s) => ({ messages: s.messages.filter((m) => m.id !== id) }));
 }
 
+/** Slot rengi; tabanın grisi (paletin ilk rengi) boyalı slotlara verilmez, yoksa bölge görünmez. */
 export function nextSlotColor(index: number): string {
-  return DEFAULT_COLORS[index % DEFAULT_COLORS.length];
+  const palette = DEFAULT_COLORS.slice(1);
+  return palette[(Math.max(1, index) - 1) % palette.length];
 }
 
 let partCounter = 0;

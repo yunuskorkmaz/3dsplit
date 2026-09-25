@@ -9,6 +9,7 @@ import {
   refineToValley,
   type SmartFillOptions,
   smartFill,
+  suggestFeatures,
 } from '../core/paint';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { downloadBytes, type ExportObject, write3mf, writeStl, writeStlZip } from '../io/exportFile';
@@ -666,6 +667,42 @@ export function updatePin(index: number, patch: Partial<PinPlacement>): void {
 
 export function removePin(index: number): void {
   set((s) => ({ pins: s.pins.filter((_, i) => i !== index), selectedPin: -1, preview: null }));
+}
+
+// ---------- otomatik öneri (B9) ----------
+
+/**
+ * Seçili parçadaki çıkıntıları (göz, burun, kaş, kulak…) bulup her birini yeni
+ * bir slota boyar. Büyükten küçüğe boyanır; iç içe olanlarda (ağız çevresi ve
+ * burun) küçük olan üstte kalır. Önceden boyanmış yerlere dokunulmaz. Tek geri alma.
+ */
+export function autoSuggestFeatures(): void {
+  const part = selectedPart();
+  if (!part) return notify('warn', 'Önce bir parça seçin.');
+  const topo = topologyOf(part.mesh);
+  const concavity = concavityOf(part.mesh, topo.meanEdge * 3);
+  const found = suggestFeatures(topo.adj, topo.normals, topo.centroids, topo.areas, concavity, {
+    meanEdge: topo.meanEdge,
+    maxSeeds: 40,
+    spacing: Math.max(2, topo.meanEdge * 10),
+    areaRange: [0.0005, 0.15],
+  });
+  if (!found.length) return notify('info', 'Belirgin çıkıntı bulunamadı.');
+  const slots = [...get().slots];
+  let nextId = Math.max(...slots.map((s) => s.id)) + 1;
+  const labels = part.mesh.labels;
+  const ours = new Set<number>();
+  beginStroke(part.id);
+  for (const tris of found) {
+    const id = nextId++;
+    slots.push({ id, name: `Öneri ${ours.size + 1}`, color: nextSlotColor(id) });
+    ours.add(id);
+    const free = Array.from(tris).filter((t) => labels[t] === BASE_SLOT || ours.has(labels[t]));
+    applyLabels(part, free, id);
+  }
+  endStroke();
+  set({ slots });
+  notify('info', `${found.length} çıkıntı önerildi ve "Öneri" slotlarına boyandı. Beğenmediğini Silgi ile sil ya da Ctrl+Z ile geri al.`);
 }
 
 // ---------- slotlar ----------

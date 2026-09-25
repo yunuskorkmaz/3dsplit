@@ -51,6 +51,8 @@ Büyütme (clearance): `V`'nin yana 8 yönde ve `−d` yönünde clearance kadar
 
 **Kesim modu önerisi (X5, `suggestCutMode`).** En büyük adanın kesim halkası alanından eşdeğer yarıçap r, bölge + düz kapak hacminden ortalama çıkıntı yüksekliği h = hacim / kesit hesaplanır. r ≥ 4 mm ve h ≥ 0.8·r ise Keys (kulak, kol, kafa), değilse Socket (göz, kaş, burun). Boyama durulunca Worker'da hesaplanır, kesim panelinde "Uygula" ile seçilir.
 
+**Çıkıntı önerisi (B9, `suggestFeatures`).** İçbükeylik haritasının en düşük (en tümsek) noktaları birbirinden en az 10 kenar uzak tohum seçilir; her tohumdan otomatik ölçekli Smart Fill (çukurda dur) + vadiye oturtma çalışır. Taşan, alanı toplamın %0.05–%15'i dışında kalan veya öncekilerle %30'dan fazla örtüşen sonuçlar elenir. Büyükten küçüğe yeni slotlara boyanır; iç içe olanlarda küçük olan üstte kalır.
+
 ## Smart Fill (`src/core/paint.ts`)
 
 Tohum üçgenden BFS. Aday üçgenin normali, yolda `ölçek` mm geride kalan atasının normaliyle karşılaştırılır; komşu üçgen karşılaştırması yoğun mesh'te kıvrım birçok üçgene yayıldığı için eşiği hiç aşmıyor. "Sadece çukur kenarda dur" modunda eşiği aşan kıvrım, yerel kenar içbükeyse durdurur; tümsek tepelerinden geçilir (göz, kaş, burun gibi çıkıntılar tek tıkla seçilir). Ölçek otomatikte tıklanan özelliğe göre seçilir (X14): ortalama kenarın 3, 4, 6, 8, 12, 16 katı sırayla denenir; modelin %40'ından azını kaplayan ve sonraki iki ölçekten biriyle ±%25 benzer alan veren ilk ölçek alınır (testa.stl: göz/kaş/burun 1.3 mm, kulak 3.4 mm). Sonuçtaki küçük, aynı etiketli delikler kapatılır.

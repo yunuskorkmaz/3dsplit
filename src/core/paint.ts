@@ -548,3 +548,76 @@ export function cleanSelection(
   for (const t of closed.tris) out[t] = 1;
   return out;
 }
+
+export interface FeatureOptions {
+  /** Ortalama kenar uzunluğu (Smart Fill ölçeği bunun katları). */
+  meanEdge: number;
+  /** En çok aday tohum sayısı. */
+  maxSeeds: number;
+  /** Tohumlar arası en az uzaklık, mm. */
+  spacing: number;
+  /** Özellik alanı, toplam alanın oranı olarak [en az, en çok]. */
+  areaRange: [number, number];
+}
+
+/**
+ * B9: otomatik özellik önerisi. Modelin en tümsek noktaları (içbükeylik
+ * haritasının en düşük değerleri; burun ucu, göz ortası, kulak tepesi)
+ * birbirinden `spacing` uzak tohumlar olarak seçilir. Her tohumdan otomatik
+ * ölçekli Smart Fill (çukurda dur) çalıştırılır ve vadiye oturtulur; taşan,
+ * boyutu aralık dışında kalan veya daha önce bulunanla büyük ölçüde örtüşen
+ * sonuçlar elenir. Alana göre büyükten küçüğe döner.
+ */
+export function suggestFeatures(
+  adj: Int32Array,
+  normals: Float32Array,
+  centroids: Float32Array,
+  areas: Float32Array,
+  concavity: Float32Array,
+  opts: FeatureOptions,
+): Uint32Array[] {
+  const triCount = areas.length;
+  let total = 0;
+  for (let t = 0; t < triCount; t++) total += areas[t];
+  // en tümsekten başlayarak birbirinden uzak tohumlar
+  const order = Array.from({ length: triCount }, (_, t) => t).sort((a, b) => concavity[a] - concavity[b]);
+  const seeds: number[] = [];
+  const sp2 = opts.spacing * opts.spacing;
+  for (const t of order) {
+    if (seeds.length >= opts.maxSeeds || concavity[t] >= 0) break;
+    let far = true;
+    for (const s2 of seeds) {
+      if (dist2(centroids, s2, t) < sp2) {
+        far = false;
+        break;
+      }
+    }
+    if (far) seeds.push(t);
+  }
+  const taken = new Uint8Array(triCount);
+  const out: { tris: Uint32Array; area: number }[] = [];
+  for (const seed of seeds) {
+    if (taken[seed]) continue;
+    const r = chooseSmartScale(adj, normals, centroids, areas, seed, opts.meanEdge, { maxAngleDeg: 20, concaveOnly: true });
+    if (r.leaked) continue;
+    const mask = new Uint8Array(triCount);
+    for (const t of r.tris) mask[t] = 1;
+    const refined = refineToValley(adj, centroids, concavity, mask, r.scale * 2);
+    const clean = cleanSelection(adj, areas, refined, { keepSeed: seed });
+    const tris: number[] = [];
+    let area = 0;
+    let overlap = 0;
+    for (let t = 0; t < triCount; t++) {
+      if (!clean[t]) continue;
+      tris.push(t);
+      area += areas[t];
+      if (taken[t]) overlap += areas[t];
+    }
+    const frac = area / total;
+    if (!tris.length || frac < opts.areaRange[0] || frac > opts.areaRange[1] || overlap > area * 0.3) continue;
+    for (const t of tris) taken[t] = 1;
+    out.push({ tris: Uint32Array.from(tris), area });
+  }
+  out.sort((a, b) => b.area - a.area);
+  return out.map((o) => o.tris);
+}

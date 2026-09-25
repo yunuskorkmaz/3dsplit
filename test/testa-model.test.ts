@@ -98,3 +98,38 @@ describe.skipIf(!existsSync(FILE))('testa.stl kesim önerisi', () => {
     expect(check([56, 62, 82])).toBe('keys');
   }, 120000);
 });
+
+describe.skipIf(!existsSync(FILE))('testa.stl otomatik özellik önerisi', () => {
+  it('göz, kaş, burun ve kulakları bulur', async () => {
+    const { suggestFeatures, triangleConcavity } = await import('../src/core/paint');
+    await initKernel();
+    const buf = readFileSync(FILE);
+    const n = buf.readUInt32LE(80);
+    const pos = new Float32Array(n * 9);
+    for (let t = 0; t < n; t++) for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
+    const man = toManifold(repairMesh(pos).mesh);
+    const mesh = fromManifold(man, 0);
+    man.delete();
+    const adj = buildAdjacency(mesh);
+    const { normals, areas } = faceNormalsAndAreas(mesh);
+    const c = faceCentroids(mesh);
+    const edge = meanEdgeLength(mesh);
+    const conc = triangleConcavity(mesh, normals, areas, edge * 3);
+    const found = suggestFeatures(adj, normals, c, areas, conc, { meanEdge: edge, maxSeeds: 40, spacing: 4, areaRange: [0.0005, 0.15] });
+    const centers = found.map((tris) => {
+      let a = 0;
+      const p = [0, 0, 0];
+      for (const t of tris) {
+        a += areas[t];
+        for (let k = 0; k < 3; k++) p[k] += c[3 * t + k] * areas[t];
+      }
+      return p.map((x) => x / a);
+    });
+    const has = (q: number[], tol: number) => centers.some((p) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]) < tol);
+    expect(has([32, 14, 44], 3)).toBe(true); // göz
+    expect(has([58, 24, 48], 3)).toBe(true); // göz
+    expect(has([26, 19, 56], 4)).toBe(true); // kaş
+    expect(has([51, 3, 45], 4)).toBe(true); // burun
+    expect(has([56, 68, 74], 8)).toBe(true); // kulak
+  }, 120000);
+});

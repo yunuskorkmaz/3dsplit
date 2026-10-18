@@ -1,6 +1,8 @@
 # 3dsplit
 
-Boyanmış bölgeleri ayrı basılabilir parçalara bölen tarayıcı aracı (Audja Color Painter + Separate by Color benzeri). Her şey yerelde çalışır; dosya sunucuya gitmez.
+Boyanmış bölgeleri ayrı basılabilir parçalara bölen tarayıcı aracı (Audja Color Painter + Separate by Color benzeri). Her şey tarayıcıda çalışır; dosya sunucuya gitmez.
+
+Canlı: [yunuskorkmaz.github.io/3dsplit](https://yunuskorkmaz.github.io/3dsplit/)
 
 ## Çalıştırma
 

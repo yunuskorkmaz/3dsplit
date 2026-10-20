@@ -79,3 +79,20 @@ test('X58: yüzen sahne ve seçimin yeri', async ({ page }) => {
   await page.screenshot({ path: 'test-results/chrome-kabuk.png' });
   expect(errors).toEqual([]);
 });
+
+test('X66: meşgulken İptal görünür', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    (window as any).app.store.set({ busy: 'Kesiliyor…' });
+  });
+  const cancel = page.getByRole('button', { name: 'İptal' });
+  await expect(cancel).toBeVisible();
+  await cancel.click();
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    (window as any).app.store.set({ busy: null });
+  });
+  await expect(cancel).toHaveCount(0);
+});

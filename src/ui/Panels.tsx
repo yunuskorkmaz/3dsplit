@@ -25,6 +25,7 @@ import {
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
 import { type CutSettings, dismiss, set, setCameraPrefs, useStore } from '../state/store';
+import { cancelGeometry } from '../worker/client';
 import { NumberField } from './fields';
 import { Group, Panel } from './Panel';
 import { RingEditor } from './RingEditor';
@@ -740,7 +741,14 @@ export function StatusBar() {
   const messages = useStore((s) => s.messages);
   return (
     <div className="status">
-      {busy && <div className="msg busy">{busy}</div>}
+      {busy && (
+        <div className="msg busy">
+          {busy}
+          <button type="button" onClick={() => cancelGeometry()}>
+            İptal
+          </button>
+        </div>
+      )}
       {messages.map((m) => (
         <div key={m.id} className={`msg ${m.kind}`} onClick={() => dismiss(m.id)}>
           {m.text}

@@ -10,7 +10,7 @@ Ana akış: yükle ve onar → Smart Fill / fırça / çizgi / kova ile seç →
 
 ## Ne bitti
 
-A1–E2 (`docs/project-brief.md`) ve X1–X65 (`docs/ROADMAP.md`) uygulandı. Yeni iş **X66**. Kullanıcı istemeden özellik ekleme. Yeni işe başlamadan önce roadmap'e yaz; bitince `[x]` yap ve "Tamamlananlar günlüğü"ne tarih + commit ekle.
+A1–E2 (`docs/project-brief.md`) ve X1–X66 (`docs/ROADMAP.md`) uygulandı. Yeni iş **X67**. Kullanıcı istemeden özellik ekleme. Yeni işe başlamadan önce roadmap'e yaz; bitince `[x]` yap ve "Tamamlananlar günlüğü"ne tarih + commit ekle.
 
 Çelişirse şu sıra geçerlidir:
 

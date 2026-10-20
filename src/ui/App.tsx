@@ -16,6 +16,7 @@ import {
 } from '../state/actions';
 import { type Command, commandFor, keyName, shortcutCapture } from '../state/keymap';
 import { get, set, type Tool, useStore } from '../state/store';
+import { cancelGeometry } from '../worker/client';
 import { Header } from './Header';
 import { HelpDialog } from './HelpDialog';
 import { HistoryPanel } from './HistoryPanel';
@@ -72,6 +73,11 @@ function useShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (shortcutCapture.active) return;
+      if (e.key === 'Escape' && get().busy) {
+        e.preventDefault();
+        cancelGeometry();
+        return;
+      }
       if (e.key === 'Escape' && get().helpOpen) {
         set({ helpOpen: false });
         return;

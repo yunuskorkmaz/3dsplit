@@ -34,7 +34,7 @@ import {
 } from '../io/exportFile';
 import { importFile } from '../io/importFile';
 import { PROJECT_EXTENSION, readProject, writeProject } from '../io/project';
-import { geometry } from '../worker/client';
+import { GeometryAbort, geometry } from '../worker/client';
 import {
   get,
   type HistoryEntry,
@@ -1956,7 +1956,7 @@ async function busy(label: string, fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
   } catch (e) {
-    console.error(e);
+    if (!(e instanceof GeometryAbort)) console.error(e);
     notify('error', e instanceof Error ? e.message : String(e));
   } finally {
     set({ busy: null });

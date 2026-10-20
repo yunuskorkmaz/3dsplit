@@ -420,7 +420,19 @@ main {
   cursor: pointer;
 }
 .msg.busy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: #2f6fd6cc;
+  cursor: default;
+}
+.msg.busy button {
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: #1a3f86;
+  padding: 2px 8px;
+  cursor: pointer;
 }
 .msg.warn {
   background: #a07000dd;

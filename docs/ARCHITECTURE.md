@@ -20,7 +20,7 @@ src/io        STL/OBJ/3MF içe aktarma, STL/3MF/ZIP dışa aktarma
 **Kurallar**
 
 - `src/core` DOM, React veya Three.js'e bağlı değil. Node'da test edilir, Worker'da çalışır. Tauri'ye geçişte aynen taşınır.
-- Boyama ana thread'de, etiket dizisi üzerinde yerinde çalışır. Kesim, onarım ve bölme Worker'da çalışır.
+- Boyama ana thread'de, etiket dizisi üzerinde yerinde çalışır. Kesim, onarım ve bölme Worker'da çalışır. Uzun çağrı 120 saniyede bitmezse veya kullanıcı İptal / Esc derse worker kapatılıp yeniden kurulur; model ve geri alma yığını değişmez (X66).
 - Viewport React'ten bağımsız bir sınıftır (`Viewport`). React sadece `sync` ile parça listesini verir. Görüntü indekssizdir (üçgen başına renk). Köşe normali komşu yüzlerden gelir; aralarındaki açı 60°'yi geçerse kenar keskin kalır. Kesimle oluşan yüz (`cut`) heykel yüzeyiyle normal paylaşmaz. Üçgen sayısı bu gölgeden değişmez.
 
 ## Veri modeli

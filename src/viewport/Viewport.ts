@@ -653,7 +653,7 @@ export class Viewport {
     const w = el.clientWidth;
     const h = el.clientHeight;
     if (w >= 480 && h >= 320) {
-      const left = 240;
+      const left = 280;
       const right = 268;
       const top = 126;
       const bottom = 64;

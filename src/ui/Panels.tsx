@@ -107,7 +107,9 @@ export function PartsPanel() {
         {parts.map((p) => (
           <li
             key={p.id}
-            className={`${p.id === selected ? 'selected' : ''}${p.visible ? '' : ' hidden-part'}`}
+            className={`${p.id === selected ? 'selected' : ''}${p.visible ? '' : ' hidden-part'}${
+              p.badge !== 'source' && sizeWarning(sizes.get(p.id) ?? 0) ? ' size-warn' : ''
+            }`}
             onClick={() => selectPart(p.id)}
           >
             <button
@@ -125,10 +127,10 @@ export function PartsPanel() {
             <input
               className="name"
               value={p.name}
-              title={`${p.mesh.labels.length.toLocaleString('tr-TR')} üçgen`}
+              title={`${p.name} · ${p.mesh.labels.length.toLocaleString('tr-TR')} üçgen`}
               onChange={(e) => renamePart(p.id, e.target.value)}
             />
-            <span className="size" title="En uzun kenar">
+            <span className="size" title={partSizeTitle(sizes.get(p.id) ?? 0)}>
               {formatMm(sizes.get(p.id) ?? 0)}
             </span>
             {p.badge === 'source' && (
@@ -178,7 +180,7 @@ export function PartsPanel() {
         <div className={`print-size${warning ? ' warn' : ''}`}>
           {warning && (
             <p>
-              Model {formatMm(extent)}:{' '}
+              {parts.length > 1 ? 'En büyük parça' : 'Model'} {formatMm(extent)}:{' '}
               {warning === 'large'
                 ? `${PRINT_SIZE_MAX} mm'den büyük, birimi inç ya da metre olabilir.`
                 : `${PRINT_SIZE_MIN} mm'den küçük; pim ve tolerans bu boyda anlamsız.`}
@@ -192,7 +194,7 @@ export function PartsPanel() {
               max={1000}
               step={1}
               unit="mm"
-              title="Modelin en uzun kenarı bu boya ölçeklenir. Ctrl+Z ile geri alınır"
+              title="En büyük parçanın en uzun kenarı bu boya gelir; bütün parçalar birlikte ölçeklenir. Ctrl+Z ile geri alınır"
               onChange={setPrintSize}
             />
             <button
@@ -222,6 +224,13 @@ export function PartsPanel() {
       )}
     </Panel>
   );
+}
+
+function partSizeTitle(size: number): string {
+  const w = sizeWarning(size);
+  if (w === 'large') return `En uzun kenar. ${PRINT_SIZE_MAX} mm'den büyük: tablaya sığmayabilir`;
+  if (w === 'small') return `En uzun kenar. ${PRINT_SIZE_MIN} mm'den küçük: pim ve tapa sığmaz`;
+  return 'En uzun kenar';
 }
 
 function formatMm(v: number): string {

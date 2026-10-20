@@ -13,6 +13,7 @@ export default defineConfig({
     'keys-flow.spec.ts',
     'select.spec.ts',
     'navigate.spec.ts',
+    'multipart.spec.ts',
   ],
   timeout: 120_000,
   use: {

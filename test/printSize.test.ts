@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { boundingBox, longestExtent, scaleMeshes, sizeWarning } from '../src/core/geometry';
+import {
+  boundingBox,
+  largestExtent,
+  largestPart,
+  longestExtent,
+  scaleMeshes,
+  sizeWarning,
+} from '../src/core/geometry';
 import type { LabeledMesh } from '../src/core/types';
 import { subdividedCube } from './fixtures';
 
@@ -39,5 +46,21 @@ describe('X71 baskı boyu', () => {
       return (Math.min(...bs.map((x) => x.min[0])) + Math.max(...bs.map((x) => x.max[0]))) / 2;
     };
     expect(box([sa, sb])).toBeCloseTo(box([a, b]), 3);
+  });
+
+  it('X80: plakaya dağılmış parçalarda ölçü en büyük parçanın', () => {
+    // 3 küçük parça 400 mm'lik plakaya yayılmış: toplam kutu 400, en büyük parça 40
+    const plate = [labeled(40, 0), labeled(10, 200), labeled(4, 378)];
+    expect(longestExtent(plate)).toBeCloseTo(400, 3);
+    expect(largestExtent(plate)).toBeCloseTo(40, 3);
+    expect(largestExtent([])).toBe(0);
+  });
+
+  it('X80: en büyük hacimli parça', () => {
+    // uzun ince çubuk kutusu büyük ama hacmi küçük
+    const rod = labeled(4, 0);
+    for (let i = 0; i < rod.positions.length; i += 3) rod.positions[i] *= 20;
+    expect(largestPart([rod, labeled(20, 200), labeled(10, 400)])).toBe(1);
+    expect(largestPart([])).toBe(-1);
   });
 });

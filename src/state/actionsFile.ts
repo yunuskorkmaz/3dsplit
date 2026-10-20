@@ -1,3 +1,4 @@
+import { largestPart } from '../core/geometry';
 import { BASE_SLOT } from '../core/types';
 import { filamentColors, write3mfBambu } from '../io/bambu3mf';
 import {
@@ -31,6 +32,7 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
     }
     await busy(`${file.name} yükleniyor…`, async () => {
       const objects = await importFile(file);
+      const added: Part[] = [];
       for (const obj of objects) {
         const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
         if (obj.labels) ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []);
@@ -56,7 +58,7 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
         }
         const part: Part = {
           id: newPartId(),
-          name: obj.name,
+          name: stripModelExtension(obj.name),
           mesh: prepared.mesh,
           visible: true,
           badge: null,
@@ -68,9 +70,19 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
         if (!before.length) set({ cutModeManual: false });
         set({ parts: [...before, part], selectedPartId: part.id });
         pushHistory({ kind: 'parts', before, after: get().parts }, `Aç: ${part.name}`);
+        added.push(part);
       }
+      // X80: çok parçalı dosyada son yüklenen değil, en büyük (hacim) parça seçili
+      const big = added[largestPart(added.map((p) => p.mesh))];
+      if (big) set({ selectedPartId: big.id });
     });
   }
+}
+
+/** X80: parça adında model dosyası uzantısı gösterilmez. */
+function stripModelExtension(name: string): string {
+  // 3MF nesne adları "nails_v1.0.stl_5" gibi olabiliyor: uzantı sonda olmayabilir
+  return name.replace(/\.(stl|obj|3mf)(?=$|[_\s-])/i, '') || name;
 }
 
 /** A4: parçalar, etiketler ve slotlar tek dosyada. */

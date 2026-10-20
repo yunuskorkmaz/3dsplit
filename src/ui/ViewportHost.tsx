@@ -290,6 +290,19 @@ export function ViewportHost() {
     );
   }, [parts, selectedPartId, slots]);
 
+  // X80: boş sahneye açılan dosyanın bütün parçaları gelince görünüm yeniden sığdırılır
+  // (ilk sığdırma ilk parçaya göre yapılıyor; çok parçalı dosyada diğerleri dışarıda kalıyordu)
+  const busy = useStore((s) => s.busy);
+  const loadingIntoEmpty = useRef(false);
+  useEffect(() => {
+    if (busy) {
+      if (!get().parts.length) loadingIntoEmpty.current = true;
+    } else if (loadingIntoEmpty.current) {
+      loadingIntoEmpty.current = false;
+      if (get().parts.length > 1) vpRef.current?.fitView();
+    }
+  }, [busy]);
+
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;

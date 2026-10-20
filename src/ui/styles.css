@@ -77,7 +77,7 @@ select {
 .float.side-left {
   top: 118px;
   left: 10px;
-  width: 220px;
+  width: 260px;
   max-height: calc(100% - 136px);
 }
 .float.side-right {
@@ -476,6 +476,16 @@ ul.parts li button {
   padding: 0 6px;
 }
 .tris,
+/* X80: 250 mm'den büyük ya da 8 mm'den küçük parça */
+  ul.parts
+  li.size-warn
+  .size {
+  color: #f5c542;
+  font-weight: 600;
+}
+ul.parts li.size-warn {
+  background: #f5c54214;
+}
 ul.parts li .size {
   color: #777;
   font-size: 11px;

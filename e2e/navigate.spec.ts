@@ -109,9 +109,9 @@ test('X81: başka parçaya çift tık onu seçer ve sığdırır, boyamaz', asyn
   // parça ekrana sığar ve ekranın büyük kısmını kaplar
   expect(fitted.h).toBeLessThan(fitted.H);
   expect(fitted.h).toBeGreaterThan(fitted.H * 0.35);
-  // panellerin bıraktığı boşluğun ortasında (sol 240, sağ 268, üst 126, alt 64 px)
+  // panellerin bıraktığı boşluğun ortasında (sol 280, sağ 268, üst 126, alt 64 px)
   const view = page.viewportSize() ?? { width: 0, height: 0 };
-  expect(Math.abs(fitted.cx - (240 + (view.width - 240 - 268) / 2))).toBeLessThan(60);
+  expect(Math.abs(fitted.cx - (280 + (view.width - 280 - 268) / 2))).toBeLessThan(60);
   expect(Math.abs(fitted.cy - (126 + (view.height - 126 - 64) / 2))).toBeLessThan(60);
   await page.screenshot({ path: 'test-results/navigate-fit.png' });
 

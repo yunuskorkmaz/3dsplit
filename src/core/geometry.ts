@@ -90,6 +90,27 @@ export function longestExtent(meshes: MeshData[]): number {
   return Math.max(0, max[0] - min[0], max[1] - min[1], max[2] - min[2]);
 }
 
+/** X80: parça başına en uzun kenarların en büyüğü (plakaya dağılmış parçalar toplanmaz). */
+export function largestExtent(meshes: MeshData[]): number {
+  let best = 0;
+  for (const m of meshes) best = Math.max(best, longestExtent([m]));
+  return best;
+}
+
+/** X80: hacmi en büyük parçanın sırası; liste boşsa -1. */
+export function largestPart(meshes: MeshData[]): number {
+  let best = -1;
+  let volume = -Infinity;
+  meshes.forEach((m, i) => {
+    const v = Math.abs(signedVolume(m));
+    if (v > volume) {
+      volume = v;
+      best = i;
+    }
+  });
+  return best;
+}
+
 export function sizeWarning(extent: number): 'large' | 'small' | null {
   if (extent > PRINT_SIZE_MAX) return 'large';
   if (extent < PRINT_SIZE_MIN) return 'small';

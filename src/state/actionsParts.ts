@@ -1,4 +1,4 @@
-import { longestExtent, scaleMeshes } from '../core/geometry';
+import { largestExtent, scaleMeshes } from '../core/geometry';
 import { get, notify, type Part, pushHistory, set } from './store';
 
 // ---------- parça yönetimi ----------
@@ -64,12 +64,15 @@ function measuredParts(parts: Part[]): Part[] {
   return live.length ? live : parts;
 }
 
-/** X71: modelin en uzun kenarı, mm. Parça yoksa 0. */
+/**
+ * X71/X80: modelin ölçüsü, mm: en büyük parçanın en uzun kenarı. Plakaya dağılmış
+ * parçaların aralıkları sayılmaz. Parça yoksa 0.
+ */
 export function modelExtent(parts: Part[]): number {
-  return parts.length ? longestExtent(measuredParts(parts).map((p) => p.mesh)) : 0;
+  return parts.length ? largestExtent(measuredParts(parts).map((p) => p.mesh)) : 0;
 }
 
-/** X71: bütün parçaları birlikte ölçekler; en uzun kenar `target` mm olur. Geri alınabilir. */
+/** X71: bütün parçaları birlikte ölçekler; en büyük parçanın en uzun kenarı `target` mm olur. Geri alınabilir. */
 export function scaleToPrintSize(target: number): void {
   const before = get().parts;
   const extent = modelExtent(before);
@@ -94,6 +97,6 @@ export function scaleToPrintSize(target: number): void {
   pushHistory({ kind: 'parts', before, after }, `Baskı boyu ${target} mm`);
   notify(
     'info',
-    `Model ${extent.toFixed(1)} mm → ${target} mm ölçeklendi (×${factor.toFixed(3)}).`,
+    `${before.length > 1 ? 'En büyük parça' : 'Model'} ${extent.toFixed(1)} mm → ${target} mm ölçeklendi (×${factor.toFixed(3)}).`,
   );
 }

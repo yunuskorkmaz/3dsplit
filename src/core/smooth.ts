@@ -1,7 +1,7 @@
 import { faceCentroids, faceNormalsAndAreas } from './geometry';
 import { cleanSelection } from './paint';
-import { boundaryLoops } from './topology';
-import type { LabeledMesh } from './types';
+import { boundaryLoops, buildAdjacency } from './topology';
+import { BASE_SLOT, type LabeledMesh } from './types';
 
 /**
  * B6: bölge sınırını düzgün bir eğriye oturtur, alanı korur.
@@ -153,6 +153,68 @@ export function smoothRegionBoundary(
     offset,
   );
   return { labels, positions, indices: mesh.indices };
+}
+
+/**
+ * X53: kesimden hemen önce seçili slotun sınırını üçgenlerin içinden geçirir.
+ * Girdi değişmez. Bölgeye yalnız taban katılır; çıkan üçgen komşudaki çoğunluk
+ * etiketini alır. Yarıçap ortalama kenarın 4 katıdır.
+ */
+export function smoothCutEdge(mesh: LabeledMesh, slot: number): LabeledMesh {
+  if (slot === BASE_SLOT || !mesh.labels.includes(slot)) return mesh;
+  const adj = buildAdjacency(mesh);
+  const labels = mesh.labels;
+  return smoothRegionBoundary(
+    mesh,
+    adj,
+    slot,
+    meanEdgeLength(mesh) * 4,
+    (t) => labels[t] === BASE_SLOT,
+    (t) => majorityOtherLabel(adj, labels, t, slot),
+    true,
+  );
+}
+
+function meanEdgeLength(mesh: LabeledMesh): number {
+  const p = mesh.positions;
+  const idx = mesh.indices;
+  let sum = 0;
+  let n = 0;
+  for (let i = 0; i < idx.length; i += 3) {
+    for (let k = 0; k < 3; k++) {
+      const a = idx[i + k];
+      const b = idx[i + ((k + 1) % 3)];
+      const dx = p[3 * a] - p[3 * b];
+      const dy = p[3 * a + 1] - p[3 * b + 1];
+      const dz = p[3 * a + 2] - p[3 * b + 2];
+      sum += Math.hypot(dx, dy, dz);
+      n++;
+    }
+  }
+  return n ? sum / n : 1;
+}
+
+function majorityOtherLabel(
+  adj: Int32Array,
+  labels: Uint16Array,
+  t: number,
+  exclude: number,
+): number {
+  const counts = new Map<number, number>();
+  for (let e = 0; e < 3; e++) {
+    const n = adj[3 * t + e];
+    if (n < 0 || labels[n] === exclude) continue;
+    counts.set(labels[n], (counts.get(labels[n]) ?? 0) + 1);
+  }
+  let best = BASE_SLOT;
+  let bestCount = 0;
+  for (const [label, count] of counts) {
+    if (count > bestCount) {
+      best = label;
+      bestCount = count;
+    }
+  }
+  return best;
 }
 
 /**

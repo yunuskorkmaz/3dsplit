@@ -56,7 +56,7 @@ test('X36 çizgi aracı, X35 deneme parçası, X27 ayrık görünüm', async ({ 
   expect(after.tris).toBeGreaterThan(trisBefore);
 
   // önizleme açıkken pim aracıyla modele tıklamak önizlemeyi kapatmaz, pim önizlemeye girer
-  await page.getByRole('button', { name: 'Keys', exact: true }).click();
+  await page.getByRole('button', { name: 'Pimli kes', exact: true }).first().click();
   await page.keyboard.press('Space');
   await expect
     .poll(async () => (await state(page)).preview !== null, { timeout: 30_000 })

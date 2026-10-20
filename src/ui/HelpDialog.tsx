@@ -24,6 +24,7 @@ const TOOL_DETAILS: Record<string, string> = {
     'Seçimin kenarında gezdir: tırtıklı sınırı düzgün bir eğriye çeker. Güç arttıkça daha çok düzeltir. Üst şeritteki "Tüm sınırı yumuşat" bütün sınırı bir kerede düzeltir.',
   bucket: 'Tıklanan aynı renkli bağlı bölgeyi aktif slota boyar.',
   line: 'Doğal kıvrımı olmayan bölgeler için: yüzeye noktalar tıkla, yol yüzey üzerinden en kısa yoldan geçer. İlk noktaya tıklayınca ya da Enter ile halka kapanır, içi aktif slota boyanır ve kenar çizgi boyunca düzeltilip üçgenlerin içinden geçirilir. Backspace son noktayı siler, Esc iptal eder.',
+  seam: 'Kol ve bacak için: yüzeye kapalı bir halka çiz. İçi boyanmaz. Kes, halkanın düzleminden iki parça ayırır. Pimli kes seçiliyse kesite pim konur; değilse yapıştırmalık kalır. Halka düz değilse ya da düzlem modeli birden fazla yerden kesiyorsa kesim durur ve halka kırmızı çizilir.',
   pin: 'Keys modunda pimleri düzenler. Pimler kesim yüzeyinde gerçek boyutlarıyla yarı saydam görünür. Pime tıkla: seçilir; W ile taşıma okları (kesim düzleminde), R ile döndürme halkaları çıkar, sürüklerken pim anlık hareket eder. Pimi yüzeyde sürükleyerek de taşıyabilirsin. Seçiliyken boş yere tıklamak ya da Esc seçimi bırakır; seçili pim yokken boş yere tıklamak yeni pim ekler. Shift+tık siler. Otomatik pime tıklayınca pimler o yerlerde elle düzenlenebilir hale gelir.',
 };
 
@@ -68,38 +69,42 @@ function Workflow() {
     <ol className="steps">
       <li>
         <b>Yükle.</b> STL, OBJ, 3MF veya .3dsplit dosyasını pencereye sürükle. Açık (su geçirmez
-        olmayan) mesh otomatik onarılır; olmazsa parçada kırmızı{' '}
-        <span className="badge bad">!</span> çıkar, "Voxel onar"ı dene.
+        olmayan) mesh otomatik onarılır; olmazsa parçada kırmızı “bozuk” yazar, “Delikleri kapat”ı
+        dene.
       </li>
       <li>
-        <b>Slot seç.</b> Sağda her renk bir slottur. 1–9 tuşları slot değiştirir. Taban (0)
-        gövdedir.
+        <b>Renk seç.</b> Soldaki listede her satır bir renktir. 1–9 tuşları rengi değiştirir. Taban
+        (0) gövdedir.
       </li>
       <li>
         <b>Bölgeyi seç.</b> Smart Fill (F) ile çıkıntıya tıkla, Fırça (B) / Silgi (E) ile düzelt,
         Yumuşat (S) ile kenarı düzgünleştir. Çift özelliklerde (iki göz) üst şeritteki Ayna'yı aç.
-        Yanlış seçimi silmek için: Smart Fill'de Shift+tık, Silgi, "Seçimi temizle" (Delete) ya da
-        Ctrl/Cmd+Z. Sol paneldeki Geçmiş'ten istediğin adıma dönebilirsin.
+        Renk satırına tıklayınca o boya modelde öne çıkar, diğerleri solar. “temizle” boyayı siler,
+        “kaldır” rengi listeden çıkarır. Tek bir yeri silmek için Akıllı seç’te Shift+tık, Silgi,
+        "Seçimi temizle" (Delete) ya da Ctrl/Cmd+Z. Sol paneldeki Geçmiş'ten istediğin adıma
+        dönebilirsin.
       </li>
       <li>
-        <b>Kesim modunu seç.</b> Socket: ince, yüzeysel bölgeler (göz, kaş) — bölge tapa olur,
-        gövdede yuva açılır. Keys: kalın bölgeler (kol, kafa) — düz kesim + pim. Fast: düz kesim,
-        yapıştırmalık. Program bir öneri gösterir.
+        <b>Kesim modunu seç.</b> Üst şeritte Tapa: ince bölgeler (göz, kaş). Pimli kes: kalın
+        bölgeler (kol, kafa). Yapıştır: pimsiz düz kesim. Seçili rengin çevresi ve adı modelin
+        üstünde durur.
       </li>
       <li>
-        <b>Toleransı ayarla.</b> Parça ile yuva arasında bırakılan boşluktur. FDM için 0.1 sıkı, 0.2
-        normal, 0.3 gevşek. Önce küçük bir deneme baskısı almak iyi olur.
+        <b>Toleransı ayarla.</b> Pim ile delik, tapa ile yuva arasında bırakılan boşluktur. FDM için
+        0.1 sıkı, 0.2 normal, 0.3 gevşek. Önce küçük bir deneme baskısı almak iyi olur. Yüz boşluğu
+        ayrıdır: düz kesilen yüzler birbirine değmesin diye aralarına konur; 0 ise değerler.
       </li>
       <li>
         <b>Önizle (Space), sonra Kes.</b> Önizleme açıkken ayar değiştirip pim ekleyip
         sürükleyebilirsin; önizleme kapanmaz, kendini yeniler. Pimin gövdeye ne kadar gireceği
-        "Gövdede %" ile (pim aracında tek pim için de) ayarlanır. Kırmızı alanlar incelen duvardır.
-        Kesimden sonra yeni parça listede "yeni" olarak çıkar; sonraki bölge için slot değiştirip
-        devam et.
+        “Gövdede pay” ile (pim aracında tek pim için de) ayarlanır. Kırmızı alanlar incelen
+        duvardır. Kesimden sonra yeni parça listede “yeni” olarak çıkar; sonraki bölge için rengi
+        değiştirip devam et.
       </li>
       <li>
         <b>İncele.</b> Parça listesinde göz simgesi gizler/gösterir, Alt+tık (veya Shift+H) yalnız o
-        parçayı gösterir, X ayrık görünümü açar.
+        parçayı gösterir. Üstteki Aralıklı, parçaları birbirinden ayırarak gösterir; Saydam,
+        fırçanın arkadaki yüzleri de boyamasını sağlar.
       </li>
       <li>
         <b>Dışa aktar.</b> Üst çubuktaki Dışa aktar: Bambu/Orca 3MF (renk başına filament), genel
@@ -149,6 +154,8 @@ function Mouse() {
     ['Alt + tekerlek', 'Fırça yarıçapı'],
     ['Shift + sağ sürükle', 'Smart Fill açı eşiği'],
     ['Boşluğa çift tık', 'Görünümü sığdır (model kaybolursa)'],
+    ['Sağ üst küp: yüz', 'Kamerayı o yana alır; küp de o yöne döner'],
+    ['Küpün köşesi', 'Çapraz (köşe) bakış'],
     ['Pim aracında Shift + tık', 'Pimi sil'],
   ];
   return (

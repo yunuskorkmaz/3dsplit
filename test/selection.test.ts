@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { faceCentroids, faceNormalsAndAreas, signedVolume } from '../src/core/geometry';
 import { fromManifold, initKernel, kernel } from '../src/core/kernel';
 import { refineToValley, triangleConcavity } from '../src/core/paint';
-import { smoothRegionBoundary } from '../src/core/smooth';
+import { smoothCutEdge, smoothRegionBoundary } from '../src/core/smooth';
 import { buildAdjacency } from '../src/core/topology';
 import type { LabeledMesh } from '../src/core/types';
 import { labelWhere, subdividedCube } from './fixtures';
@@ -168,6 +168,40 @@ describe('sınır yumuşatma', () => {
     expect(se.std).toBeLessThan(stats(m).std * 0.4);
     expect(se.std).toBeLessThan(stats(snapped).std);
     expect(Math.abs(se.area - stats(m).area) / stats(m).area).toBeLessThan(0.1);
+  });
+
+  it('X53: kesim kenarı başka slotu yutmaz ve tırtığı azaltır', () => {
+    const plain = make();
+    const posPlain = plain.positions[0];
+    const smoothed = smoothCutEdge(plain, 1);
+    expect(smoothed.labels.length).toBeGreaterThan(plain.labels.length);
+    expect(stats(smoothed).std).toBeLessThan(stats(plain).std * 0.4);
+    expect(plain.positions[0]).toBe(posPlain);
+
+    const m = make();
+    const adj0 = buildAdjacency(m);
+    // sınırın hemen dışını başka slot yap: genişleme ancak bu slotu yutarak olur
+    for (let t = 0; t < m.labels.length; t++) {
+      if (m.labels[t] !== 0) continue;
+      for (let e = 0; e < 3; e++) {
+        if (m.labels[adj0[3 * t + e]] === 1) {
+          m.labels[t] = 2;
+          break;
+        }
+      }
+    }
+    const areaOf = (mesh: LabeledMesh, slot: number) => {
+      const { areas } = faceNormalsAndAreas(mesh);
+      let area = 0;
+      for (let t = 0; t < mesh.labels.length; t++) if (mesh.labels[t] === slot) area += areas[t];
+      return area;
+    };
+    const before = areaOf(m, 1);
+    const pos0 = m.positions[0];
+    const out = smoothCutEdge(m, 1);
+    expect(areaOf(out, 1)).toBeLessThanOrEqual(before * 1.01);
+    expect(m.positions[0]).toBe(pos0);
+    expect(buildAdjacency(out).every((n) => n >= 0)).toBe(true);
   });
 
   it('tekrar basmak bölgeyi daraltmaz', () => {

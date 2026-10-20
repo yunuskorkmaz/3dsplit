@@ -336,6 +336,17 @@ describe('kesim', () => {
     expect(r.warnings.length).toBe(1);
   });
 
+  it('Socket: sık üçgenli yama yuva payında biter', () => {
+    const fine = labelWhere(subdividedCube(20, 32), 1, (_x, _y, z) => z > 9.99);
+    const t0 = performance.now();
+    const r = cutRegion(fine, { ...baseOpts, mode: 'socket' });
+    expect(performance.now() - t0).toBeLessThan(20_000);
+    expect(r.parts.length).toBe(1);
+    const body = volume(r.body);
+    expect(body).toBeLessThan(8000 - 1000);
+    expect(body).toBeGreaterThan(6000);
+  });
+
   it('Socket: tapa derinlik kadar, yuva clearance kadar büyük', () => {
     const r = cutRegion(patch, { ...baseOpts, mode: 'socket' });
     expect(r.parts.length).toBe(1);

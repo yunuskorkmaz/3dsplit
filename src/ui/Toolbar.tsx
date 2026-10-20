@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import type { CutMode } from '../core/cut';
 import {
   autoSmartScale,
   gapFillSelected,
@@ -14,12 +16,13 @@ import {
 import { useKeymap } from '../state/keymap';
 import { set, type Tool, useStore } from '../state/store';
 import { NumberField, Toggle } from './fields';
+import { cameraCssMatrix, viewToward, watchCamera } from './ViewportHost';
 
 export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: string }[] = [
   {
     id: 'smart',
     icon: '✦',
-    label: 'Smart Fill',
+    label: 'Akıllı seç',
     key: 'F',
     hint: 'Tıkla: çıkıntıyı seç. Shift+tık: sil.',
   },
@@ -41,6 +44,13 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
     hint: 'Tıkla: nokta ekle. İlk noktaya tıkla ya da Enter: kapat ve boya. Backspace: son nokta, Esc: iptal.',
   },
   {
+    id: 'seam',
+    icon: '⌇',
+    label: 'Dikiş',
+    key: 'D',
+    hint: 'Kapalı halka çizin. İçi boyanmaz; Kes, halkanın düzleminden ayırır. Backspace: son nokta, Esc: iptal.',
+  },
+  {
     id: 'pin',
     icon: '⊕',
     label: 'Pim',
@@ -49,13 +59,16 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
   },
 ];
 
-/** Viewport'un solundaki dikey araç çubuğu. */
-export function ToolBar({ onFit }: { onFit: () => void }) {
+/** Üstteki araç şeridi. Görünüş küpü ayrı durur. */
+export function ToolBar() {
   const tool = useStore((s) => s.tool);
   const keys = useKeymap((s) => s.map);
+  const mode = useStore((s) => s.cut.mode);
+  const setMode = (next: CutMode) => set((s) => ({ cut: { ...s.cut, mode: next } }));
   return (
-    <div className="toolbar">
-      {TOOLS.map((t) => (
+    <div className="toolbar ribbon" role="toolbar" aria-label="Araçlar">
+      <span className="gname">Seç</span>
+      {TOOLS.filter((t) => t.id !== 'pin').map((t) => (
         <button
           key={t.id}
           type="button"
@@ -63,20 +76,155 @@ export function ToolBar({ onFit }: { onFit: () => void }) {
           onClick={() => set({ tool: t.id })}
           title={`${t.label} (${keys[`tool.${t.id}`]}) — ${t.hint}`}
         >
-          <span className="icon">{t.icon}</span>
-          <span className="key">{keys[`tool.${t.id}`]}</span>
+          {t.label}
         </button>
       ))}
+      <span className="sep" />
+      <span className="gname">Kes</span>
+      <button
+        type="button"
+        className={mode === 'socket' ? 'active' : ''}
+        onClick={() => setMode('socket')}
+      >
+        Tapa
+      </button>
+      <button
+        type="button"
+        className={mode === 'keys' ? 'active' : ''}
+        onClick={() => setMode('keys')}
+      >
+        Pimli kes
+      </button>
+      <button
+        type="button"
+        className={mode === 'fast' ? 'active' : ''}
+        onClick={() => setMode('fast')}
+      >
+        Yapıştır
+      </button>
+    </div>
+  );
+}
+
+const FACES: {
+  name: string;
+  n: [number, number, number];
+  view: [number, number, number];
+}[] = [
+  { name: 'Ön', n: [0, -1, 0], view: [0, -1, 0.6] },
+  { name: 'Arka', n: [0, 1, 0], view: [0, 1, 0.6] },
+  { name: 'Sağ', n: [1, 0, 0], view: [1, 0, 0.6] },
+  { name: 'Sol', n: [-1, 0, 0], view: [-1, 0, 0.6] },
+  { name: 'Üst', n: [0, 0, 1], view: [0, -0.2, 1] },
+  { name: 'Alt', n: [0, 0, -1], view: [0, -0.2, -1] },
+];
+
+const CORNERS: [number, number, number][] = [-1, 1].flatMap((x) =>
+  [-1, 1].flatMap((y) => [-1, 1].map((z) => [x, y, z] as [number, number, number])),
+);
+
+const CUBE = 52;
+
+/** Yüzün veya köşenin yerel eksenini dünya normaline oturtan CSS matrisi. */
+function solidTransform(
+  nx: number,
+  ny: number,
+  nz: number,
+  px: number,
+  py: number,
+  pz: number,
+): string {
+  const len = Math.hypot(nx, ny, nz) || 1;
+  nx /= len;
+  ny /= len;
+  nz /= len;
+  let ux = 0;
+  let uy = 0;
+  let uz = 1;
+  if (Math.abs(nx * ux + ny * uy + nz * uz) > 0.9) {
+    ux = 0;
+    uy = 1;
+    uz = 0;
+  }
+  let xx = uy * nz - uz * ny;
+  let xy = uz * nx - ux * nz;
+  let xz = ux * ny - uy * nx;
+  const xl = Math.hypot(xx, xy, xz) || 1;
+  xx /= xl;
+  xy /= xl;
+  xz /= xl;
+  const yx = -(ny * xz - nz * xy);
+  const yy = -(nz * xx - nx * xz);
+  const yz = -(nx * xy - ny * xx);
+  return `matrix3d(${xx},${xy},${xz},0,${yx},${yy},${yz},0,${nx},${ny},${nz},0,${px},${py},${pz},1)`;
+}
+
+function cornerName(x: number, y: number, z: number): string {
+  return `${y < 0 ? 'Ön' : 'Arka'} ${x > 0 ? 'sağ' : 'sol'} ${z > 0 ? 'üst' : 'alt'}`;
+}
+
+/** Modelin sağ üstünde yüzen görünüş küpü. Yüz yana, köşe çapraz bakışa gider. */
+export function ViewCube({ onFit }: { onFit: () => void }) {
+  const keys = useKeymap((s) => s.map);
+  const [orient, setOrient] = useState('none');
+  const [spin, setSpin] = useState(false);
+  useEffect(() => {
+    const pull = () => setOrient(cameraCssMatrix());
+    pull();
+    return watchCamera(pull);
+  }, []);
+  const turn = (go: () => void) => {
+    setSpin(true);
+    go();
+    window.setTimeout(() => setSpin(false), 320);
+  };
+  return (
+    <fieldset className="viewcube">
+      <legend>Görünüş</legend>
+      <div className="cube-scene">
+        <div className={spin ? 'cube spin' : 'cube'} style={{ transform: orient }}>
+          {FACES.map((f) => (
+            <button
+              key={f.name}
+              type="button"
+              className="face"
+              style={{
+                transform: solidTransform(
+                  ...f.n,
+                  f.n[0] * (CUBE / 2),
+                  f.n[1] * (CUBE / 2),
+                  f.n[2] * (CUBE / 2),
+                ),
+              }}
+              onClick={() => turn(() => viewToward(...f.view))}
+            >
+              {f.name}
+            </button>
+          ))}
+          {CORNERS.map(([x, y, z]) => (
+            <button
+              key={`${x}${y}${z}`}
+              type="button"
+              className="corner"
+              aria-label={cornerName(x, y, z)}
+              title={cornerName(x, y, z)}
+              style={{
+                transform: solidTransform(x, y, z, x * (CUBE / 2), y * (CUBE / 2), z * (CUBE / 2)),
+              }}
+              onClick={() => turn(() => viewToward(x, y, z))}
+            />
+          ))}
+        </div>
+      </div>
       <button
         type="button"
         className="fit"
         onClick={onFit}
         title={`Görünümü sığdır (${keys.fit} veya boşluğa çift tık) — model kaybolursa geri getirir`}
       >
-        <span className="icon">⤢</span>
-        <span className="key">{keys.fit}</span>
+        Sığdır
       </button>
-    </div>
+    </fieldset>
   );
 }
 
@@ -163,13 +311,13 @@ export function ToolOptions() {
             </button>
           )}
           <Toggle
-            label="Çukurda dur"
+            label="Yalnız çukur"
             checked={smartConcave}
             title="Sadece çukur kıvrımlarda dur; tümseklerden geç (göz, burun, kaş)"
             onChange={(v) => setSmartOptions({ smartConcave: v })}
           />
           <Toggle
-            label="Vadiye oturt"
+            label="Dibe oturt"
             checked={smartValley}
             title="Seçimi çıkıntının dibindeki çukur çizgiye oturt"
             onChange={(v) => setSmartOptions({ smartValley: v })}
@@ -180,7 +328,7 @@ export function ToolOptions() {
         <>
           {radius}
           <Toggle
-            label="X-ray"
+            label="Saydam"
             checked={xray}
             title="Model yarı saydam; fırça küre içindeki arka ve gizli yüzleri de boyar"
             onChange={(v) => set({ xray: v })}
@@ -231,17 +379,17 @@ export function ToolOptions() {
             onClick={gapFillSelected}
             title="Bu alandan küçük renk adalarını komşu renge çevir"
           >
-            Gap Fill
+            Adaları birleştir
           </button>
         </>
       )}
-      {tool === 'line' && (
+      {(tool === 'line' || tool === 'seam') && (
         <>
           <span className="label">
             {lineCount ? `${lineCount} nokta` : 'Yüzeye tıklayarak başla'}
           </span>
           <button type="button" disabled={lineCount < 3} onClick={lineClose} title="Enter">
-            Kapat ve boya
+            {tool === 'seam' ? 'Kapat' : 'Kapat ve boya'}
           </button>
           <button type="button" disabled={!lineCount} onClick={lineUndo} title="Backspace">
             Son noktayı sil
@@ -326,7 +474,7 @@ export function ToolOptions() {
             onChange={(v) => updatePin(selectedPin, { length: v }, 'Pim boyu')}
           />
           <NumberField
-            label="Gövdede"
+            label="Gövdede pay"
             value={Math.round((pin.bodyRatio ?? cut.pinBodyRatio) * 100)}
             min={5}
             max={95}

@@ -10,7 +10,7 @@ import type {
 import type { SplitDiff } from '../core/smooth';
 import type { LabeledMesh, Vec3 } from '../core/types';
 
-export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin' | 'line';
+export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin' | 'line' | 'seam';
 /** source: kesilmiş eski parça (sarı rozet), new: kesimden yeni çıkan parça (mavi rozet). */
 export type PartBadge = 'source' | 'new' | null;
 
@@ -45,6 +45,8 @@ export interface CutSettings {
   ringProfile: number[];
   /** X4: Fast/Keys düzlemle keser. */
   planar: boolean;
+  /** X53: kesimden önce sınırı üçgenlerin içinden geçir. */
+  smoothEdge: boolean;
   /** C12: açıkken tüm bölgeler aynı derinlikte; kapalıyken `islandDepths`. */
   linkAll: boolean;
   /** Ada anahtarı (en küçük üçgen numarası) -> derinlik. */
@@ -63,6 +65,8 @@ export interface CutSettings {
   pinAuto: boolean;
   /** Pim boyunun gövde (yuva) tarafında kalan payı, 0..1 (0.5: yarı yarıya). */
   pinBodyRatio: number;
+  /** X64: düz kesilen yüzler arası boşluk, mm. 0 ise birbirine değer. */
+  faceGap: number;
 }
 
 export interface Message {
@@ -79,6 +83,16 @@ type HistoryData =
   // boyama kaydı parça kimliğine değil mesh nesnesine bağlı: inceltme/kesim mesh'i değiştirse de kayıt kendi mesh'ine yazar
   | { kind: 'paint'; mesh: LabeledMesh; tris: Uint32Array; before: Uint16Array; after: Uint16Array }
   | { kind: 'parts'; before: Part[]; after: Part[] }
+  | {
+      kind: 'removeSlot';
+      slotId: number;
+      beforeSlots: Slot[];
+      afterSlots: Slot[];
+      activeBefore: number;
+      activeAfter: number;
+      paints: { mesh: LabeledMesh; tris: Uint32Array }[];
+      colorBefore: { id: string; colorSlot: number }[];
+    }
   // Keys pimleri (ekleme, silme, taşıma, döndürme, boyut)
   | { kind: 'pins'; before: PinPlacement[]; after: PinPlacement[] }
   // X34/X30: üçgen bölme mesh üzerinde yerinde; sadece fark saklanır (tam kopya belleği doldururdu)
@@ -152,7 +166,15 @@ export interface AppState {
   /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
   mirror: { enabled: boolean; axis: 0 | 1 | 2; offset: number | null };
   /** X36: çizgi aracında tıklanan köşeler ve aralarındaki yüzey yolu (köşe numaraları). */
-  line: { partId: string | null; anchors: number[]; path: number[] };
+  line: {
+    partId: string | null;
+    anchors: number[];
+    path: number[];
+    /** Dikiş halkası kapanınca. Çizgi aracı boyayıp temizler. */
+    closed?: boolean;
+    /** Dikiş düzleme uymadı; halka kırmızı. */
+    bad?: boolean;
+  };
   /** X27: patlatılmış görünüm çarpanı (0: kapalı). Sadece görüntü. */
   explode: number;
   /** X26: yardım penceresi açık mı. */
@@ -182,7 +204,7 @@ export const useStore = create<AppState>(() => ({
   selectedPartId: null,
   slots: DEFAULT_COLORS.slice(0, 4).map((color, id) => ({
     id,
-    name: id === 0 ? 'Taban' : `Slot ${id}`,
+    name: id === 0 ? 'Taban' : `Renk ${id}`,
     color,
   })),
   activeSlot: 1,
@@ -207,6 +229,7 @@ export const useStore = create<AppState>(() => ({
     inset: 0,
     ringProfile: [0, 0, 0, 0, 0, 0, 0, 0],
     planar: false,
+    smoothEdge: true,
     linkAll: true,
     islandDepths: {},
     direction: null,
@@ -218,6 +241,7 @@ export const useStore = create<AppState>(() => ({
     pinChamfer: 0.4,
     pinAuto: true,
     pinBodyRatio: 0.5,
+    faceGap: 0,
   },
   pins: [],
   selectedPin: -1,
@@ -313,5 +337,6 @@ export function historyLabel(e: HistoryEntry): string {
   if (e.kind === 'geometry') return 'Yumuşatma';
   if (e.kind === 'split') return 'Üçgen bölme';
   if (e.kind === 'pins') return 'Pim';
+  if (e.kind === 'removeSlot') return 'Rengi kaldır';
   return 'Parça değişikliği';
 }

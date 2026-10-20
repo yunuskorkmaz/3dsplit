@@ -7,6 +7,11 @@ export interface MeshData {
 /** Her üçgenin bir slot kimliği taşıdığı mesh. */
 export interface LabeledMesh extends MeshData {
   labels: Uint16Array;
+  /**
+   * Kesimle oluşan yeni yüz (kapak, tapa, delik). 1 ise gölge bu yüzü
+   * heykel yüzeyiyle birleştirmez. Yoksa bütün üçgenler heykel yüzeyidir.
+   */
+  cut?: Uint8Array;
 }
 
 /** Boyanmamış üçgenlerin slotu. */

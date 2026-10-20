@@ -4,6 +4,28 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
+**Durum (2026-10-20):** A1–E2 ve X1–X65 bitti. Yeni iş **X66** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+
+## Sprint 6 — slicer öncesi parça ayırma
+
+Ayrıntı ve bırakılanlar `docs/HEDEF.md`.
+
+| # | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| X53 | Kesimde kenarı düzelt: kesimden önce sınırı üçgen içinden geçir. Yeni yüz kendi komşularıyla gölgelenir, heykel yüzeyiyle birleşmez | Kesilen parça tırtıklı çıkıyor | [x] |
+| X54 | Görünüş düğmeleri (ön, arka, sol, sağ, üst) ve dönüş merkezi seçili parça | Modelin arkasına dönmek zor | [x] |
+| X55 | Program kabuğu: adım şeridi, boş durum, kesim paneli Detay / Ayır | Araç yığını gibi duruyor | [x] |
+| X56 | Dikiş kesimi: kapalı yüzey halkasıyla ikiye böl, kesit yüzüne pim | Kol ve bacak istenen yerden ayrılsın | [x] |
+| X57 | Slot seçince o boya öne çıkar; satırdaki sil yalnız seçimi kaldırır, slot kalır | Öneri çok slot açıyor, hangisi nerede belli olmuyor | [x] |
+| X58 | Yüzen sahne: cam şerit, komut kartı, adlı geçmiş; seçili rengin çevresi ve adı modelde | Fusion’a yakın, model sahnenin kendisi olsun | [x] |
+| X59 | Görünüş küpü: modelin sağ üstünde yüzer, yüz ve köşe bakışı küple birlikte döner | Şeritteki yazı düğmeleri CAD görünüşüne benzemiyor | [x] |
+| X60 | Düğme ve rozet adları: simge ve İngilizce yerine ne yaptığı yazan kısa Türkçe | Üçgen sayısı, ◎, X-ray, sil, Slot ne işe yarıyor belli değil | [x] |
+| X61 | Rengi listeden kaldır: boya varsa tabana döner, geri alma rengi geri getirir | Öneri satırları temizlenince listede kalıyor | [x] |
+| X62 | Açılışta yumuşak gölge: komşu yüzler 60°'ye kadar aynı normali paylaşır | Aynı STL, düz gölgede olduğundan köşeli duruyordu | [x] |
+| X63 | Düzlem tutmayan dikiş, halka yüzeyi ikiye bölüyorsa çizilen çizgiyi izler | Kol kesimi hafif dalgalı halkada duruyordu | [x] |
+| X64 | Düz kesilen yüzler arasında boşluk; 0 ise birbirine değer. Pim toleransından ayrı | Baskıda yüzler yapışmasın | [x] |
+| X65 | Tapa yuvası payı kopya birleşimi olmadan: yanlar dışarı, taban derine kayar | Yoğun boyada Kes "Kesiliyor…"da kalıyordu | [x] |
+
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
 
 ## Ana akış
@@ -11,8 +33,8 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 Her iş bu akışı iyileştirdiği ölçüde önceliklidir:
 
 ```
-Yükle + onar → Smart Fill ile seç → Fırça/Kova ile düzelt → Gap Fill → Önizleme (Space)
-→ Socket (göz, kaş) veya Keys (kol, kafa) → Kes → yeni parçada sonraki bölge → Dışa aktar
+Yükle + onar → Smart Fill / Fırça / Çizgi / Kova → Gap Fill, sınırı yumuşat → Önizleme (Space)
+→ Socket (göz, kaş) veya Keys (kol, kafa) veya Fast → Kes (kaynak gizlenir) → sonraki bölge → Dışa aktar
 ```
 
 ## Sprint 5 — bağlantı kalitesi ve araştırmadan gelenler (sırayla)
@@ -130,7 +152,7 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | B3 | Brush | 1 | [x] | Yüzey boyunca yayılır, Shift ile siler, darbe aralıkları doldurulur (X1) |
 | B4 | Bucket Fill | 1 | [x] | |
 | B5 | Gap Fill | 1 | [x] | |
-| B6 | Smooth sınır | 2 | [x] | Eğri tabanlı, alan koruyan (`src/core/smooth.ts`). Üçgenler kesilmez; sınır köşeleri eğriye kaydırılır |
+| B6 | Smooth sınır | 2 | [x] | Eğri tabanlı, alan koruyan (`src/core/smooth.ts`). "Üçgenleri böl" kapalıyken sınır köşeleri eğriye kayar; açıkken X30 ile üçgenlerin içinden kesilir |
 | B7 | Arka yüz / X-ray boyama | 3 | [x] | Fırça/Silgi seçeneği: model yarı saydam, küre içindeki tüm üçgenler |
 | B8 | Mirror boyama | 3 | [x] | Smart Fill, Fırça, Silgi, Kova, Yumuşat; düzlem X/Y/Z, konum varsayılan parçanın ortası |
 | B9 | Auto-paint | 3 | [x] | "Çıkıntıları öner": en tümsek noktalardan otomatik ölçekli Smart Fill, her çıkıntı yeni slota (testa: kulaklar, gözler, kaşlar, burun, ağız, çene) |
@@ -229,5 +251,6 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-09-25 | X50: kesim paneli sadeleştirme | `6c0b5d7` |
 | 2026-09-25 | X51: pim düzenleme: gerçek boyutlu görüntü, taşı/döndür tutamağı, seçme davranışı | `2070559` |
 | 2026-09-25 | X52: pim değişiklikleri geçmişte | `a72bddd` |
-
 | 2026-09-25 | Sprint 4: yardım, parça görünürlüğü/ayrık görünüm, tolerans, üst çubuk (X26–X29), sınırı üçgen içinden kesme (X30) | `c36ac31` + sonraki |
+| 2026-10-18 | X56: dikiş kesimi, kapalı halkadan iki parça | — |
+| 2026-10-20 | X65: tapa yuvası payı kopya birleşimi olmadan | — |

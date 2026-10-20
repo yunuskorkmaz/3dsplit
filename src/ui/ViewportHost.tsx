@@ -24,9 +24,15 @@ import {
 import { get, notify, set, useStore } from '../state/store';
 import { type Hit, Viewport } from '../viewport/Viewport';
 
+const DIMMED = new THREE.Color('#2a2a2a');
+
+/** Aktif slot dolu renkte kalır; diğer boyalar solar. Taban seçiliyken hepsi görünür. */
 function slotColor(label: number): THREE.Color {
-  const slot = get().slots.find((s) => s.id === label);
-  return new THREE.Color(slot?.color ?? '#ff00ff');
+  const { slots, activeSlot } = get();
+  const slot = slots.find((s) => s.id === label);
+  const color = new THREE.Color(slot?.color ?? '#ff00ff');
+  if (label !== 0 && activeSlot !== 0 && label !== activeSlot) color.lerp(DIMMED, 0.78);
+  return color;
 }
 
 let activeViewport: Viewport | null = null;
@@ -34,6 +40,35 @@ let activeViewport: Viewport | null = null;
 /** Görünümü sığdır (araç çubuğu, Home tuşu). */
 export function fitView(): void {
   activeViewport?.fitView();
+}
+
+export const VIEWS = [
+  ['front', 'Ön'],
+  ['back', 'Arka'],
+  ['left', 'Sol'],
+  ['right', 'Sağ'],
+  ['top', 'Üst'],
+  ['bottom', 'Alt'],
+] as const;
+
+/** Kamerayı seçili parçanın bu yanına çevirir. */
+export function viewFrom(side: (typeof VIEWS)[number][0]): void {
+  activeViewport?.viewFrom(side);
+}
+
+/** Köşe bakışı. İşaretler: sağ +X, arka +Y, üst +Z. */
+export function viewToward(x: number, y: number, z: number): void {
+  activeViewport?.viewToward(new THREE.Vector3(x, y, z));
+}
+
+/** Görünüş küpünün o anki dönüşü. */
+export function cameraCssMatrix(): string {
+  return activeViewport?.cssViewMatrix() ?? 'none';
+}
+
+/** Kamera kıpırdayınca çağrılır. Viewport yoksa abonelik kurulmaz. */
+export function watchCamera(fn: () => void): () => void {
+  return activeViewport?.watchCamera(fn) ?? (() => {});
 }
 
 /** Hedeften kameraya bakan yön; Socket yönünü "kameradan al" için. */
@@ -82,7 +117,7 @@ export function ViewportHost() {
         if (hit.partId !== sel) set({ selectedPartId: hit.partId });
         if (tool === 'smart') smartFillAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, e.shiftKey);
-        else if (tool === 'line') lineClick(hit.partId, hit.tri, hit.point);
+        else if (tool === 'line' || tool === 'seam') lineClick(hit.partId, hit.tri, hit.point);
         else if (tool === 'pin') {
           // ekranda pimin üstüne tıklama: seç (sürükleyince yüzeyde taşınır); Shift ile sil.
           // pim seçiliyken boşluğa tıklama seçimi bırakır, seçili pim yokken yeni pim ekler
@@ -227,6 +262,13 @@ export function ViewportHost() {
   const directionGizmo = useStore((s) => s.directionGizmo);
   const activeSlot = useStore((s) => s.activeSlot);
   const paintVersion = useStore((s) => s.paintVersion);
+  useEffect(() => {
+    const vp = vpRef.current;
+    if (!vp) return;
+    for (const p of get().parts) vp.recolor(p.id, slotColor);
+    const slot = get().slots.find((s) => s.id === activeSlot);
+    vp.showSlotFocus(selectedPartId, activeSlot, slot?.color ?? '#ffffff', slot?.name ?? '');
+  }, [activeSlot, selectedPartId, paintVersion, parts]);
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;

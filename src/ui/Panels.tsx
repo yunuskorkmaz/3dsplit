@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import type { CutMode, PinShape } from '../core/cut';
+import { useMemo, useState } from 'react';
+import type { PinShape } from '../core/cut';
 import {
   activeIslands,
   addSlot,
   autoSuggestFeatures,
   clearActiveSlot,
   clearPins,
+  clearSlotPaint,
   deletePart,
   makeToleranceCoupon,
   refineSelected,
+  removeSlot,
   renamePart,
   runCut,
   selectPart,
@@ -114,6 +116,7 @@ export function PartsPanel() {
             <input
               className="name"
               value={p.name}
+              title={`${p.mesh.labels.length.toLocaleString('tr-TR')} üçgen`}
               onChange={(e) => renamePart(p.id, e.target.value)}
             />
             {p.badge === 'source' && (
@@ -124,28 +127,31 @@ export function PartsPanel() {
                 kaynak
               </span>
             )}
-            {p.badge === 'new' && <span className="badge new">yeni</span>}
-            {!p.manifold && (
-              <span className="badge bad" title="Kapalı mesh değil: Voxel onar'ı deneyin">
-                !
+            {p.badge === 'new' && (
+              <span className="badge new" title="Kesimle oluşan parça">
+                yeni
               </span>
             )}
-            <span className="tris">{(p.mesh.labels.length / 1000).toFixed(1)}k</span>
+            {!p.manifold && (
+              <span className="badge bad" title="Kapalı değil. Mesh araçlarından Delikleri kapat">
+                bozuk
+              </span>
+            )}
             <button
               type="button"
               className="icon-btn"
-              title="Yalnız bunu göster / hepsini geri getir"
+              title="Yalnız bunu göster. Tekrar basınca hepsi geri gelir"
               onClick={(e) => {
                 e.stopPropagation();
                 soloPart(p.id);
               }}
             >
-              ◎
+              Tek
             </button>
             <button
               type="button"
               className="icon-btn"
-              title="Sil"
+              title="Parçayı listeden sil"
               onClick={(e) => {
                 e.stopPropagation();
                 deletePart(p.id);
@@ -183,13 +189,13 @@ export function MeshToolsPanel() {
         <button
           type="button"
           onClick={() => voxelRepairSelected()}
-          title="Bozuk (! rozetli) parçayı voksel ızgarasıyla yeniden kurar: her zaman kapalı, ince ayrıntı biraz yumuşar"
+          title="Bozuk parçayı yeniden kurar: delikler kapanır, ince ayrıntı biraz yumuşar"
         >
-          Voxel onar
+          Delikleri kapat
         </button>
       </div>
       <NumberField
-        label="Kenar"
+        label="Üçgen boyu"
         value={refineEdge}
         min={0.1}
         max={5}
@@ -213,8 +219,26 @@ export function SlotPanel() {
   const keys = useKeymap((s) => s.map);
   const slots = useStore((s) => s.slots);
   const active = useStore((s) => s.activeSlot);
+  const parts = useStore((s) => s.parts);
+  const selectedPartId = useStore((s) => s.selectedPartId);
+  const paintVersion = useStore((s) => s.paintVersion);
+  const counts = useMemo(() => {
+    const part = parts.find((p) => p.id === selectedPartId);
+    const n = new Map<number, number>();
+    if (!part) return n;
+    const labels = part.mesh.labels;
+    for (let i = 0; i < labels.length; i++) {
+      const id = labels[i] ?? 0;
+      if (id) n.set(id, (n.get(id) ?? 0) + 1);
+    }
+    return n;
+  }, [parts, selectedPartId, paintVersion]);
   return (
-    <Panel id="slots" title="Slotlar (renkler)">
+    <Panel id="slots" title="Renkler">
+      <p className="hint">
+        Renk seçince o boyanın çevresi modelde görünür. Temizle boyayı siler, kaldır rengi listeden
+        çıkarır.
+      </p>
       <ul className="slots">
         {slots.map((s) => (
           <li
@@ -233,13 +257,42 @@ export function SlotPanel() {
               value={s.name}
               onChange={(e) => updateSlot(s.id, { name: e.target.value })}
             />
-            <span className="key">{s.id <= 9 ? s.id : ''}</span>
+            <span className="key" title={s.id <= 9 ? `Kısayol: ${s.id}` : undefined}>
+              {s.id <= 9 ? s.id : ''}
+            </span>
+            {s.id !== 0 && (
+              <button
+                type="button"
+                className="slot-clear"
+                disabled={!(counts.get(s.id) ?? 0)}
+                title="Bu rengin boyasını siler. Renk listede kalır."
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearSlotPaint(s.id);
+                }}
+              >
+                temizle
+              </button>
+            )}
+            {s.id !== 0 && (
+              <button
+                type="button"
+                className="slot-clear"
+                title="Rengi listeden siler. Boyası varsa o da gider. Geri al ile döner."
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeSlot(s.id);
+                }}
+              >
+                kaldır
+              </button>
+            )}
           </li>
         ))}
       </ul>
       <div className="row">
         <button type="button" onClick={addSlot}>
-          + Slot
+          + Renk
         </button>
         <button
           type="button"
@@ -287,7 +340,8 @@ export function CutActions() {
   const activeSlot = useStore((s) => s.activeSlot);
   const hasParts = useStore((s) => s.parts.length > 0);
   const keys = useKeymap((s) => s.map);
-  const disabled = !hasParts || activeSlot === 0;
+  const seamReady = useStore((s) => s.tool === 'seam' && !!s.line.closed && !s.line.bad);
+  const disabled = !hasParts || (!seamReady && activeSlot === 0);
   return (
     <div className="cut-actions">
       <button
@@ -306,16 +360,6 @@ export function CutActions() {
   );
 }
 
-const MODES: { id: CutMode; label: string; hint: string }[] = [
-  { id: 'fast', label: 'Fast', hint: 'Düz kapakla keser; yapıştırmalık.' },
-  {
-    id: 'socket',
-    label: 'Socket',
-    hint: 'Bölge içeri doğru tapa olur, gövdede yuva açılır. İnce, yüzeysel bölgeler için.',
-  },
-  { id: 'keys', label: 'Keys', hint: 'Düz kesim + pim/yuva. Kalın bölgeler (kol, kafa) için.' },
-];
-
 export function CutPanel() {
   const cut = useStore((s) => s.cut);
   const tool = useStore((s) => s.tool);
@@ -328,323 +372,365 @@ export function CutPanel() {
   const activeSlot = useStore((s) => s.activeSlot);
   const slotName = useStore((s) => s.slots.find((x) => x.id === s.activeSlot)?.name);
   const update = (patch: Partial<CutSettings>) => set((s) => ({ cut: { ...s.cut, ...patch } }));
+  const seamGlue = tool === 'seam' && cut.mode !== 'keys';
+  const modeTitle = seamGlue
+    ? 'Yapıştır'
+    : cut.mode === 'socket'
+      ? 'Tapa'
+      : cut.mode === 'keys'
+        ? 'Pimli kes'
+        : 'Yapıştır';
+  const modeHint =
+    cut.mode === 'socket'
+      ? 'Göz, kaş, burun. Tapa gövdeye girer, yerinde yuva kalır.'
+      : cut.mode === 'keys'
+        ? 'Kol, bacak, kafa. Düz kesim ve pim.'
+        : 'Yapıştırmalık kapak. Pim yok.';
   return (
-    <Panel id="cut" grow title={`Kesim — ${activeSlot === 0 ? 'slot seçin' : slotName}`}>
-      <div className="row segmented">
-        {MODES.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            className={cut.mode === m.id ? 'active' : ''}
-            onClick={() => update({ mode: m.id })}
-            title={m.hint}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-      <p className="hint">{MODES.find((m) => m.id === cut.mode)?.hint}</p>
-      {suggestion && (
-        <div className={`suggestion ${suggestion.mode === cut.mode ? 'ok' : ''}`}>
-          {suggestion.mode === cut.mode ? '✓ ' : 'Öneri: '}
-          <b>{suggestion.mode === 'keys' ? 'Keys' : 'Socket'}</b> — {suggestion.reason}
-          {suggestion.mode !== cut.mode && (
-            <button type="button" onClick={() => update({ mode: suggestion.mode })}>
-              Uygula
-            </button>
-          )}
-        </div>
-      )}
-      {cut.mode === 'socket' && (
-        <Group title="Tapa">
-          <NumberField
-            label="Derinlik"
-            value={cut.depth}
-            min={0.4}
-            max={30}
-            step={0.1}
-            unit="mm"
-            onChange={(v) => update({ depth: v })}
+    <Panel
+      id="cut"
+      grow
+      title={`${modeTitle} — ${tool === 'seam' ? 'dikiş' : activeSlot === 0 ? 'renk seçin' : slotName}`}
+    >
+      <div id="kesim">
+        <label
+          className="field"
+          title="Kesimden önce boyanın tırtıklı sınırını üçgenlerin içinden geçirir. Boyama değişmez; kapatınca kenar üçgen kenarında kalır"
+        >
+          <input
+            type="checkbox"
+            checked={cut.smoothEdge}
+            onChange={(e) => update({ smoothEdge: e.target.checked })}
           />
-          {islands.length > 1 && (
-            <label className="field">
-              <input
-                type="checkbox"
-                checked={cut.linkAll}
-                onChange={(e) => update({ linkAll: e.target.checked })}
-              />
-              <span>Link all ({islands.length} bölge aynı ayarla)</span>
-            </label>
-          )}
-          {islands.length > 1 &&
-            !cut.linkAll &&
-            islands.map((isl, i) => (
-              <NumberField
-                key={isl.key}
-                label={`Bölge ${i + 1}`}
-                value={cut.islandDepths[isl.key] ?? cut.depth}
-                min={0.4}
-                max={30}
-                step={0.1}
-                unit="mm"
-                title={`~${isl.area.toFixed(0)} mm² — derinlik`}
-                onChange={(v) => update({ islandDepths: { ...cut.islandDepths, [isl.key]: v } })}
-              />
-            ))}
-          <div className="row">
-            <span className="label">Yön: {cut.direction ? 'elle' : 'otomatik'}</span>
-            <button
-              type="button"
-              className={directionGizmo ? 'active' : ''}
-              onClick={() => set({ directionGizmo: !directionGizmo })}
-              title="Ok üzerindeki gizmo ile döndür"
-            >
-              Döndür
-            </button>
-            <button
-              type="button"
-              onClick={() => setSocketDirection(cameraDirection())}
-              title="Tapa yönü = şu anki bakış yönü"
-            >
-              Kameradan
-            </button>
-            <button
-              type="button"
-              disabled={!cut.direction}
-              onClick={() => setSocketDirection(null)}
-            >
-              Oto
-            </button>
-          </div>
-          <NumberField
-            label="Ayak payı"
-            value={cut.inset}
-            min={0}
-            max={10}
-            step={0.1}
-            unit="mm"
-            title="0: tapa tam yüzeyle girer. Artırınca gövdeye giren ayak kenardan içeri çekilir; yuvanın çevresinde gövdede taşıyıcı basamak kalır"
-            onChange={(v) => update({ inset: v })}
-          />
-          <div className="row">
-            <button
-              type="button"
-              className={ringOpen ? 'active' : ''}
-              onClick={() => setRingOpen(!ringOpen)}
-              title="Tapa ayağının kesitini yönlere göre şekillendir (önizlemede 1 numara kırmızı)"
-            >
-              Kesit şekli {cut.ringProfile.some((v) => v !== 0) ? '•' : ''}
-            </button>
-          </div>
-          {ringOpen && (
-            <RingEditor value={cut.ringProfile} onChange={(v) => update({ ringProfile: v })} />
-          )}
-          <NumberField
-            label="Squeeze"
-            value={Math.round(cut.squeeze * 100)}
-            min={0}
-            max={90}
-            step={5}
-            unit="%"
-            onChange={(v) => update({ squeeze: v / 100 })}
-          />
-        </Group>
-      )}
-      {cut.mode === 'keys' && (
-        <Group title="Pim">
-          <div className="row segmented">
-            {PIN_SHAPES.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={cut.pinShape === p.id ? 'active' : ''}
-                onClick={() => update({ pinShape: p.id })}
-                title={p.hint}
-              >
-                {p.label}
+          <span>Kenarı düzelt</span>
+        </label>
+        {suggestion && (
+          <div className={`suggestion ${suggestion.mode === cut.mode ? 'ok' : ''}`}>
+            {suggestion.mode === cut.mode ? '✓ ' : 'Öneri: '}
+            <b>{suggestion.mode === 'keys' ? 'Pimli kes' : 'Tapa'}</b> — {suggestion.reason}
+            {suggestion.mode !== cut.mode && (
+              <button type="button" onClick={() => update({ mode: suggestion.mode })}>
+                Uygula
               </button>
-            ))}
-          </div>
-          <div className="pin-placement">
-            <span>
-              {pinCount
-                ? `${pinCount} pim elle yerleştirildi`
-                : 'Pimler otomatik: kesitin ortasına (uzun kesitte 2–3 pim)'}
-            </span>
-            <div className="row">
-              <button
-                type="button"
-                className={tool === 'pin' ? 'active' : ''}
-                onClick={() => set({ tool: tool === 'pin' ? 'smart' : 'pin' })}
-                title="Pim aracını aç/kapa (P)"
-              >
-                {tool === 'pin' ? 'Yerleştirmeyi bitir' : 'Elle yerleştir'}
-              </button>
-              {pinCount > 0 && (
-                <button type="button" onClick={clearPins}>
-                  Otomatiğe dön
-                </button>
-              )}
-            </div>
-            {tool === 'pin' && (
-              <p className="hint">
-                Bölgeye tıkla: pim ekle · pime tıklayıp sürükle: taşı · Shift+tık: sil. Seçili pimin
-                ayarları üst şeritte.
-              </p>
             )}
           </div>
-        </Group>
-      )}
-      {cut.mode !== 'fast' && (
-        <Group title="Tolerans">
-          <div className="row segmented">
-            {TOLERANCE_PRESETS.map((t) => (
-              <button
-                key={t.label}
-                type="button"
-                className={Math.abs(cut.clearance - t.value) < 1e-6 ? 'active' : ''}
-                onClick={() => update({ clearance: t.value })}
-                title={t.hint}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <p className="hint">
-            {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arası {cut.clearance} mm.
-            Emin değilsen önce deneme parçası bas.
-          </p>
-          <button
-            type="button"
-            onClick={makeToleranceCoupon}
-            title="Seçili pim/tapa ile boşluğun −0.1, kendisi ve +0.1 mm'si için delikli küçük plaka ve pimler üretir; önce bunu basıp en iyi oturanı seçin"
-          >
-            Deneme parçası üret
-          </button>
-        </Group>
-      )}
-      <details className="advanced">
-        <summary>Gelişmiş ayarlar</summary>
-        {cut.mode === 'keys' && (
-          <>
-            <label
-              className="field"
-              title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Uzun kesitte (pim aracıyla pim konmadıysa) uzun eksen boyunca 2–3 pim dizilir. Pim aracında tek tek boyut verilen pimler hariç"
-            >
-              <input
-                type="checkbox"
-                checked={cut.pinAuto}
-                onChange={(e) => update({ pinAuto: e.target.checked })}
-              />
-              <span>Pim boyutu otomatik</span>
-            </label>
-            {!cut.pinAuto && (
-              <>
-                <NumberField
-                  label="Yarıçap"
-                  value={cut.pinRadius}
-                  min={0.5}
-                  max={20}
-                  step={0.1}
-                  unit="mm"
-                  onChange={(v) => update({ pinRadius: v })}
-                />
-                <NumberField
-                  label="Boy"
-                  value={cut.pinLength}
-                  min={1}
-                  max={60}
-                  step={0.5}
-                  unit="mm"
-                  onChange={(v) => update({ pinLength: v })}
-                />
-              </>
-            )}
-            <NumberField
-              label="Gövdede"
-              value={Math.round(cut.pinBodyRatio * 100)}
-              min={5}
-              max={95}
-              step={5}
-              unit="%"
-              title="Pim boyunun gövde tarafında kalan payı. %50: yarı yarıya; artırınca pim gövdeye daha derin girer. Pim aracında tek pim için ayrıca ayarlanır"
-              onChange={(v) => update({ pinBodyRatio: v / 100 })}
-            />
-            {cut.pinShape !== 'snap' && (
-              <NumberField
-                label="Uç pahı"
-                value={cut.pinChamfer}
-                min={0}
-                max={3}
-                step={0.1}
-                unit="mm"
-                title="Pim uçları konik: yuvaya kolay girer, baskıda uç sarkmaz. 0: düz uç"
-                onChange={(v) => update({ pinChamfer: v })}
-              />
-            )}
-            <label
-              className="field"
-              title="Kapalıyken pim gövdede kalır, delik kesilen parçada açılır"
-            >
-              <input
-                type="checkbox"
-                checked={cut.pinOnPart}
-                onChange={(e) => update({ pinOnPart: e.target.checked })}
-              />
-              <span>Pim kesilen parçada</span>
-            </label>
-          </>
         )}
-        {cut.mode !== 'fast' && (
-          <>
+        <p className="hint">{modeHint}</p>
+        {tool === 'seam' && (
+          <p className="hint">
+            Dikiş halkası kapanınca Kes ayırır. Halka düzse kesim düzlemdir; değilse çizilen çizgiyi
+            izler. Pimli kes seçiliyse kesite pim konur; değilse iki parça yapıştırmalık kalır.
+          </p>
+        )}
+        {cut.mode === 'socket' && (
+          <Group title="Tapa">
             <NumberField
-              label="Boşluk"
-              value={cut.clearance}
-              min={0}
-              max={1}
-              step={0.01}
-              unit="mm"
-              title="Tapa/pim ile yuva arasında her yüzeyde bırakılan boşluk. Yuva bu kadar büyütülür, parça boyutu değişmez"
-              onChange={(v) => update({ clearance: Math.round(v * 100) / 100 })}
-            />
-            {cut.mode === 'keys' && (
-              <NumberField
-                label="Boy boşluğu"
-                value={cut.pinDepthClearance}
-                min={0}
-                max={2}
-                step={0.05}
-                unit="mm"
-                title="Delik pimden her uçta bu kadar derin: pim dibe oturmaz, iki parçanın kesim yüzleri birbirine tam değer"
-                onChange={(v) => update({ pinDepthClearance: Math.round(v * 100) / 100 })}
-              />
-            )}
-            <NumberField
-              label="Duvar"
-              value={cut.minWall}
-              min={0}
-              max={5}
+              label="Derinlik"
+              value={cut.depth}
+              min={0.4}
+              max={30}
               step={0.1}
               unit="mm"
-              title="Önizlemede yuva çevresinde bundan ince kalan duvar kırmızı gösterilir (0: kontrol yok)"
-              onChange={(v) => update({ minWall: v })}
+              onChange={(v) => update({ depth: v })}
             />
-          </>
+            {islands.length > 1 && (
+              <label className="field">
+                <input
+                  type="checkbox"
+                  checked={cut.linkAll}
+                  onChange={(e) => update({ linkAll: e.target.checked })}
+                />
+                <span>Hepsine aynı ({islands.length} bölge)</span>
+              </label>
+            )}
+            {islands.length > 1 &&
+              !cut.linkAll &&
+              islands.map((isl, i) => (
+                <NumberField
+                  key={isl.key}
+                  label={`Bölge ${i + 1}`}
+                  value={cut.islandDepths[isl.key] ?? cut.depth}
+                  min={0.4}
+                  max={30}
+                  step={0.1}
+                  unit="mm"
+                  title={`~${isl.area.toFixed(0)} mm² — derinlik`}
+                  onChange={(v) => update({ islandDepths: { ...cut.islandDepths, [isl.key]: v } })}
+                />
+              ))}
+            <div className="row">
+              <span className="label">Gidiş: {cut.direction ? 'elle' : 'otomatik'}</span>
+              <button
+                type="button"
+                className={directionGizmo ? 'active' : ''}
+                onClick={() => set({ directionGizmo: !directionGizmo })}
+                title="Modelin üstündeki okla tapanın gideceği yönü çevir"
+              >
+                Çevir
+              </button>
+              <button
+                type="button"
+                onClick={() => setSocketDirection(cameraDirection())}
+                title="Tapa, şu an baktığın yöne doğru girer"
+              >
+                Bakıştan
+              </button>
+              <button
+                type="button"
+                disabled={!cut.direction}
+                onClick={() => setSocketDirection(null)}
+                title="Yönü parçanın şeklinden kendisi seçer"
+              >
+                Otomatik
+              </button>
+            </div>
+            <p className="hint">Tapa bu yönde gövdeye girer.</p>
+          </Group>
         )}
-        {cut.mode !== 'socket' && (
-          <label
-            className="field"
-            title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)"
-          >
-            <input
-              type="checkbox"
-              checked={cut.planar}
-              onChange={(e) => update({ planar: e.target.checked })}
-            />
-            <span>Düzlemle kes</span>
-          </label>
+        {cut.mode === 'keys' && (
+          <Group title="Pim">
+            <div className="row segmented">
+              {PIN_SHAPES.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={cut.pinShape === p.id ? 'active' : ''}
+                  onClick={() => update({ pinShape: p.id })}
+                  title={p.hint}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div className="pin-placement">
+              <span>
+                {pinCount
+                  ? `${pinCount} pim elle yerleştirildi`
+                  : 'Pimler otomatik: kesitin ortasına (uzun kesitte 2–3 pim)'}
+              </span>
+              <div className="row">
+                <button
+                  type="button"
+                  className={tool === 'pin' ? 'active' : ''}
+                  onClick={() => set({ tool: tool === 'pin' ? 'smart' : 'pin' })}
+                  title="Pim aracını aç/kapa (P)"
+                >
+                  {tool === 'pin' ? 'Yerleştirmeyi bitir' : 'Elle yerleştir'}
+                </button>
+                {pinCount > 0 && (
+                  <button type="button" onClick={clearPins}>
+                    Otomatiğe dön
+                  </button>
+                )}
+              </div>
+              {tool === 'pin' && (
+                <p className="hint">
+                  Bölgeye tıkla: pim ekle · pime tıklayıp sürükle: taşı · Shift+tık: sil. Seçili
+                  pimin ayarları üst şeritte.
+                </p>
+              )}
+            </div>
+          </Group>
         )}
-      </details>
+        {cut.mode !== 'fast' && (
+          <Group title="Tolerans">
+            <div className="row segmented">
+              {TOLERANCE_PRESETS.map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  className={Math.abs(cut.clearance - t.value) < 1e-6 ? 'active' : ''}
+                  onClick={() => update({ clearance: t.value })}
+                  title={t.hint}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <p className="hint">
+              {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arası {cut.clearance} mm.
+              Emin değilsen önce deneme parçası bas.
+            </p>
+            <button
+              type="button"
+              onClick={makeToleranceCoupon}
+              title="Seçili pim/tapa ile boşluğun −0.1, kendisi ve +0.1 mm'si için delikli küçük plaka ve pimler üretir; önce bunu basıp en iyi oturanı seçin"
+            >
+              Deneme parçası üret
+            </button>
+          </Group>
+        )}
+        {(tool === 'seam' || cut.mode !== 'socket') && (
+          <NumberField
+            label="Yüz boşluğu"
+            value={cut.faceGap}
+            min={0}
+            max={2}
+            step={0.05}
+            unit="mm"
+            title="Düz kesilen yüzler arasında bırakılan boşluk. 0 ise yüzler birbirine değer. Pim boşluğundan ayrıdır. Eğri dikişte uygulanmaz."
+            onChange={(v) => update({ faceGap: Math.round(v * 100) / 100 })}
+          />
+        )}
+        <details className="advanced">
+          <summary>İnce ayar</summary>
+          {cut.mode === 'socket' && (
+            <>
+              <NumberField
+                label="Ayak payı"
+                value={cut.inset}
+                min={0}
+                max={10}
+                step={0.1}
+                unit="mm"
+                title="0: tapa tam yüzeyle girer. Artırınca gövdeye giren ayak kenardan içeri çekilir; yuvanın çevresinde gövdede taşıyıcı basamak kalır"
+                onChange={(v) => update({ inset: v })}
+              />
+              <div className="row">
+                <button
+                  type="button"
+                  className={ringOpen ? 'active' : ''}
+                  onClick={() => setRingOpen(!ringOpen)}
+                  title="Tapa ayağının kesitini yönlere göre şekillendir (önizlemede 1 numara kırmızı)"
+                >
+                  Kesit şekli {cut.ringProfile.some((v) => v !== 0) ? '•' : ''}
+                </button>
+              </div>
+              {ringOpen && (
+                <RingEditor value={cut.ringProfile} onChange={(v) => update({ ringProfile: v })} />
+              )}
+              <NumberField
+                label="Sıkıştır"
+                value={Math.round(cut.squeeze * 100)}
+                min={0}
+                max={90}
+                step={5}
+                unit="%"
+                onChange={(v) => update({ squeeze: v / 100 })}
+              />
+            </>
+          )}
+          {cut.mode === 'keys' && (
+            <>
+              <label
+                className="field"
+                title="Yarıçap kesim halkasına uzaklığa ve kesit alanına göre, boy yarıçapın 4 katı. Uzun kesitte (pim aracıyla pim konmadıysa) uzun eksen boyunca 2–3 pim dizilir. Pim aracında tek tek boyut verilen pimler hariç"
+              >
+                <input
+                  type="checkbox"
+                  checked={cut.pinAuto}
+                  onChange={(e) => update({ pinAuto: e.target.checked })}
+                />
+                <span>Pim boyutu otomatik</span>
+              </label>
+              {!cut.pinAuto && (
+                <>
+                  <NumberField
+                    label="Yarıçap"
+                    value={cut.pinRadius}
+                    min={0.5}
+                    max={20}
+                    step={0.1}
+                    unit="mm"
+                    onChange={(v) => update({ pinRadius: v })}
+                  />
+                  <NumberField
+                    label="Boy"
+                    value={cut.pinLength}
+                    min={1}
+                    max={60}
+                    step={0.5}
+                    unit="mm"
+                    onChange={(v) => update({ pinLength: v })}
+                  />
+                </>
+              )}
+              <NumberField
+                label="Gövdede pay"
+                value={Math.round(cut.pinBodyRatio * 100)}
+                min={5}
+                max={95}
+                step={5}
+                unit="%"
+                title="Pim boyunun gövde tarafında kalan payı. %50: yarı yarıya; artırınca pim gövdeye daha derin girer. Pim aracında tek pim için ayrıca ayarlanır"
+                onChange={(v) => update({ pinBodyRatio: v / 100 })}
+              />
+              {cut.pinShape !== 'snap' && (
+                <NumberField
+                  label="Uç pahı"
+                  value={cut.pinChamfer}
+                  min={0}
+                  max={3}
+                  step={0.1}
+                  unit="mm"
+                  title="Pim uçları konik: yuvaya kolay girer, baskıda uç sarkmaz. 0: düz uç"
+                  onChange={(v) => update({ pinChamfer: v })}
+                />
+              )}
+              <label
+                className="field"
+                title="Kapalıyken pim gövdede kalır, delik kesilen parçada açılır"
+              >
+                <input
+                  type="checkbox"
+                  checked={cut.pinOnPart}
+                  onChange={(e) => update({ pinOnPart: e.target.checked })}
+                />
+                <span>Pim kesilen parçada</span>
+              </label>
+            </>
+          )}
+          {cut.mode !== 'fast' && (
+            <>
+              <NumberField
+                label="Boşluk"
+                value={cut.clearance}
+                min={0}
+                max={1}
+                step={0.01}
+                unit="mm"
+                title="Tapa/pim ile yuva arasında her yüzeyde bırakılan boşluk. Yuva bu kadar büyütülür, parça boyutu değişmez"
+                onChange={(v) => update({ clearance: Math.round(v * 100) / 100 })}
+              />
+              {cut.mode === 'keys' && (
+                <NumberField
+                  label="Boy boşluğu"
+                  value={cut.pinDepthClearance}
+                  min={0}
+                  max={2}
+                  step={0.05}
+                  unit="mm"
+                  title="Delik pimden her uçta bu kadar derin: pim dibe oturmaz, iki parçanın kesim yüzleri birbirine tam değer"
+                  onChange={(v) => update({ pinDepthClearance: Math.round(v * 100) / 100 })}
+                />
+              )}
+              <NumberField
+                label="Duvar"
+                value={cut.minWall}
+                min={0}
+                max={5}
+                step={0.1}
+                unit="mm"
+                title="Önizlemede yuva çevresinde bundan ince kalan duvar kırmızı gösterilir (0: kontrol yok)"
+                onChange={(v) => update({ minWall: v })}
+              />
+            </>
+          )}
+          {cut.mode !== 'socket' && (
+            <label
+              className="field"
+              title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)"
+            >
+              <input
+                type="checkbox"
+                checked={cut.planar}
+                onChange={(e) => update({ planar: e.target.checked })}
+              />
+              <span>Düzlemle kes</span>
+            </label>
+          )}
+        </details>
+      </div>
     </Panel>
   );
 }

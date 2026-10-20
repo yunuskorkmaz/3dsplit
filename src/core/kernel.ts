@@ -84,7 +84,7 @@ export function fromManifold(man: Manifold, cutLabel: number): LabeledMesh {
 
 /**
  * Manifold'dan etiketli mesh'e döner; faceID orijinal mesh'in üçgen numarasıdır,
- * etiket `labels`'tan okunur. CUT_FACE_ID olan yüzler `cutLabel` alır.
+ * etiket `labels`'tan okunur. CUT_FACE_ID olan yüzler `cutLabel` alır ve `cut` bayrağı 1 olur.
  * (Manifold etiketlerden bağımsız kurulduğu için boyama değişse de yeniden kullanılabilir.)
  */
 export function fromManifoldMapped(
@@ -100,12 +100,15 @@ export function fromManifoldMapped(
   const indices = new Uint32Array(mesh.triVerts);
   const triCount = indices.length / 3;
   const out = new Uint16Array(triCount);
+  const cut = new Uint8Array(triCount);
   const faceID = mesh.faceID;
   for (let t = 0; t < triCount; t++) {
     const id = faceID && faceID.length === triCount ? faceID[t] : CUT_FACE_ID;
-    out[t] = id < labels.length ? labels[id] : cutLabel;
+    const fresh = id === CUT_FACE_ID || id >= labels.length;
+    out[t] = fresh ? cutLabel : labels[id];
+    cut[t] = fresh ? 1 : 0;
   }
-  return { positions, indices, labels: out };
+  return { positions, indices, labels: out, cut };
 }
 
 /** Yüz kimliği = üçgen numarası olan model manifold'u (etiketler sonra eşlenir). */

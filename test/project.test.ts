@@ -35,6 +35,24 @@ describe('proje dosyası', () => {
     expect(Array.from(back.parts[0].mesh.positions)).toEqual(Array.from(mesh.positions));
     expect(Array.from(back.parts[0].mesh.indices)).toEqual(Array.from(mesh.indices));
     expect(Array.from(back.parts[0].mesh.labels)).toEqual(Array.from(mesh.labels));
+    expect(back.parts[0].mesh.cut).toBeUndefined();
+  });
+
+  it('kesim yüzünü de saklar', () => {
+    const mesh = labelWhere(subdividedCube(20, 2), 1, () => false);
+    mesh.cut = new Uint8Array(mesh.labels.length);
+    mesh.cut[0] = 1;
+    mesh.cut[3] = 1;
+    const data = {
+      parts: [
+        { id: 'p1', name: 'kapak', visible: true, badge: null, colorSlot: 0, manifold: true, mesh },
+      ],
+      slots: [{ id: 0, name: 'Taban', color: '#b0b0b0' }],
+      activeSlot: 0,
+      selectedPartId: 'p1',
+    };
+    const back = readProject(writeProject(data));
+    expect(Array.from(back.parts[0].mesh.cut ?? [])).toEqual(Array.from(mesh.cut));
   });
 
   it('başka zip dosyasını reddeder', async () => {

@@ -28,8 +28,25 @@ import {
   SlotPanel,
   StatusBar,
 } from './Panels';
-import { ToolBar, ToolOptions } from './Toolbar';
+import { ToolBar, ToolOptions, ViewCube } from './Toolbar';
 import { fitView, ViewportHost } from './ViewportHost';
+
+function openModel(): void {
+  document.getElementById('open-model')?.click();
+}
+
+function EmptyStage() {
+  const parts = useStore((s) => s.parts);
+  if (parts.length) return null;
+  return (
+    <div className="empty-stage">
+      <p>Modeli aç, bölgeyi seç, kes, slicer'a aktar.</p>
+      <button type="button" onClick={openModel}>
+        Aç
+      </button>
+    </div>
+  );
+}
 
 function runCommand(cmd: Command): void {
   if (cmd.startsWith('tool.')) set({ tool: cmd.slice(5) as Tool });
@@ -78,7 +95,7 @@ function useShortcuts() {
       // Alt: sadece harf/rakam olmayan karakterlerde (Türkçe Mac klavyesinde [ ] Option ile yazılır)
       if (e.altKey && (e.key.length !== 1 || /[\p{L}\p{N}]/u.test(e.key))) return;
       // X36: çizgi aracı tuşları
-      if (get().tool === 'line' && get().line.anchors.length) {
+      if ((get().tool === 'line' || get().tool === 'seam') && get().line.anchors.length) {
         if (e.key === 'Enter') {
           e.preventDefault();
           return lineClose();
@@ -136,25 +153,29 @@ export function App() {
       }}
     >
       <Header />
-      <aside className="left">
-        <PartsPanel />
-        <HistoryPanel />
-        <MeshToolsPanel />
-        <CameraPanel />
-      </aside>
-      <main>
-        <ToolOptions />
-        <div className="viewport-area">
-          <ViewportHost />
-          <ToolBar onFit={fitView} />
-          <StatusBar />
+      <main className="stage">
+        <ViewportHost />
+        <EmptyStage />
+        <div className="top-stack">
+          <ToolBar />
+          <ToolOptions />
         </div>
+        <ViewCube onFit={fitView} />
+        <div className="float side-left">
+          <PartsPanel />
+          <SlotPanel />
+          <MeshToolsPanel />
+          <CameraPanel />
+        </div>
+        <div className="float side-right">
+          <CutPanel />
+          <CutActions />
+        </div>
+        <div className="timeline">
+          <HistoryPanel />
+        </div>
+        <StatusBar />
       </main>
-      <aside className="right">
-        <SlotPanel />
-        <CutPanel />
-        <CutActions />
-      </aside>
       <HelpDialog />
     </div>
   );

@@ -1,6 +1,6 @@
 # 3dsplit
 
-Boyanmış bölgeleri ayrı basılabilir parçalara bölen tarayıcı aracı (Audja Color Painter + Separate by Color benzeri). Her şey tarayıcıda çalışır; dosya sunucuya gitmez.
+Boyanmış bölgeleri ayrı basılabilir parçalara bölen tarayıcı aracı (Audja Color Painter + Separate by Color benzeri). Her şey tarayıcıda çalışır; dosya sunucuya gitmez. Proje dokümanındaki özellikler (A1–E2) ve yol haritasındaki ek işler (X1–X52) uygulandı.
 
 Canlı: [yunuskorkmaz.github.io/3dsplit](https://yunuskorkmaz.github.io/3dsplit/)
 
@@ -30,6 +30,6 @@ Kısayollar, fare hareketleri ve iş akışı: **?** tuşu veya sağ üstte **Ya
 
 ## Dokümanlar
 
-- [docs/ROADMAP.md](docs/ROADMAP.md): iş listesi, durumlar, şimdiki sprint
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): katmanlar, veri modeli, kesim algoritmaları
-- [docs/project-brief.md](docs/project-brief.md): proje dokümanı (özellik listesi, fazlar)
+- [docs/project-brief.md](docs/project-brief.md): amaç, kapsam, özellik kimlikleri (A1–E2)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): kesim ve boyama yolu (kodla aynı kaynak)
+- [docs/ROADMAP.md](docs/ROADMAP.md): biten işler; sıradaki numara X53

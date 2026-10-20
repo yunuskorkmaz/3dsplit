@@ -15,6 +15,7 @@ import {
 import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from '../core/kernel';
 import { refineMesh } from '../core/refine';
 import { type RepairReport, repairMesh } from '../core/repair';
+import { smoothCutEdge } from '../core/smooth';
 import { BASE_SLOT, type LabeledMesh } from '../core/types';
 import { voxelRepair } from '../core/voxelRepair';
 
@@ -36,6 +37,28 @@ const ready = initKernel(wasmUrl);
  * 1-2M üçgende her önizleme/kesimde yeniden kurmak ~2 s sürüyordu.
  */
 let cached: { key: string; man: Manifold } | null = null;
+
+/** X53: kenar düzeltmesi topolojiyi değiştirir. Orijinal anahtar o katıyı geri verirdi. */
+function edgePrepared(
+  mesh: LabeledMesh,
+  opts: CutOptions,
+  geomKey?: string,
+): { mesh: LabeledMesh; key?: string } {
+  if (!opts.smoothEdge || opts.seamLoop) return { mesh, key: geomKey };
+  return {
+    mesh: smoothCutEdge(mesh, opts.slot),
+    key: geomKey ? `${geomKey}:edge:${opts.slot}:${hashLabels(mesh.labels)}` : undefined,
+  };
+}
+
+function hashLabels(labels: Uint16Array): string {
+  let h = 2166136261;
+  for (let i = 0; i < labels.length; i++) {
+    h ^= labels[i];
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16);
+}
 
 function modelProvider(mesh: LabeledMesh, key?: string) {
   if (!key) return undefined;
@@ -103,7 +126,8 @@ const api = {
   async cut(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {
     await ready;
     try {
-      const r = cutRegion(mesh, opts, modelProvider(mesh, geomKey));
+      const prepared = edgePrepared(mesh, opts, geomKey);
+      const r = cutRegion(prepared.mesh, opts, modelProvider(prepared.mesh, prepared.key));
       return Comlink.transfer({ ok: true as const, ...r }, buffersOf([r.body, ...r.parts]));
     } catch (e) {
       if (e instanceof CutError)
@@ -114,13 +138,14 @@ const api = {
 
   async preview(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {
     await ready;
-    return previewCut(mesh, opts, modelProvider(mesh, geomKey));
+    const prepared = edgePrepared(mesh, opts, geomKey);
+    return previewCut(prepared.mesh, opts, modelProvider(prepared.mesh, prepared.key));
   },
 
   async pinLayout(mesh: LabeledMesh, opts: CutOptions) {
     await ready;
     try {
-      return pinLayout(mesh, opts);
+      return pinLayout(edgePrepared(mesh, opts).mesh, opts);
     } catch {
       // bölge henüz kesilebilir değil (ör. açık sınır): pim gösterilmez
       return [];

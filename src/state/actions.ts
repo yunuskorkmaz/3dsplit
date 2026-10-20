@@ -1,4 +1,4 @@
-import type { CutOptions, PinPlacement } from '../core/cut';
+import { CutError, type CutOptions, type PinPlacement, seamSeparates } from '../core/cut';
 import { boundingBox } from '../core/geometry';
 import { regionInsideLoop, surfacePath, vertexNeighbors } from '../core/lasso';
 import {
@@ -1070,7 +1070,7 @@ export function autoSuggestFeatures(): void {
   set({ slots });
   notify(
     'info',
-    `${found.length} çıkıntı önerildi ve "Öneri" slotlarına boyandı. Beğenmediğini Silgi ile sil ya da Ctrl+Z ile geri al.`,
+    `${found.length} çıkıntı önerildi. "temizle" boyayı siler, "kaldır" rengi listeden çıkarır.`,
   );
 }
 
@@ -1079,7 +1079,7 @@ export function autoSuggestFeatures(): void {
 export function addSlot(): void {
   const slots = get().slots;
   const id = Math.max(...slots.map((s) => s.id)) + 1;
-  set({ slots: [...slots, { id, name: `Slot ${id}`, color: nextSlotColor(id) }], activeSlot: id });
+  set({ slots: [...slots, { id, name: `Renk ${id}`, color: nextSlotColor(id) }], activeSlot: id });
 }
 
 export function updateSlot(id: number, patch: { name?: string; color?: string }): void {
@@ -1101,6 +1101,7 @@ function cutOptions(): CutOptions {
     inset: cut.mode === 'socket' ? cut.inset : 0,
     ringProfile: cut.mode === 'socket' ? cut.ringProfile : undefined,
     planar: cut.mode !== 'socket' && cut.planar,
+    smoothEdge: cut.smoothEdge,
     minWall: cut.minWall,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
     pin: {
@@ -1114,6 +1115,7 @@ function cutOptions(): CutOptions {
       auto: cut.pinAuto,
     },
     pins: cut.mode === 'keys' ? pins : undefined,
+    faceGap: cut.faceGap,
   };
 }
 
@@ -1177,9 +1179,21 @@ export function scheduleSuggestion(): void {
  * Önizleme modunu açar/kapatır. Açıkken ayar, pim, slot, boyama veya parça
  * değişince önizleme kendiliğinden yenilenir (pim sürüklerken de açık kalır).
  */
+function seamReady(): { part: Part; loop: number[] } | null {
+  const line = get().line;
+  if (get().tool !== 'seam' || !line.closed || line.bad || line.path.length < 3) return null;
+  const part = line.partId ? get().parts.find((p) => p.id === line.partId) : undefined;
+  return part ? { part, loop: line.path } : null;
+}
+
+function seamOptions(loop: number[]): CutOptions {
+  const mode = get().cut.mode === 'keys' ? 'keys' : 'fast';
+  return { ...cutOptions(), mode, seamLoop: loop };
+}
+
 export async function togglePreview(): Promise<void> {
   if (get().previewActive) return set({ previewActive: false, preview: null });
-  if (!cutTarget()) return;
+  if (!seamReady() && !cutTarget()) return;
   set({ previewActive: true });
   await refreshPreview(true);
 }
@@ -1192,13 +1206,23 @@ async function refreshPreview(loud = false): Promise<void> {
   const part = selectedPart();
   const seq = ++previewSeq;
   if (!get().previewActive) return;
-  if (!part || get().activeSlot === BASE_SLOT || !part.mesh.labels.includes(get().activeSlot)) {
+  const seam = seamReady();
+  if (
+    !seam &&
+    (!part || get().activeSlot === BASE_SLOT || !part.mesh.labels.includes(get().activeSlot))
+  ) {
     set({ preview: null });
     return;
   }
+  const target = seam?.part ?? part;
+  if (!target) return;
   const run = async () => {
     try {
-      const p = await geometry.preview(part.mesh, cutOptions(), geomKey(part.mesh));
+      const p = await geometry.preview(
+        target.mesh,
+        seam ? seamOptions(seam.loop) : cutOptions(),
+        geomKey(target.mesh),
+      );
       // bu arada yeni istek geldiyse ya da mod kapandıysa eski sonucu gösterme
       if (seq !== previewSeq || !get().previewActive) return;
       if (loud) for (const w of p.warnings) notify('warn', w);
@@ -1222,7 +1246,9 @@ useStore.subscribe((s, prev) => {
     s.activeSlot === prev.activeSlot &&
     s.selectedPartId === prev.selectedPartId &&
     s.paintVersion === prev.paintVersion &&
-    s.parts === prev.parts
+    s.parts === prev.parts &&
+    s.line === prev.line &&
+    s.tool === prev.tool
   )
     return;
   if (previewTimer) clearTimeout(previewTimer);
@@ -1233,6 +1259,11 @@ useStore.subscribe((s, prev) => {
 });
 
 export async function runCut(): Promise<void> {
+  const seam = seamReady();
+  if (get().tool === 'seam') {
+    if (!seam) return notify('warn', 'Önce dikiş halkasını kapatın.');
+    return runSeamCut(seam.part, seam.loop);
+  }
   const part = cutTarget();
   if (!part) return;
   const opts = cutOptions();
@@ -1285,10 +1316,69 @@ export async function runCut(): Promise<void> {
     }));
     pushHistory(
       { kind: 'parts', before, after },
-      `Kes (${opts.mode === 'socket' ? 'Socket' : opts.mode === 'keys' ? 'Keys' : 'Fast'})`,
+      `Kes (${opts.mode === 'socket' ? 'Tapa' : opts.mode === 'keys' ? 'Pimli kes' : 'Yapıştır'})`,
     );
     set({ previewActive: false, preview: null });
     notify('info', `Kesildi: ${newParts.length} yeni parça. Kaynak parça gizlendi (sarı rozet).`);
+  });
+}
+
+async function runSeamCut(part: Part, loop: number[]): Promise<void> {
+  const opts = seamOptions(loop);
+  await busy('Kesiliyor…', async () => {
+    const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh));
+    if (!r.ok) {
+      set({ errorLoops: r.loops.length ? r.loops : null, line: { ...get().line, bad: true } });
+      notify('error', r.loops.length ? `${r.error} Halka kırmızıyla gösterildi.` : r.error);
+      return;
+    }
+    set({ errorLoops: null });
+    for (const w of r.warnings) notify('warn', w);
+    const newParts: Part[] = [
+      {
+        id: newPartId(),
+        name: `${part.name} gövde`,
+        mesh: r.body,
+        visible: true,
+        badge: 'new',
+        colorSlot: part.colorSlot,
+        manifold: true,
+      },
+      ...r.parts.map((mesh: LabeledMesh) => ({
+        id: newPartId(),
+        name: `${part.name} parça`,
+        mesh,
+        visible: true,
+        badge: 'new' as const,
+        colorSlot: part.colorSlot,
+        manifold: true,
+      })),
+    ];
+    const before = get().parts;
+    const after = before.flatMap((p) => {
+      const cleared = p.badge === 'new' ? { ...p, badge: null } : p;
+      return p.id === part.id
+        ? [{ ...p, badge: 'source' as const, visible: false }, ...newParts]
+        : [cleared];
+    });
+    set((s) => ({
+      parts: after,
+      selectedPartId: newParts[0].id,
+      preview: null,
+      pins: [],
+      selectedPin: -1,
+      directionGizmo: false,
+      cut: { ...s.cut, direction: null, islandDepths: {}, ringProfile: [0, 0, 0, 0, 0, 0, 0, 0] },
+    }));
+    lineCancel();
+    pushHistory({ kind: 'parts', before, after }, 'Kes (Dikiş)');
+    set({ previewActive: false, preview: null });
+    notify(
+      'info',
+      opts.mode === 'keys'
+        ? 'Dikiş kesildi, kesite pim kondu. Kaynak parça gizlendi.'
+        : 'Dikiş kesildi, yapıştırmalık iki parça. Kaynak parça gizlendi.',
+    );
   });
 }
 
@@ -1456,7 +1546,7 @@ export function lineClick(partId: string, tri: number, point: Vec3): void {
   const part = partById(partId);
   if (!part) return;
   let line = get().line;
-  if (line.partId !== partId) line = { partId, anchors: [], path: [] };
+  if (line.partId !== partId || line.closed) line = { partId, anchors: [], path: [] };
   const mesh = part.mesh;
   const v = nearestCorner(mesh, tri, point);
   if (line.anchors.length >= 3) {
@@ -1524,6 +1614,7 @@ export function lineClose(): void {
   const line = get().line;
   const part = line.partId ? partById(line.partId) : undefined;
   if (!part || line.anchors.length < 3) return notify('warn', 'Halka için en az 3 nokta gerekli.');
+  if (get().tool === 'seam') return finishSeam(part, line);
   const slot = get().activeSlot;
   if (slot === BASE_SLOT) return notify('warn', 'Boyanacak slotu seçin (taban değil).');
   const mesh = part.mesh;
@@ -1603,6 +1694,37 @@ export function lineClose(): void {
   );
 }
 
+function finishSeam(
+  part: Part,
+  line: { partId: string | null; anchors: number[]; path: number[] },
+): void {
+  const mesh = part.mesh;
+  const nbr = neighborsOf(mesh);
+  const loop = [
+    ...line.path,
+    ...surfacePath(mesh, nbr, line.anchors[line.anchors.length - 1], line.anchors[0]).slice(1, -1),
+  ];
+  try {
+    const kind = seamSeparates(mesh, loop);
+    set({ line: { ...line, path: loop, closed: true, bad: false }, errorLoops: null });
+    notify(
+      'info',
+      kind === 'surface'
+        ? 'Dikiş hazır. Çizgi düz değil; Kes, çizilen halkayı izler.'
+        : get().cut.mode === 'keys'
+          ? 'Dikiş hazır. Kes, bu düzlemden ayırır ve kesite pim koyar.'
+          : 'Dikiş hazır. Kes, yapıştırmalık iki parça ayırır. Pim için üstten Pimli kes’i seçin.',
+    );
+  } catch (e) {
+    const loops = e instanceof CutError ? (e.loops ?? []) : [];
+    set({
+      line: { ...line, path: loop, closed: true, bad: true },
+      errorLoops: loops.length ? loops : null,
+    });
+    notify('error', e instanceof Error ? e.message : String(e));
+  }
+}
+
 // ---------- parça yönetimi ----------
 
 export function selectPart(id: string): void {
@@ -1674,6 +1796,25 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
   } else if (entry.kind === 'split') {
     if (reverse) replaceMeshArrays(entry.mesh, revertSplit(entry.mesh, entry.diff));
     else replaceMeshArrays(entry.mesh, applySplit(entry.mesh, entry.diff), entry.diff);
+  } else if (entry.kind === 'removeSlot') {
+    const slots = reverse ? entry.beforeSlots : entry.afterSlots;
+    const activeSlot = reverse ? entry.activeBefore : entry.activeAfter;
+    for (const paint of entry.paints) {
+      const value = reverse ? entry.slotId : BASE_SLOT;
+      for (const t of paint.tris) paint.mesh.labels[t] = value;
+      const part = get().parts.find((p) => p.mesh === paint.mesh);
+      if (part) onLabelsChanged?.(part.id, [...paint.tris]);
+    }
+    set((s) => ({
+      slots,
+      activeSlot,
+      paintVersion: s.paintVersion + 1,
+      parts: s.parts.map((p) => {
+        const prev = entry.colorBefore.find((c) => c.id === p.id);
+        if (!prev) return p;
+        return { ...p, colorSlot: reverse ? prev.colorSlot : BASE_SLOT };
+      }),
+    }));
   } else if (entry.kind === 'geometry') {
     const pos = reverse ? entry.posBefore : entry.posAfter;
     const lab = reverse ? entry.labelsBefore : entry.labelsAfter;
@@ -1712,8 +1853,60 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
 
 /** Seçili parçada aktif slotun boyasını siler (yanlış seçimi temizlemek için). */
 export function clearActiveSlot(): void {
+  clearSlotPaint(get().activeSlot);
+}
+
+/**
+ * Rengi listeden kaldırır. Taban kalır. Bu renkle boyanmış üçgenler tabana döner;
+ * geri alma rengi ve boyayı birlikte getirir.
+ */
+export function removeSlot(id: number): void {
+  if (id === BASE_SLOT) return;
+  const beforeSlots = get().slots;
+  const slot = beforeSlots.find((s) => s.id === id);
+  if (!slot) return;
+  const paints: { mesh: LabeledMesh; tris: Uint32Array }[] = [];
+  for (const part of get().parts) {
+    const labels = part.mesh.labels;
+    const tris: number[] = [];
+    for (let t = 0; t < labels.length; t++) if (labels[t] === id) tris.push(t);
+    if (!tris.length) continue;
+    for (const t of tris) labels[t] = BASE_SLOT;
+    paints.push({ mesh: part.mesh, tris: Uint32Array.from(tris) });
+    onLabelsChanged?.(part.id, tris);
+  }
+  const colorBefore = get()
+    .parts.filter((p) => p.colorSlot === id)
+    .map((p) => ({ id: p.id, colorSlot: p.colorSlot }));
+  const activeBefore = get().activeSlot;
+  const activeAfter = activeBefore === id ? BASE_SLOT : activeBefore;
+  const afterSlots = beforeSlots.filter((s) => s.id !== id);
+  pushHistory(
+    {
+      kind: 'removeSlot',
+      slotId: id,
+      beforeSlots,
+      afterSlots,
+      activeBefore,
+      activeAfter,
+      paints,
+      colorBefore,
+    },
+    `Rengi kaldır: ${slot.name}`,
+  );
+  set((s) => ({
+    slots: afterSlots,
+    activeSlot: activeAfter,
+    paintVersion: s.paintVersion + 1,
+    parts: colorBefore.length
+      ? s.parts.map((p) => (p.colorSlot === id ? { ...p, colorSlot: BASE_SLOT } : p))
+      : s.parts,
+  }));
+}
+
+/** Seçili parçada bu slotun boyasını siler. Slot listede kalır. */
+export function clearSlotPaint(slot: number): void {
   const part = selectedPart();
-  const slot = get().activeSlot;
   if (!part || slot === BASE_SLOT) return;
   const labels = part.mesh.labels;
   const tris: number[] = [];

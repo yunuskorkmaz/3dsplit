@@ -2,6 +2,8 @@
 
 Sep 25, 2026 · @Yunus Korkmaz
 
+**Durum (18 Ekim 2026):** Amaç aynı. Tablodaki A1–E2 ve yol haritasındaki X1–X52 kodda. Kesim ve boyama yolunun ayrıntısı `docs/ARCHITECTURE.md`. İş durumu `docs/ROADMAP.md`; sıradaki numara X53. Bu dosya amaç, kapsam ve özellik kimlikleri içindir.
+
 ## Amaç ve kapsam
 
 Audja'nın **Color Painter + Separate by Color** akışını tarayıcıda çalışan, kendi kontrolümüzdeki bir araçla yeniden yapıyoruz. Hedef, boyanmış bölgeleri ayrı basılabilir parçalara bölüp Socket veya Keys bağlantısıyla geri birleştirilebilir hale getirmek. Böylece AMS olmadan çok renkli baskı mümkün oluyor.
@@ -17,27 +19,26 @@ Kesim büyükten küçüğe ilerliyor: önce büyük bloklar (kafa, gövde, koll
 
 ```mermaid
 flowchart LR
-  A[Model yükle + onar] --> B[Smart Fill / Brush ile seç]
-  B --> C[Bucket + Gap Fill]
-  C --> D[Smooth sınır]
-  D --> E[Önizleme - Space]
-  E --> F{Bağlantı tipi}
-  F -->|kalın, çok noktadan bağlı| G[Keys]
-  F -->|ince, yüzeysel| H[Socket]
-  F -->|yapıştırılacak| I[Fast]
+  A[Model yükle + onar] --> B[Smart Fill / Fırça / Çizgi / Kova]
+  B --> C[Gap Fill + sınırı yumuşat]
+  C --> D[Önizleme Space]
+  D --> E{Bağlantı tipi}
+  E -->|kalın çıkıntı| G[Keys]
+  E -->|ince, yüzeysel| H[Socket]
+  E -->|yapıştırılacak| I[Fast]
   G --> J[Kes]
   H --> J
   I --> J
-  J --> K[Kaynak parçayı sil / Split]
+  J --> K[Kaynak gizlenir]
   K --> B
-  K --> L[Export STL / 3MF]
+  K --> L[3MF / STL]
 ```
 
-Her kesimden sonra eski parça sarı "kaynak" rozetiyle işaretleniyor, yeni parçalar mavi görünüyor. Sonraki kesimler yeni parçalar üzerinden yapılıyor.
+Her kesimden sonra eski parça sarı "kaynak" rozetiyle gizleniyor, yeni parçalar mavi "yeni" rozeti alıyor. Sonraki kesimler yeni parçalar üzerinden yapılıyor. Kopuk parçaları ayırmak ayrı bir işlem (D3).
 
 ## Özellik listesi
 
-Toplam 32 özellik var. Faz sütunu hangi sürümde geleceğini gösteriyor: **1** = MVP, **2** = kullanılabilir sürüm, **3** = cila ve ek özellikler.
+Toplam 32 özellik var; hepsi uygulandı. Faz sütunu ilk plandaki sıradır: **1** = MVP, **2** = kullanılabilir sürüm, **3** = cila. Tablodaki "Ne yapar" sütunu bugünkü davranıştır. Algoritma `docs/ARCHITECTURE.md` ile aynıdır.
 
 ### A. Model ve dosya
 
@@ -57,7 +58,7 @@ Toplam 32 özellik var. Faz sütunu hangi sürümde geleceğini gösteriyor: **1
 | B3 | Brush | Daire fırça, ayarlanabilir yarıçap; Shift ile silme | 1 | Kolay |
 | B4 | Bucket Fill | Kapalı sınırın içini tek tıkla doldurur | 1 | Kolay |
 | B5 | Gap Fill | Bölge içinde kalan küçük boşlukları eşik alanına göre kapatır | 1 | Kolay |
-| B6 | Smooth sınır | Tırtıklı bölge sınırını yumuşatır; üçgenleri yeni sınır boyunca yeniden keser | 2 | **Zor** |
+| B6 | Smooth sınır | Sınırı Gauss eğrisi ve alan dengesiyle yumuşatır. "Üçgenleri böl" açıkken eğri üçgenlerin içinden geçer | 2 | **Zor** |
 | B7 | Arka yüz boyama / X-ray | İçi boş ya da görünmeyen yüzleri boyama | 3 | Orta |
 | B8 | Mirror boyama | Simetri ekseni boyunca aynı anda boyama | 3 | Orta |
 | B9 | Auto-paint | Açılışta geometriye göre ilk bölge önerisi | 3 | Orta–zor |
@@ -71,20 +72,20 @@ Toplam 32 özellik var. Faz sütunu hangi sürümde geleceğini gösteriyor: **1
 | C3 | Socket: Depth | Bölgeyi içeri doğru belirli derinlikte uzatıp tapa, gövdede yuva üretir | 1 | **En zor** |
 | C4 | Socket: gizmo yönü | Tapa uzama yönünü gizmo ile ayarlama | 2 | Orta |
 | C5 | Socket: Squeeze | Tapayı içe doğru daraltarak yandan taşmayı önler | 2 | Zor |
-| C6 | Socket: Ring Selection | Sağ tıkla halka seçip tapa kesitini yerel olarak şekillendirme | 3 | Zor |
-| C7 | Socket: full surface | Tapanın tüm yüzeyi mi yoksa sadece iç kısmı mı kullanacağı seçeneği | 3 | Orta |
-| C8 | Keys: pim yerleştirme | Tıklanan yere pim (mavi) ve yuva (sarı) koyar; S/E/R ve gizmo ile ölçek, taşıma, döndürme | 1 | Orta |
-| C9 | Keys: clearance | Yazıcıya göre boşluk kaydırıcısı (ör. 0,1–0,4 mm) | 1 | Kolay |
+| C6 | Socket: kesit şekli | Tapa alt halkasının 8 yönlü radyal profili; önizlemede tutamaçlarla | 3 | Zor |
+| C7 | Socket: ayak payı | 0 tam yüzey; artınca gövdeye giren ayak kenardan içeri çekilir, yuva çevresinde basamak kalır | 3 | Orta |
+| C8 | Keys: pim yerleştirme | Tıklanan yere pim koyar. Pim aracında seç, W ile taşı, R ile döndür, Shift+tık ile sil | 1 | Orta |
+| C9 | Keys: tolerans | Parça–yuva boşluğu: sıkı 0,1 / normal 0,2 / gevşek 0,3 mm. Keys'te ayrıca boy boşluğu | 1 | Kolay |
 | C10 | Keys: çoklu pim | Bir kesime birden fazla pim ("Add Key") | 2 | Kolay |
 | C11 | Keys: şekiller | Silindir, küp, sekizgen ve yapıştırıcısız **snap** pim | 2 | Orta |
-| C12 | Link all | Kapalıyken her alt parçanın derinlik/ayarı bağımsız | 2 | Orta |
+| C12 | Link all | Kapalıyken Socket'te her adanın derinliği ayrı; diğer ayarlar ortak | 2 | Orta |
 
 ### D. Parça yönetimi
 
 | # | Özellik | Ne yapar | Faz | Zorluk |
 | --- | --- | --- | --- | --- |
 | D1 | Parça listesi | Tüm parçalar, görünürlük, renk, seçim | 1 | Kolay |
-| D2 | Kaynak/yeni rozetleri | Kesimden sonra eski parça sarı "kaynak", yeni parçalar mavi; kaynak elle silinir | 1 | Kolay |
+| D2 | Kaynak/yeni rozetleri | Eski parça sarı "kaynak" rozetiyle gizlenir, yeni parçalar mavi "yeni" rozeti alır. Kaynak listeden silinebilir | 1 | Kolay |
 | D3 | Split Operation | Tek mesh içindeki kopuk parçaları ayrı nesnelere böler | 1 | Kolay |
 | D4 | Undo/redo | Boyama ve kesim adımlarını geri alma | 2 | Orta |
 | D5 | Hata bildirimi | Kesim başarısız olursa anlaşılır uyarı + geri dönüş | 2 | Kolay |
@@ -98,77 +99,78 @@ Toplam 32 özellik var. Faz sütunu hangi sürümde geleceğini gösteriyor: **1
 
 ## Teknik mimari
 
-Tamamen istemci tarafında çalışan bir TypeScript web uygulaması. Ağır geometri işleri arayüzü dondurmasın diye Web Worker'da çalışıyor.
+Tamamen istemci tarafında çalışan bir TypeScript web uygulaması. Ağır geometri işleri arayüzü dondurmasın diye Web Worker'da çalışıyor. Katmanların ve dosyaların ayrıntısı `docs/ARCHITECTURE.md`.
 
 | Katman | Seçim | Görevi |
 | --- | --- | --- |
 | Arayüz | React + TypeScript + Vite | Paneller, slot listesi, parça ağacı, ayarlar |
 | 3D görüntüleme | Three.js | Sahne, kamera, renkli mesh çizimi |
 | Seçim ve fırça | three-mesh-bvh | Hızlı ray casting, fırça altındaki üçgenleri bulma |
-| Gizmo | Three.js TransformControls | Pim ve socket taşıma, döndürme, ölçekleme |
-| Boolean ve onarım | manifold-3d (WASM) | Kesim, pim ekleme/çıkarma, kapalı parça garantisi |
-| Mesh yapısı | Yarım kenar (half-edge) veya komşuluk tablosu | Flood fill, sınır bulma, smooth |
+| Gizmo | TransformControls; pimde W/R tutamaçları | Socket yönü, pim taşıma ve döndürme |
+| Boolean ve onarım | manifold-3d (WASM) | Socket hacmi, pim deliği, kapalı parça kontrolü. Fast/Keys ayrımı kapakla |
+| Mesh yapısı | Komşuluk tablosu (`src/core/topology.ts`) | Flood fill, sınır bulma, smooth |
 | Durum yönetimi | Zustand + komut yığını | Undo/redo, proje kaydetme |
-| Dosya | three.js loader'ları + kendi 3MF yazıcımız (JSZip) | İçe/dışa aktarma |
-| Ağır işler | Web Worker (Comlink) | Boolean, smooth, onarım |
-| Test | Vitest + Playwright (ekran görüntüsü) | Geometri birim testleri, görsel smoke test |
+| Dosya | three.js STL/OBJ + kendi 3MF okuyucu/yazıcı (fflate) | İçe/dışa aktarma, `.3dsplit` |
+| Ağır işler | Web Worker (Comlink) | Kesim, smooth, onarım. Boyama ana thread'de |
+| Test | Vitest + Playwright | Geometri birim testleri, arayüz smoke testi |
 
-**Veri modeli:** Her üçgen bir slot kimliği taşıyor (`Uint16Array`). Bölgeler bu etiketlerden türetiliyor. Kesimde her parça yeni bir mesh oluyor ve "kaynak" parçaya bağlanıyor.
+**Veri modeli:** Her üçgen bir slot kimliği taşıyor (`Uint16Array`). Slot 0 taban. Bölgeler bu etiketlerden türetiliyor. Kesimde her parça yeni bir mesh oluyor; eski parça `source` rozetiyle gizleniyor.
 
 **İleride:** Tauri ile masaüstü paketi. Bununla "slicer'da aç" ve dosya ilişkilendirme özellikleri gelir; gerekirse ağır geometri Rust tarafına taşınabilir.
 
-## Algoritma notları
+## Uygulanan yol
 
-Projenin riski üç yerde toplanıyor: Socket hacmi üretmek, sınırı yumuşatmak ve boolean işlemlerini bozuk girdide ayakta tutmak.
+Ayrıntı ve kenar durumlar `docs/ARCHITECTURE.md` içinde. Özet:
 
-**Smart Fill (B2).** Tıklanan üçgenden BFS başlıyor. Komşu üçgene geçiş, iki normal arasındaki açı eşik değerin altındaysa yapılıyor. Eşik kaydırıcıyla değişince sonuç canlı yeniden hesaplanıyor; 1M üçgende 100 ms altı hedef.
+**Smart Fill (B2).** Tohum üçgenden BFS. Adayın normali, yolda ölçek kadar gerideki atayla karşılaştırılır. "Çukurda dur" modunda tümsekten geçilir, çukur kenarda durulur. Ölçek otomatik seçilebilir. Sonuç vadiye oturtulabilir. Eşik Shift+sağ sürükle ile değişir.
 
-**Gap Fill (B5).** Her bağlı renk adası için alan hesaplanıyor. Eşiğin altındaki adalar en uzun ortak sınırı paylaştıkları komşu rengi alıyor.
+**Gap Fill (B5).** Eşiğin altındaki aynı etiketli adalar, en uzun ortak sınırını paylaştığı komşu etikete geçer.
 
-**Smooth sınır (B6).** Önce sınır kenarları bir polyline olarak çıkarılıyor. Polyline Laplacian ile yüzey üzerinde yumuşatılıyor ve yüzeye geri projekte ediliyor. Sonra mesh bu eğri boyunca kesilip üçgenler yeniden etiketleniyor. Daha kolay bir ilk sürüm: sınır bandını subdivide edip etiketleri çoğunluk oylamasıyla yumuşatmak.
+**Smooth (B6).** Sınır halkası Gauss çekirdeğiyle düzleşir, alan dengesi büzülmeyi geri alır. "Üçgenleri böl" kapalıyken sınır köşeleri eğriye kayar; açıkken sıfır çizgisi üçgenlerin içinden geçer. Yumuşatma fırçası (S) aynı işi yerel yapar.
 
-**Fast kesim (C2).** Bölge yüzeyi normal yönünün tersine küçük bir derinlikte (ör. 1,5 mm) offsetleniyor ve kenarları dikilerek kapalı hacim `V` oluşturuluyor. Sonra `parça = model ∩ V` ve `gövde = model − V` hesaplanıyor.
+**Çizgi (X36).** Yüzeye tıklanan noktalar arasında en kısa yüzey yolu. Halka kapanınca içi boyanır.
 
-**Socket (C3–C7).** Fast ile aynı mantık, tek fark `V` içeri doğru **Depth** kadar uzatılıyor. Squeeze, iç kapağı merkeze doğru ölçekleyerek tapayı konikleştiriyor. Gövdedeki yuva `V`'nin tolerans kadar büyütülmüş hâli ile açılıyor. Ring Selection, tapa kesitindeki bir halkayı taşıyıp komşularını ağırlıklı olarak takip ettiren yerel bir deformasyon. En kırılgan kısım offsetin kendini kesmesi; manifold-3d ile birleştirme veya voxel/SDF tabanlı yedek yöntem planlanmalı.
+**Fast (C2) ve Keys ayrımı.** Sınır halkası düzleme izdüşürülüp kapatılır. Parça = ada + kapak, gövde = geri kalan + ters kapak. Bu adımda boolean yok. Kapak üretilemezse veya "Düzlemle kes" açıksa halkanın Newell düzlemiyle kesilir.
 
-**Keys (C8–C11).** Pim tıklanan yüzey noktasına, yüzey normaline göre hizalanarak konuyor. Kesim yüzeyi bölge sınırından türetiliyor. `parça = (model ∩ V) ∪ pim` ve `gövde = (model − V) − büyütülmüş(pim, clearance)` hesaplanıyor. Pim gövdenin yeterince içinde değilse boolean anlamsız çıktı veriyor; bu yüzden yerleştirmede otomatik uyarı gerekiyor.
+**Socket (C3–C7).** Üç yoldan biri: düz yamada süpürme (`tapa = model ∩ V`), çıkıntıda kapak prizması, oyukta yedek prizma. Yuva, `V`'nin tolerans kadar büyütülmüş halidir. Squeeze tabanı daraltır, kesit şekli 8 yönlü radyal profil, ayak payı ayağı kenardan içeri çeker. Voxel kesim yedeği yok.
 
-**Onarım (A2).** Yüklemede manifold-3d'ye veriliyor; manifold olmayan girdi için önce köşe kaynaştırma, delik kapama ve normal düzeltme yapılıyor.
+**Keys (C8–C11).** Pim kapak normalinde, kapak yüzeyi üzerinde durur. Varsayılan: pim kesilen parçaya eklenir, delik gövdeden çıkar. Delik yarıçapta tolerans, boyda ayrıca boy boşluğu kadar büyüktür. Uçta pah vardır. Boyut kesitten otomatik gelebilir.
 
-**Performans.** Boyama ana thread'de ve etiket dizisi üzerinden çalışıyor. Kesim, smooth ve onarım Worker'da. Hedef, 1–2M üçgenlik modellerde akıcı boyama.
+**Onarım (A2).** Köşe kaynaştırma, dejenere ve tekrar silme, yönelim, delik kapama. Kapanmazsa voxel onarım. O da olmazsa parça `!` rozeti alır. Voxel yolu kesim yedeği değildir.
 
-## Yol haritası ve süre
+**Performans.** Boyama ana thread'de, etiket dizisi üzerinde. Kesim, smooth ve onarım Worker'da. 1–2M üçgenlik modellerde boyama akıcı olacak şekilde ölçüldü (`docs/ROADMAP.md`, X7).
 
-Videodaki kapsamın tamamı için toplam süre yarı zamanlı çalışıp Claude Code ile **yaklaşık 2–3 ay**. Tam zamanlı çalışılırsa bu süre kabaca yarıya iner. Süreler takvim süresi; kodun yazılması kısa sürüyor, zamanı asıl test ve düzeltme döngüsü alıyor.
+## Tablonun dışında, kodda olanlar
 
-| Faz | İçerik | Süre (yarı zamanlı) | Geçiş kriteri |
-| --- | --- | --- | --- |
-| 0. Socket testi | Elle boyanmış bir bölgeden Depth ile tapa ve yuva, 3MF çıktı, Orca'da dilimleme | 1 hafta sonu – 1 hafta | Tapa ve yuva basılıp birbirine oturuyor |
-| 1. MVP | A1–A3, B1–B5, C1–C3, C8–C9, D1–D3, E1 | 3–4 hafta | Videodaki kafa ve kol kesimleri yapılabiliyor |
-| 2. Kullanılabilir sürüm | A4, B6, C4–C5, C10–C12, D4–D5 | 4–6 hafta | Videodaki 20 parçalı model baştan sona çıkarılabiliyor |
-| 3. Cila | B7–B9, C6–C7, E2, performans | 2–4 hafta | 1–2M üçgende akıcı çalışıyor |
+Seçim: silgi (E), yumuşatma fırçası (S), çizgi aracı (L), vadiye oturtma, otomatik Smart Fill ölçeği, mesh inceltme, ayna.
 
-**Faz 0 neden önce?** Socket projenin en riskli parçası. Çalışmazsa mimari (ör. voxel/SDF yaklaşımına geçiş) baştan değişir. O yüzden arayüzden önce çözülmesi gerekiyor.
+Kesim: mod önerisi, düzlemle kesme, ince duvar uyarısı (önizlemede kırmızı), pim pahı, yarıçap ve boy boşluğu ayrı, otomatik pim boyutu, uzun kesitte birden fazla otomatik pim, pim gövde payı, kalıcı önizleme.
 
-**Her fazın sonunda:** Birkaç test modeli (AI üretimi bir figür, internetten indirilmiş bozuk bir STL, low-poly bir model) ile kesim yapıp gerçekten baskı almak.
+Parça ve dosya: ayrık görünüm, yalnız bunu göster, geçmiş zaman çizelgesi, seçimi temizle, boyalı Bambu/Orca 3MF, tolerans deneme parçası, plakaya dizme, yardım paneli, özelleştirilebilir kısayollar.
 
-## Riskler ve açık kararlar
+## Yol haritası
 
-| Risk | Etki | Önlem |
+İlk plan (Eylül 2026) faz 0–3 için yarı zamanlı yaklaşık 2–3 aydı. Bu fazlar ve sonraki X1–X52 işleri bitti. Günlük ve madde madde durum `docs/ROADMAP.md` içindedir. Yeni istek X53 ile oraya yazılır.
+
+Baskı kontrolü hâlâ geçerli: AI üretimi bir figür, bozuk bir STL ve low-poly bir modelle kesip gerçekten basmak.
+
+## Riskler ve kararlar
+
+| Risk | Etki | Şimdiki karşılık |
 | --- | --- | --- |
-| Socket offsetinin kendini kesmesi | Kesim patlar veya parça kapanmaz | manifold-3d ile birleştirme, gerekirse voxel/SDF yedek yöntem, Faz 0'da test |
-| Bozuk girdi mesh'leri | Boolean hataları | Yüklemede zorunlu onarım, anlaşılır hata mesajı |
-| Smooth sınırın zorluğu | Faz 2 uzar | Önce subdivide + çoğunluk oylaması ile basit sürüm |
-| Tarayıcı bellek sınırı | Çok büyük modellerde çökme | Worker, tipli diziler; gerekirse Tauri |
-| Pim ince duvara denk gelmesi | Basılı parça kırılır | Yerleştirmede kalınlık kontrolü ve uyarı |
+| Socket hacminin kendini kesmesi | Kesim patlar veya parça kapanmaz | Üç yol: süpürme, kapak prizması, yedek prizma. Voxel kesim yedeği yok |
+| Bozuk girdi mesh'leri | Boolean hataları | Yüklemede onarım, olmazsa voxel onarım, olmazsa `!` rozeti |
+| Sınırın tırtıklı kalması | Kesim kenarı kötü | Gauss + alan dengesi; isteğe bağlı üçgen bölme |
+| Tarayıcı bellek sınırı | Büyük modelde çökme | Worker, tipli diziler, yerinde geri alma |
+| Pim ince duvara denk gelmesi | Basılı parça kırılır | Önizlemede ince duvar kırmızı |
 
 **Kapsam dışı:** Sculpt, AI ile model üretimi, doku uygulama, kalıp, hollow, destek, render ve video, AR, Chroma katman boyama.
 
-**Açık kararlar**
+**Kararlar**
 
-- [ ] Proje ve uygulama adı
-- [ ] Sadece kendi kullanımımız için mi, yoksa ileride ürün olarak mı yayınlanacak?
-- [ ] Varsayılan clearance ve derinlik değerleri (yazıcı ve filament testiyle belirlenecek)
+- [x] Ad: 3dsplit
+- [x] Varsayılan tolerans: sıkı 0,1 / normal 0,2 / gevşek 0,3 mm. Socket derinliği 3 mm. Sayılar `src/state/store.ts` başlangıcında
+- [ ] Yalnızca kendi kullanımımız için mi, yoksa ürün olarak mı yayınlanacak? Canlı demo var; ürün kararı verilmedi
 
 ## Kaynaklar
 

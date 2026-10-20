@@ -39,6 +39,7 @@ export function Header() {
         Aç
       </button>
       <input
+        id="open-model"
         ref={input}
         type="file"
         accept={ACCEPTED_EXTENSIONS}
@@ -104,27 +105,27 @@ export function Header() {
       </details>
       <span className="sep" />
       <button type="button" disabled={!canUndo} onClick={undo} title="Geri al (Ctrl/Cmd+Z)">
-        ↶
+        Geri
       </button>
       <button type="button" disabled={!canRedo} onClick={redo} title="Yinele (Ctrl/Cmd+Shift+Z)">
-        ↷
+        İleri
       </button>
       <span className="sep" />
       <button
         type="button"
         className={explode > 0 ? 'active' : ''}
         onClick={toggleExplode}
-        title={`Ayrık görünüm: parçaları birbirinden uzaklaştırır, sadece görüntü (${keys['view.explode']})`}
+        title={`Parçaları birbirinden ayırarak gösterir; model değişmez (${keys['view.explode']})`}
       >
-        Ayrık
+        Aralıklı
       </button>
       <button
         type="button"
         className={xray ? 'active' : ''}
         onClick={() => set({ xray: !xray })}
-        title="X-ray: model yarı saydam, fırça arka yüzleri de boyar"
+        title="Model saydamlaşır; fırça arkasındaki yüzleri de boyar"
       >
-        X-ray
+        Saydam
       </button>
       <span className="spacer" />
       <button

@@ -13,10 +13,11 @@ import {
   suggestCutMode,
 } from '../core/cut';
 import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from '../core/kernel';
+import { computeMeshTopology, type MeshTopology, withMeshTopology } from '../core/meshTopology';
 import { refineMesh } from '../core/refine';
 import { type RepairReport, repairMesh } from '../core/repair';
 import { smoothCutEdge } from '../core/smooth';
-import { BASE_SLOT, type LabeledMesh } from '../core/types';
+import { BASE_SLOT, type LabeledMesh, type MeshData } from '../core/types';
 import { voxelRepair } from '../core/voxelRepair';
 
 export interface PreparedMesh {
@@ -37,6 +38,17 @@ const ready = initKernel(wasmUrl);
  * 1-2M üçgende her önizleme/kesimde yeniden kurmak ~2 s sürüyordu.
  */
 let cached: { key: string; man: Manifold } | null = null;
+let topoCached: { key: string; topo: MeshTopology } | null = null;
+
+/** X68: aynı geometri anahtarında komşuluk ve normaller yeniden kurulmaz. */
+function topologyFor(key?: string): (mesh: MeshData) => MeshTopology {
+  return (mesh) => {
+    if (key && topoCached?.key === key) return topoCached.topo;
+    const topo = computeMeshTopology(mesh);
+    if (key) topoCached = { key, topo };
+    return topo;
+  };
+}
 
 /** X53: kenar düzeltmesi topolojiyi değiştirir. Orijinal anahtar o katıyı geri verirdi. */
 function edgePrepared(
@@ -127,7 +139,9 @@ const api = {
     await ready;
     try {
       const prepared = edgePrepared(mesh, opts, geomKey);
-      const r = cutRegion(prepared.mesh, opts, modelProvider(prepared.mesh, prepared.key));
+      const r = withMeshTopology(topologyFor(prepared.key), () =>
+        cutRegion(prepared.mesh, opts, modelProvider(prepared.mesh, prepared.key)),
+      );
       return Comlink.transfer({ ok: true as const, ...r }, buffersOf([r.body, ...r.parts]));
     } catch (e) {
       if (e instanceof CutError)
@@ -139,7 +153,9 @@ const api = {
   async preview(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {
     await ready;
     const prepared = edgePrepared(mesh, opts, geomKey);
-    return previewCut(prepared.mesh, opts, modelProvider(prepared.mesh, prepared.key));
+    return withMeshTopology(topologyFor(prepared.key), () =>
+      previewCut(prepared.mesh, opts, modelProvider(prepared.mesh, prepared.key)),
+    );
   },
 
   async pinLayout(mesh: LabeledMesh, opts: CutOptions) {

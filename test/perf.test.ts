@@ -3,6 +3,7 @@ import { it } from 'vitest';
 import { cutRegion } from '../src/core/cut';
 import { faceCentroids, faceNormalsAndAreas } from '../src/core/geometry';
 import { fromManifold, initKernel, kernel, toManifold } from '../src/core/kernel';
+import { meshTopology } from '../src/core/meshTopology';
 import { chooseSmartScale, meanEdgeLength, triangleConcavity } from '../src/core/paint';
 import { repairMesh } from '../src/core/repair';
 import { buildAdjacency } from '../src/core/topology';
@@ -70,8 +71,30 @@ it.skipIf(!process.env.PERF || !existsSync('samples/testa.stl'))(
     time('chooseSmartScale (kulak)', () =>
       chooseSmartScale(adj, normals, c, areas, seed, edge, { maxAngleDeg: 20, concaveOnly: true }),
     );
+    time('topology cold', () => meshTopology(mesh));
+    time('topology warm', () => meshTopology(mesh));
   },
   600000,
+);
+
+it.skipIf(!process.env.PERF || !existsSync('samples/testa-1m.stl'))(
+  'X68: 1M komşuluk önbelleği',
+  () => {
+    const buf = readFileSync('samples/testa-1m.stl');
+    const n = buf.readUInt32LE(80);
+    const pos = new Float32Array(n * 9);
+    for (let t = 0; t < n; t++)
+      for (let k = 0; k < 9; k++) pos[9 * t + k] = buf.readFloatLE(84 + t * 50 + 12 + 4 * k);
+    const { mesh } = repairMesh(pos);
+    const once = (label: string, fn: () => void) => {
+      const t0 = performance.now();
+      fn();
+      console.log(label.padEnd(24), Math.round(performance.now() - t0), 'ms', 'üçgen', n);
+    };
+    once('topology cold', () => meshTopology(mesh));
+    once('topology warm', () => meshTopology(mesh));
+  },
+  300000,
 );
 
 it.skipIf(!process.env.PERF)(

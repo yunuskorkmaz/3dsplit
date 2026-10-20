@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-20):** A1–E2 ve X1–X67 bitti. Yeni iş **X68** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-20):** A1–E2 ve X1–X68 bitti. Yeni iş **X69** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -27,6 +27,7 @@ Ayrıntı ve bırakılanlar `docs/HEDEF.md`.
 | X65 | Tapa yuvası payı kopya birleşimi olmadan: yanlar dışarı, taban derine kayar | Yoğun boyada Kes "Kesiliyor…"da kalıyordu | [x] |
 | X66 | Worker iptali ve 120 s zaman aşımı; model ve geri alma durur | Takılan kesim arayüzü kilitliyordu | [x] |
 | X67 | Yedek prizma birleşimi en çok 200 üçgen; üstü süpürme veya seyreltme | Üçgen başına manifold yoğun bölgede bitmiyordu | [x] |
+| X68 | Komşuluk ve normaller geometri anahtarıyla önbellekte | Her kesimde 1M üçgende baştan kuruluyordu | [x] |
 
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
 
@@ -258,3 +259,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-20 | X65: tapa yuvası payı kopya birleşimi olmadan | — |
 | 2026-10-20 | X66: worker iptali ve zaman aşımı | — |
 | 2026-10-20 | X67: yedek prizma sınırı 200; seyrek küre ölçümü ~1 s | — |
+| 2026-10-20 | X68: 1.89M üçgende komşuluk 239 ms, aynı mesh'te ikinci kez 0 ms | — |

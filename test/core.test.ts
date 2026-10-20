@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { CutError, type CutOptions, cutRegion, previewCut, splitComponents } from '../src/core/cut';
 import { faceCentroids, faceNormalsAndAreas, signedVolume } from '../src/core/geometry';
 import { fromManifold, initKernel, kernel, toManifold } from '../src/core/kernel';
+import { meshTopology } from '../src/core/meshTopology';
 import { bucketFill, gapFill, smartFill } from '../src/core/paint';
 import { repairMesh } from '../src/core/repair';
 import { boundaryLoops, buildAdjacency } from '../src/core/topology';
@@ -97,6 +98,13 @@ describe('boyama', () => {
     const { tris, newLabels } = gapFill(m, adj, m.labels, areas, 20);
     expect(Array.from(tris)).toEqual([top]);
     expect(newLabels[0]).toBe(1);
+  });
+
+  it('aynı mesh için komşuluk bir kez kurulur', () => {
+    const a = meshTopology(cube);
+    const b = meshTopology(cube);
+    expect(b.adj).toBe(a.adj);
+    expect(b.normals).toBe(a.normals);
   });
 
   it('sınır halkası çıkarır', () => {

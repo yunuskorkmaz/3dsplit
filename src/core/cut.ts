@@ -1,5 +1,5 @@
 import type { Manifold } from 'manifold-3d';
-import { faceNormalsAndAreas, signedVolume } from './geometry';
+import { signedVolume } from './geometry';
 import {
   CUT_FACE_ID,
   fromManifoldMapped,
@@ -10,8 +10,9 @@ import {
   toManifold,
 } from './kernel';
 import { regionInsideLoop } from './lasso';
+import { meshTopology } from './meshTopology';
 import { closeHoles } from './paint';
-import { boundaryLoops, buildAdjacency, connectedComponents, extractTriangles } from './topology';
+import { boundaryLoops, connectedComponents, extractTriangles } from './topology';
 import { BASE_SLOT, type LabeledMesh, type MeshData, type Vec3 } from './types';
 import { add, cross, dot, normalize, orthoBasis, scale, sub, vertexAt } from './vec';
 
@@ -191,8 +192,7 @@ function findIslands(mesh: LabeledMesh, slot: number, warnings: string[] = []): 
   if (selected === triCount)
     throw new CutError('Bölge parçanın tamamını kaplıyor; kesilecek sınır yok.');
 
-  const adj = buildAdjacency(mesh);
-  const { normals, areas } = faceNormalsAndAreas(mesh);
+  const { adj, normals, areas } = meshTopology(mesh);
   const { component, count } = connectedComponents(triCount, adj, mask);
   const groups: number[][] = Array.from({ length: count }, () => []);
   for (let t = 0; t < triCount; t++) if (component[t] >= 0) groups[component[t]].push(t);
@@ -683,7 +683,7 @@ function prismUnion(
   scope: Scope,
   warnings: string[] = [],
 ): Manifold {
-  const { normals, areas } = faceNormalsAndAreas(mesh);
+  const { normals, areas } = meshTopology(mesh);
   const pieces: Manifold[] = [];
   const goodMask = new Uint8Array(mesh.indices.length / 3);
   const good: number[] = [];
@@ -1113,7 +1113,7 @@ function socketDirection(island: Island, opts: CutOptions): Vec3 {
 }
 
 function isHeightField(mesh: MeshData, island: Island, dir: Vec3): boolean {
-  const { normals, areas } = faceNormalsAndAreas(mesh);
+  const { normals, areas } = meshTopology(mesh);
   for (const t of island.tris) {
     if (areas[t] < 1e-9) continue;
     const nd = normals[3 * t] * dir[0] + normals[3 * t + 1] * dir[1] + normals[3 * t + 2] * dir[2];
@@ -1565,7 +1565,7 @@ function planePatch(positions: Float32Array, island: Island): MeshData {
 
 /** Adanın en büyük üçgeninin merkezinden yüzeyin biraz içine giren nokta. */
 function regionProbe(mesh: MeshData, island: Island): Vec3 {
-  const { normals, areas } = faceNormalsAndAreas(mesh);
+  const { normals, areas } = meshTopology(mesh);
   let best = island.tris[0];
   for (const t of island.tris) if (areas[t] > areas[best]) best = t;
   const c: Vec3 = [0, 0, 0];
@@ -1927,8 +1927,7 @@ function chainSegments(segs: [Vec3, Vec3][], tol: number): Vec3[][] {
  * Bölmüyorsa null.
  */
 function seamSurfaceIsland(mesh: MeshData, loop: number[]): Island | null {
-  const adj = buildAdjacency(mesh);
-  const { areas } = faceNormalsAndAreas(mesh);
+  const { adj, areas } = meshTopology(mesh);
   const mask = regionInsideLoop(mesh, adj, areas, loop);
   if (!mask) return null;
   const tris: number[] = [];
@@ -2059,7 +2058,7 @@ function seamCut(mesh: LabeledMesh, loop: number[], opts: CutOptions): CutResult
         capNormal: normal,
         capCenter: plane.center,
         mainLoop: loop,
-        adj: buildAdjacency(mesh),
+        adj: meshTopology(mesh).adj,
         key: 0,
       };
       const placed = pinCenters(mesh.positions, [island], opts.pins, opts.pin);
@@ -2111,7 +2110,7 @@ function seamPreview(mesh: LabeledMesh, loop: number[], opts: CutOptions): CutPr
       capNormal: plane.normal,
       capCenter: plane.center,
       mainLoop: loop,
-      adj: buildAdjacency(mesh),
+      adj: meshTopology(mesh).adj,
       key: 0,
     };
   } catch (e) {
@@ -2142,7 +2141,7 @@ function seamPreview(mesh: LabeledMesh, loop: number[], opts: CutOptions): CutPr
 
 /** D3: kopuk parçaları ayrı mesh'lere böler. */
 export function splitComponents(mesh: LabeledMesh): LabeledMesh[] {
-  const adj = buildAdjacency(mesh);
+  const adj = meshTopology(mesh).adj;
   const triCount = mesh.labels.length;
   const { component, count } = connectedComponents(triCount, adj);
   if (count <= 1) return [mesh];

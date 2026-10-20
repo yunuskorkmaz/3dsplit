@@ -51,7 +51,7 @@ Ekran davranışları: [docs/ux-plan.md](ux-plan.md). Her madde, davranışı on
 | # | İş | Neden | Durum |
 | --- | --- | --- | --- |
 | X77 | Bütün renkler tam görünür; seçili renk sınır çizgisiyle öne çıkar | Seçili renk beyazken Bluey_Color.3mf tamamen gri | [ ] |
-| X78 | Tapa ve Yapıştır'da da canlı önizleme (300 bin üçgen üstünde Space) | Yalnız Pimli kes'te kendiliğinden | [ ] |
+| X78 | Tapa ve Yapıştır'da da canlı önizleme (önizleme 1,5 s'yi geçerse Space) | Yalnız Pimli kes'te kendiliğinden | [ ] |
 | X79 | Seçili parça turuncu çizgili; seçili olmayan parçaya ilk tık yalnız seçer | Başka parçaya tık hemen boyuyor, seçim zor görünüyor | [ ] |
 | X80 | Çok parçalı dosyada en büyük parça seçili, ölçü uyarısı parça başına, adlar okunur | Grogu'da tırnak seçili, 402 mm yanlış uyarısı | [ ] |
 | X81 | İmlece yakınlaştırma, seçili parça etrafında dönme, parçaya çift tık odak | Kamera sabit merkezde | [ ] |

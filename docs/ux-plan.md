@@ -23,9 +23,9 @@ Bugün: yalnız Pimli kes'te kendiliğinden; Tapa ve Yapıştır'da Space gereki
 Olacak:
 
 - Üç modda da boya bitince 300 ms sonra önizleme açılır (X74 ile aynı kurallar: Space kapatır, sonraki boyada yeniden açılır).
-- Seçili parça 300 bin üçgenden büyükse Tapa önizlemesi kendiliğinden açılmaz. Panelde "Büyük model: önizleme için Space" yazar.
+- Sabit üçgen sınırı yok; önizlemenin süresi ölçülür. Bir parçada son önizleme 1,5 saniyeyi geçtiyse o parçada canlı önizleme kapanır, panelde "Bu model büyük: önizleme için Space" yazar. Space ile açılan önizleme yine çalışır. Parça değişince (kesim, onarım, ölçek) ölçüm sıfırlanır.
 
-Kabul: figure.stl'de burun Tapa ile, Space'siz önizleme görünür. Bluey (500 bin) Tapa'da kendiliğinden açılmaz.
+Kabul: figure.stl'de burun Tapa ile, Space'siz önizleme görünür. Önizlemesi 1,5 s'yi geçen modelde ikinci boyada önizleme kendiliğinden açılmaz, yazı görünür.
 
 ## X79 Seçili parça belirgin, ilk tık yalnız seçer
 

@@ -671,6 +671,9 @@ function capPlugVolumes(
  * Yükseklik alanı olmayan bölgeler için yedek: `dir`'e bakan üçgenler tek
  * parça süpürülür, bakmayanlar için üçgen başına prizma eklenir.
  */
+/** Bu sayıdan fazla üçgen başına prizma birleştirilmez (X67). */
+const PRISM_LIMIT = 200;
+
 function prismUnion(
   mesh: MeshData,
   island: Island,
@@ -678,8 +681,9 @@ function prismUnion(
   depth: number,
   eps: number,
   scope: Scope,
+  warnings: string[] = [],
 ): Manifold {
-  const { normals } = faceNormalsAndAreas(mesh);
+  const { normals, areas } = faceNormalsAndAreas(mesh);
   const pieces: Manifold[] = [];
   const goodMask = new Uint8Array(mesh.indices.length / 3);
   const good: number[] = [];
@@ -708,7 +712,18 @@ function prismUnion(
     }
   }
   // süpürme başarısızsa tüm üçgenler prizma olur
-  const prismTris = sweptAll ? bad : island.tris;
+  let prismTris = sweptAll ? bad : island.tris;
+  if (prismTris.length > PRISM_LIMIT) {
+    if (sweptAll && pieces.length) {
+      warnings.push('Bölge çok yoğun; süpürme kullanıldı, arkaya bakan üçgenler atlandı.');
+      return pieces.length === 1 ? pieces[0] : scope.keep(kernel().Manifold.union(pieces));
+    }
+    prismTris = prismTris
+      .slice()
+      .sort((a, b) => areas[b] - areas[a])
+      .slice(0, PRISM_LIMIT);
+    warnings.push('Bölge çok yoğun; prizmalar seyreltilerek birleştirildi.');
+  }
   for (const t of prismTris) {
     const nd = normals[3 * t] * dir[0] + normals[3 * t + 1] * dir[1] + normals[3 * t + 2] * dir[2];
     if (Math.abs(nd) < 1e-3) continue;
@@ -722,7 +737,12 @@ function prismUnion(
     if (nd < 0) idx = flipAll(idx);
     pieces.push(scope.keep(toManifold({ positions, indices: Uint32Array.from(idx) }, CUT_FACE_ID)));
   }
-  if (!pieces.length) throw new CutError('Bölge seçilen yöne paralel; hacim üretilemedi.');
+  if (!pieces.length)
+    throw new CutError(
+      island.tris.length > PRISM_LIMIT
+        ? 'Bölge çok yoğun. Daha küçük bir renk seçin veya Pimli kes kullanın.'
+        : 'Bölge seçilen yöne paralel; hacim üretilemedi.',
+    );
   return pieces.length === 1 ? pieces[0] : scope.keep(kernel().Manifold.union(pieces));
 }
 
@@ -1129,7 +1149,7 @@ function socketVolume(
     );
   }
   warnings.push('Bölge seçilen yönden tam görünmüyor; yedek yöntem (süpürme + prizma) kullanıldı.');
-  return prismUnion(mesh, island, dir, depthOf(island, opts), eps, scope);
+  return prismUnion(mesh, island, dir, depthOf(island, opts), eps, scope, warnings);
 }
 
 function manifoldMesh(man: Manifold): MeshData {

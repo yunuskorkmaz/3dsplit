@@ -45,7 +45,7 @@ Bölge = seçili slottaki üçgenler; bağlı her ada ayrı işlenir.
 
 1. *Süpürme* (bölgenin her üçgeni `d` yönüne bakıyorsa, yani düz/sığ yama): `d` elle verilmiş yön, yoksa bölge normallerinin alan ağırlıklı ortalaması. Ada yüzeyi `+eps·d`'den `−depth·d`'ye süpürülerek kapalı hacim `V` üretilir. `tapa = model ∩ V`, `gövde = model − büyüt(V)`.
 2. *Çıkıntı* (burun, göz; bölge tek yönden tam görünmüyorsa): bölge Fast gibi kapakla ayrılır. Her kapak kendi düzleminde üçgenlendiği için yükseklik alanıdır; kapak normali boyunca `depth` kadar gövdeye süpürülür (`V`). `tapa = çıkıntı ∪ (V ∩ model)`, `gövde = kapaklı gövde − büyüt(V)`. Halka kendi düzleminde katlanırsa bölgenin ortalama normali ile tekrar denenir.
-3. *Yedek* (alttan oyuk bölgeler, ör. kaş): `d`'ye bakan üçgenler tek parça süpürülür, bakmayanlar için üçgen başına prizma eklenir.
+3. *Yedek* (alttan oyuk bölgeler, ör. kaş): `d`'ye bakan üçgenler tek parça süpürülür, bakmayanlar için üçgen başına prizma eklenir. Prizma sayısı 200'ü geçerse süpürme zorlanır; o da olmazsa en büyük 200 üçgen kalır. İkisi de hacim vermezse kesim "bölge çok yoğun" der (X67).
 
 **Squeeze (C5).** Tapa tabanı merkeze `squeeze` oranında (0–0.9) daraltılır. Yedek prizma yolunda uygulanmaz.
 

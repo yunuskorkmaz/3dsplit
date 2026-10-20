@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { it } from 'vitest';
+import { cutRegion } from '../src/core/cut';
 import { faceCentroids, faceNormalsAndAreas } from '../src/core/geometry';
-import { fromManifold, initKernel, toManifold } from '../src/core/kernel';
+import { fromManifold, initKernel, kernel, toManifold } from '../src/core/kernel';
 import { chooseSmartScale, meanEdgeLength, triangleConcavity } from '../src/core/paint';
 import { repairMesh } from '../src/core/repair';
 import { buildAdjacency } from '../src/core/topology';
@@ -71,4 +72,28 @@ it.skipIf(!process.env.PERF || !existsSync('samples/testa.stl'))(
     );
   },
   600000,
+);
+
+it.skipIf(!process.env.PERF)(
+  'X67: yoğun tapa yedeği',
+  async () => {
+    await initKernel();
+    const sphere = fromManifold(kernel().Manifold.sphere(10, 64), 0);
+    sphere.labels.fill(0);
+    for (let t = 0; t < sphere.labels.length; t++) if (t % 3 === 0) sphere.labels[t] = 1;
+    const t0 = performance.now();
+    try {
+      cutRegion(sphere, {
+        mode: 'socket',
+        slot: 1,
+        depth: 1,
+        clearance: 0.2,
+        pin: { shape: 'cylinder', radius: 2, length: 6, onPart: true },
+      });
+    } catch {
+      // sınır: ya biter ya da "çok yoğun" der; süre ölçülür
+    }
+    console.log('prismUnion yolu'.padEnd(24), Math.round(performance.now() - t0), 'ms');
+  },
+  120000,
 );

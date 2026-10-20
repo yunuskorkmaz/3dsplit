@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { type CutOptions, cutRegion, previewCut, splitComponents } from '../src/core/cut';
+import { CutError, type CutOptions, cutRegion, previewCut, splitComponents } from '../src/core/cut';
 import { faceCentroids, faceNormalsAndAreas, signedVolume } from '../src/core/geometry';
-import { initKernel, toManifold } from '../src/core/kernel';
+import { fromManifold, initKernel, kernel, toManifold } from '../src/core/kernel';
 import { bucketFill, gapFill, smartFill } from '../src/core/paint';
 import { repairMesh } from '../src/core/repair';
 import { boundaryLoops, buildAdjacency } from '../src/core/topology';
@@ -345,6 +345,21 @@ describe('kesim', () => {
     const body = volume(r.body);
     expect(body).toBeLessThan(8000 - 1000);
     expect(body).toBeGreaterThan(6000);
+  });
+
+  it('Socket: yoğun yedek prizma sonsuza kadar sürmez', () => {
+    const sphere = fromManifold(kernel().Manifold.sphere(10, 48), 0);
+    sphere.labels.fill(0);
+    for (let t = 0; t < sphere.labels.length; t++) if (t % 3 === 0) sphere.labels[t] = 1;
+    const t0 = performance.now();
+    try {
+      const r = cutRegion(sphere, { ...baseOpts, mode: 'socket', depth: 1 });
+      expect(r.parts.length + r.warnings.length).toBeGreaterThan(0);
+    } catch (e) {
+      expect(e).toBeInstanceOf(CutError);
+      expect((e as Error).message).toMatch(/yoğun|paralel|hacim|Tapa/);
+    }
+    expect(performance.now() - t0).toBeLessThan(15_000);
   });
 
   it('Socket: tapa derinlik kadar, yuva clearance kadar büyük', () => {

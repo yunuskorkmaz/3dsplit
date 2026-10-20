@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-20):** A1–E2, X1–X73 ve X75 bitti. Sıradaki işler X74, X76 (Sprint 7, `docs/catpin-flow.md`). Yeni iş **X77** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-20):** A1–E2 ve X1–X76 bitti (Sprint 7, `docs/catpin-flow.md`). Yeni iş **X77** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -40,9 +40,9 @@ Gerekçe, hedef akış ve at modelinde bulunan hatalar: [docs/catpin-flow.md](ca
 | X71 | Model ölçüsü mm olarak yazar; 250 üstü / 8 altı uyarı; "Baskı boyu" ile ölçekle | At STL'i 34 mm geliyor, ölçü hiçbir yerde görünmüyor | [x] |
 | X72 | Mod önerisi kalınlığı doğru ölçer; boya bitince öneriye geçer, elle seçim korunur | At başına "Tapa — kesit ~4 mm" öneriyor | [x] |
 | X73 | Otomatik pin kesitin içinde ve kenardan uzak; sığmazsa konmaz; küçük ada pin almaz | At başında 4 pinin 4'ü dışarı taşıyor (%24–%90 içeride) | [x] |
-| X74 | Pimli kes'te boya değişince pin önizlemesi kendiliğinden; sürükle/ekle/sil varsayılan | Pin görmek için Önizleme'ye basmak gerekiyor | [ ] |
+| X74 | Pimli kes'te boya değişince pin önizlemesi kendiliğinden; sürükle/ekle/sil varsayılan | Pin görmek için Önizleme'ye basmak gerekiyor | [x] |
 | X75 | Boyanın içindeki ayrı kabuklar ana parçaya katılır; kırıntı parça çıkmaz | At başı kesimi 2 kırıntı parça daha veriyor | [x] |
-| X76 | `e2e/horse-keys.spec.ts` geçer (HORSE_STL ile) | Akışın uçtan uca kanıtı | [ ] |
+| X76 | `e2e/keys-flow.spec.ts` geçer (testa kulağı, Yoda başı); at yerine (aşağıda) | Akışın uçtan uca kanıtı | [x] |
 
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
 
@@ -281,3 +281,5 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-20 | X72: öneri halka alanına değil bölgenin hacim/yüzeyine bakar: kapak < yüzey × 0,3 (çıkıntı) ve kalınlık 3V/A ≥ 3 mm ise Pimli kes. At başı: halkalar yalnız kulak dipleri (15 mm²), kalınlık 5,2 mm → Pimli kes. Boya bitince mod öneriye geçer; araç şeridinden elle seçilince geçmez (yeni model açılınca sıfırlanır). npm test 102 geçti; e2e 10 geçti; at e2e'si öneriyi geçip X74 adımında duruyor | fe889e9 |
 | 2026-10-20 | X75: kesimden sonra 0,5 mm³ altı parça atılır; kutusunun %60'ı daha büyük parçanın kutusunda kalan parça ona kabuk olarak katılır (boolean yok; boolean birleşim Bluey'i 1,2 → 2,6 dk'ya uzatıyordu). Halkası olmayan ada (boyanın içindeki kapalı kabuk) pin almaz. At başı: 2 parça (baş + gövde), 2–4 kabuk katıldı. Gövdedeki kopya kabuk silme yapılmadı. `e2e/models.spec.ts` (MODELS=…) 9 kullanıcı modeliyle sayfa hatasız; Bluey 1,2 dk | — |
 | 2026-10-20 | X73: otomatik pin kesit çokgeninde 19×19 ızgarayla hedefe en yakın uygun yere oturur: kenara uzaklık ≥ yarıçap + tolerans + 0,8 mm, pim boyunca iki tarafta et ışınla ölçülür (ilk çarpılan yüzden çıkılmalı). Sığmazsa otomatik boyutta önce kısaltılır, sonra inceltilir (en az 0,8 mm); yine sığmazsa pin konmaz ve "kesit pin için çok ince" yazılır. Boyutu elle verilen pim yerinde kalır. Düz yama artık pin almaz (X33 ve tools e2e beklentisi güncellendi). At başı: kesim yüzü yalnız kulak dipleri, 0 pin + uyarı; pinLayout 31 ms. 7 kullanıcı modelinde taşma uyarısı yok | — |
+| 2026-10-20 | X74: Pimli kes'te boya, slot, parça ya da mod değişince önizleme 300 ms sonra kendiliğinden açılır; yeni istek gelince eski sonuç atılır (Worker'daki hesap bitene kadar sürer). Space kapatır, sonraki boyada yeniden açılır. Önizlemedeki pin her araçta tutulup sürüklenir, Delete seçili pimi siler; boş kesite pin eklemek yalnız Pin aracında. Önizleme uyarıları kesim panelinde. Pim ekle/sil artık geçmişte birleşmez (1 sn içinde iki ekleme tek adım oluyordu). tools e2e Space adımı kaldırıldı | — |
+| 2026-10-20 | X76: at modeli kanıt olamadı: baş gövdeden ayrı kabuk, kesim yüzü yalnız kulak dipleri, pin sığmıyor (X73 doğru olarak 0 pin verir). Kullanıcı onayıyla `e2e/horse-keys.spec.ts` yerine `e2e/keys-flow.spec.ts`: testa kulağı ve Yoda başı; öneri Pimli kes, Space'siz pin, Akıllı seç'te pin sürükleme, Delete, Otomatiğe dön, kes → 2 parça, taşma yok. Chrome'da geçti; npm test 107; e2e 12 geçti | — |

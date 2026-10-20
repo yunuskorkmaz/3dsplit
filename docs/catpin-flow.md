@@ -29,6 +29,8 @@ CatPin'in taslak listesi (kesimleri biriktirip sonra üretmek) bu turda yok; `do
 
 ## At modelinde bulunan hatalar
 
+> Sonradan (X73): at başı gövdeden ayrı bir kabuk; boyanın tek kesim yüzü kulak diplerindeki ~4 mm'lik halkalar ve oraya pin sığmıyor. Bu yüzden at e2e'si kaldırıldı, kanıt `e2e/keys-flow.spec.ts` (testa kulağı, Yoda başı).
+
 Tekrarlama: `HORSE_STL=$HOME/Downloads/_75_caballo_key-fins.stl npx playwright test e2e/horse-keys.spec.ts`. Test bugün bilerek başarısız olur; X72–X75 bitince geçmelidir. Ekran görüntüleri `test-results/horse-keys-*.png`.
 
 Adımlar: modeli aç, `1`, `F`, başın ortasına tıkla (kanvasın %62,9 / %71,6 noktası), Pimli kes, Önizleme, Kes.

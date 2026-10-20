@@ -10,6 +10,7 @@ export default defineConfig({
     'seam.spec.ts',
     'print-size.spec.ts',
     'suggest.spec.ts',
+    'keys-flow.spec.ts',
   ],
   timeout: 120_000,
   use: {

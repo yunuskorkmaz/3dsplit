@@ -31,7 +31,9 @@ src/io        STL/OBJ/3MF içe aktarma, STL/3MF/ZIP dışa aktarma
 - Mesh'ler değiştirilemez kabul edilir; istisnalar: `labels` boyamada, `positions` yumuşatma fırçasında yerinde değişir (geri alma kaydı değişen öğeleri tutar). Undo boyamada değişen üçgenlerin önceki/sonraki etiketini, kesimde parça listesinin önceki halini saklar.
 - Kesimde manifold `faceID` = orijinal üçgen numarası; sonuçtaki etiketler `labels[faceID]` ile eşlenir (`fromManifoldMapped`). Kesimle oluşan yeni yüzler `CUT_FACE_ID` (0x7ffffffe) alır, parçanın slotuna veya tabana çevrilir ve `cut` bayrağıyla işaretlenir. Bu bayrak gölgede heykel yüzeyinden ayrılır. `0xffffffff` kullanılamaz: manifold onu "faceID yok" sayıyor. Manifold etiketlerden bağımsız olduğu için Worker parçanın manifold'unu geometri anahtarıyla (mesh kimliği + konum sürümü) önbellekler; boyama değişse de yeniden kurulmaz.
 
-## Kesim algoritmaları (`src/core/cut.ts`)
+## Kesim algoritmaları
+
+`src/core/cut.ts` ince bir giriş: tipler `cutTypes.ts`, kapak üçgenleme `cutCap.ts`, tapa `cutSocket.ts`, pimler `cutPins.ts`, düzlem ve dikiş `cutSeam.ts`, kesim akışı `cutRun.ts`. Arayüz eylemleri de konulara bölünür (`actionsFile`, `actionsPaint`, `actionsSmooth`, `actionsPins`, `actionsCut`, `actionsLine`, `actionsParts`, `actionsHistory`, `actionsHooks`); `actions.ts` bunları dışa aktarır.
 
 Bölge = seçili slottaki üçgenler; bağlı her ada ayrı işlenir.
 

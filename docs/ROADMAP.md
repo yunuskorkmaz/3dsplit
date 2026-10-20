@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-20):** A1–E2 ve X1–X70 bitti. Yeni iş **X71** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-20):** A1–E2 ve X1–X70 bitti. Sıradaki işler X71–X76 (Sprint 7, `docs/catpin-flow.md`). Yeni iş **X77** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -30,6 +30,19 @@ Ayrıntı ve bırakılanlar `docs/HEDEF.md`.
 | X68 | Komşuluk ve normaller geometri anahtarıyla önbellekte | Her kesimde 1M üçgende baştan kuruluyordu | [x] |
 | X69 | Bluey e2e: boyalı 3MF kesilip 3MF iner | Büyük modelde kesim takılıyordu | [x] |
 | X70 | cut.ts ve actions.ts konulara bölündü; dışarıdan aynı adlar | İki dosya ikişer bin satıra varmıştı | [x] |
+
+## Sprint 7 — CatPin benzeri akış: boya, pin kendiliğinden gelsin
+
+Gerekçe, hedef akış ve at modelinde bulunan hatalar: [docs/catpin-flow.md](catpin-flow.md). Sıra: X71, X72, X75, X73, X74, X76.
+
+| # | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| X71 | Model ölçüsü mm olarak yazar; 250 üstü / 8 altı uyarı; "Baskı boyu" ile ölçekle | At STL'i 34 mm geliyor, ölçü hiçbir yerde görünmüyor | [ ] |
+| X72 | Mod önerisi kalınlığı doğru ölçer; boya bitince öneriye geçer, elle seçim korunur | At başına "Tapa — kesit ~4 mm" öneriyor | [ ] |
+| X73 | Otomatik pin kesitin içinde ve kenardan uzak; sığmazsa konmaz; küçük ada pin almaz | At başında 4 pinin 4'ü dışarı taşıyor (%24–%90 içeride) | [ ] |
+| X74 | Pimli kes'te boya değişince pin önizlemesi kendiliğinden; sürükle/ekle/sil varsayılan | Pin görmek için Önizleme'ye basmak gerekiyor | [ ] |
+| X75 | Boyanın içindeki ayrı kabuklar ana parçaya katılır; kırıntı parça çıkmaz | At başı kesimi 2 kırıntı parça daha veriyor | [ ] |
+| X76 | `e2e/horse-keys.spec.ts` geçer (HORSE_STL ile) | Akışın uçtan uca kanıtı | [ ] |
 
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
 

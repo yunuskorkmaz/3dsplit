@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-20):** A1–E2, X1–X72 bitti. Sıradaki işler X73–X76 (Sprint 7, `docs/catpin-flow.md`). Yeni iş **X77** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-20):** A1–E2, X1–X72 ve X75 bitti. Sıradaki işler X73, X74, X76 (Sprint 7, `docs/catpin-flow.md`). Yeni iş **X77** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -41,7 +41,7 @@ Gerekçe, hedef akış ve at modelinde bulunan hatalar: [docs/catpin-flow.md](ca
 | X72 | Mod önerisi kalınlığı doğru ölçer; boya bitince öneriye geçer, elle seçim korunur | At başına "Tapa — kesit ~4 mm" öneriyor | [x] |
 | X73 | Otomatik pin kesitin içinde ve kenardan uzak; sığmazsa konmaz; küçük ada pin almaz | At başında 4 pinin 4'ü dışarı taşıyor (%24–%90 içeride) | [ ] |
 | X74 | Pimli kes'te boya değişince pin önizlemesi kendiliğinden; sürükle/ekle/sil varsayılan | Pin görmek için Önizleme'ye basmak gerekiyor | [ ] |
-| X75 | Boyanın içindeki ayrı kabuklar ana parçaya katılır; kırıntı parça çıkmaz | At başı kesimi 2 kırıntı parça daha veriyor | [ ] |
+| X75 | Boyanın içindeki ayrı kabuklar ana parçaya katılır; kırıntı parça çıkmaz | At başı kesimi 2 kırıntı parça daha veriyor | [x] |
 | X76 | `e2e/horse-keys.spec.ts` geçer (HORSE_STL ile) | Akışın uçtan uca kanıtı | [ ] |
 
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
@@ -279,3 +279,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-20 | X70: kesim ve eylemler konulara bölündü. npm test 94 geçti, 4 atlandı (4.6 s); tsc temiz; vite build 296 ms; e2e 8 geçti (2.2 dk) | — |
 | 2026-10-20 | X71: parça satırında en uzun kenar mm; 250 üstü / 8 altı sarı uyarı; "Baskı boyu" + Ölçekle bütün parçaları ortak merkezde ölçekler, Ctrl+Z geri alır, pim ve önizleme sıfırlanır. npm test 97 geçti; e2e 9 geçti; Chrome'da `print-size.spec.ts` geçti | 4be87ab |
 | 2026-10-20 | X72: öneri halka alanına değil bölgenin hacim/yüzeyine bakar: kapak < yüzey × 0,3 (çıkıntı) ve kalınlık 3V/A ≥ 3 mm ise Pimli kes. At başı: halkalar yalnız kulak dipleri (15 mm²), kalınlık 5,2 mm → Pimli kes. Boya bitince mod öneriye geçer; araç şeridinden elle seçilince geçmez (yeni model açılınca sıfırlanır). npm test 102 geçti; e2e 10 geçti; at e2e'si öneriyi geçip X74 adımında duruyor | fe889e9 |
+| 2026-10-20 | X75: kesimden sonra 0,5 mm³ altı parça atılır; kutusunun %60'ı daha büyük parçanın kutusunda kalan parça ona kabuk olarak katılır (boolean yok; boolean birleşim Bluey'i 1,2 → 2,6 dk'ya uzatıyordu). Halkası olmayan ada (boyanın içindeki kapalı kabuk) pin almaz. At başı: 2 parça (baş + gövde), 2–4 kabuk katıldı. Gövdedeki kopya kabuk silme yapılmadı. `e2e/models.spec.ts` (MODELS=…) 9 kullanıcı modeliyle sayfa hatasız; Bluey 1,2 dk | — |

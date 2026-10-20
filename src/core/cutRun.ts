@@ -1,5 +1,6 @@
 import type { Manifold } from 'manifold-3d';
 import { capPlugVolumes, capSplit, extrudeVolume, ringMarkersFor, triangulateLoop } from './cutCap';
+import { mergeNestedParts } from './cutDebris';
 import { checkPinContainment, makePin, pinCenters, pinDepthClearance } from './cutPins';
 import { loopPlane, planePatch, planeSplit, seamCut, seamPreview } from './cutSeam';
 import {
@@ -308,9 +309,10 @@ function cutRegionImpl(mesh: LabeledMesh, opts: CutOptions): CutResult {
     try {
       const r = cutIslands(mesh, islands, opts, scope, warnings);
       // hacimsiz parça (ör. yön bölgeye paralel) başarı sayılmaz
-      const parts = r.parts.filter((p) => Math.abs(signedVolume(p)) >= 1e-3);
-      if (parts.length < r.parts.length)
-        r.warnings.push(`${r.parts.length - parts.length} hacimsiz parça atlandı.`);
+      const solid = r.parts.filter((p) => Math.abs(signedVolume(p)) >= 1e-3);
+      if (solid.length < r.parts.length)
+        r.warnings.push(`${r.parts.length - solid.length} hacimsiz parça atlandı.`);
+      const parts = mergeNestedParts(solid, r.warnings);
       if (!parts.length)
         throw new CutError('Kesim hacimli bir parça üretmedi (yön bölgeye paralel olabilir).');
       return { ...r, parts };

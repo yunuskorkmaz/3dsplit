@@ -101,18 +101,20 @@ export function pinCenters(
   pins: PinPlacement[] | undefined,
   base: PinOptions,
 ): { island: Island; center: Vec3; surface: Vec3; axis: Vec3; spec: PinOptions }[] {
+  // X75: halkası olmayan ada (boyanın içine düşmüş kapalı kabuk) kesilmez, kesim yüzü yok
+  const cutIslands = islands.filter((island) => island.loops.length > 0);
   const raw: { island: Island; pin: PinPlacement }[] =
     !pins || pins.length === 0
-      ? islands.flatMap((island) =>
+      ? cutIslands.flatMap((island) =>
           (base.auto ? autoPinPoints(positions, island) : [island.capCenter]).map((point) => ({
             island,
             pin: { point },
           })),
         )
       : pins.map((pin) => {
-          let best = islands[0];
+          let best = cutIslands[0] ?? islands[0];
           let bestDist = Infinity;
-          for (const island of islands) {
+          for (const island of cutIslands) {
             const d = Math.hypot(...sub(pin.point, island.capCenter));
             if (d < bestDist) {
               best = island;

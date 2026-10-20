@@ -11,6 +11,7 @@ export default defineConfig({
     'print-size.spec.ts',
     'suggest.spec.ts',
     'keys-flow.spec.ts',
+    'select.spec.ts',
   ],
   timeout: 120_000,
   use: {

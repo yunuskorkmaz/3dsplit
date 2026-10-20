@@ -130,7 +130,11 @@ export function ViewportHost() {
     const vp = new Viewport(ref.current, {
       onDown(hit: Hit, e: PointerEvent) {
         const { tool, selectedPartId: sel } = get();
-        if (hit.partId !== sel) set({ selectedPartId: hit.partId });
+        // X79: seçili olmayan parçaya tık yalnız onu seçer; araç seçili parçada çalışır
+        if (hit.partId !== sel) {
+          set({ selectedPartId: hit.partId });
+          return true;
+        }
         // X74: önizlemedeki pin her araçta tutulup taşınır (boş yere tıklamak araca kalır)
         if (tool !== 'pin' && pinsShown()) {
           const index = vp.pickScreenPoint(e, pinPoints(), 18);

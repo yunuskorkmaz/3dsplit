@@ -463,6 +463,10 @@ ul.parts li.selected,
 ul.slots li.selected {
   background: #2f6fd655;
 }
+/* X79: görünümdeki dış çizgiyle aynı renk */
+ul.parts li.selected {
+  box-shadow: inset 0 0 0 2px #ff9900;
+}
 ul.parts li .name,
 ul.slots li .name {
   flex: 1;

@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { acceleratedRaycast, MeshBVH } from 'three-mesh-bvh';
@@ -98,6 +102,12 @@ export class Viewport {
   /** X27: patlatılmış görünüm çarpanı (0: kapalı). */
   private explode = 0;
   private selectedId: string | null = null;
+  /** X79: fare üstündeki parça (seçili değilse ince çizgiyle gösterilir). */
+  private hoveredId: string | null = null;
+  /** X79: birden çok görünür parça varken seçili ve fare üstündeki parçanın dış çizgisi. */
+  private composer: EffectComposer;
+  private selectOutline: OutlinePass;
+  private hoverOutline: OutlinePass;
 
   constructor(
     private container: HTMLElement,
@@ -107,6 +117,16 @@ export class Viewport {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(this.renderer.domElement);
     this.scene.background = new THREE.Color('#1a1d24');
+    this.composer = new EffectComposer(
+      this.renderer,
+      new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }),
+    );
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.selectOutline = outlinePass(this.scene, this.camera, '#ff5a00', 5, 4);
+    this.hoverOutline = outlinePass(this.scene, this.camera, '#d8dde6', 2, 1);
+    this.composer.addPass(this.selectOutline);
+    this.composer.addPass(this.hoverOutline);
+    this.composer.addPass(new OutputPass());
 
     this.scene.add(new THREE.HemisphereLight('#ffffff', '#444444', 1.2));
     const key = new THREE.DirectionalLight('#ffffff', 1.5);
@@ -224,6 +244,7 @@ export class Viewport {
     this.gizmo.dispose();
     this.controls.dispose();
     for (const p of this.parts.values()) disposePart(p);
+    this.composer.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -267,7 +288,6 @@ export class Viewport {
       }
       if (!obj) continue;
       obj.mesh.visible = v.visible;
-      obj.mesh.material.emissive.set(v.selected ? '#202020' : '#000000');
       this.recolor(v.id, colors);
     }
     this.selectedId = views.find((v) => v.selected)?.id ?? null;
@@ -1141,8 +1161,24 @@ export class Viewport {
     if (this.frame) return;
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
-      this.renderer.render(this.scene, this.camera);
+      if (this.updateOutlines()) this.composer.render();
+      else this.renderer.render(this.scene, this.camera);
     });
+  }
+
+  /** Dış çizgi gerekiyorsa geçişlere nesneleri verir; tek görünür parçada çizgi yok. */
+  private updateOutlines(): boolean {
+    let shown = 0;
+    for (const o of this.parts.values()) if (o.mesh.visible) shown++;
+    if (shown < 2) return false;
+    const sel = this.selectedId ? this.parts.get(this.selectedId) : undefined;
+    const hov =
+      this.hoveredId && this.hoveredId !== this.selectedId
+        ? this.parts.get(this.hoveredId)
+        : undefined;
+    this.selectOutline.selectedObjects = sel?.mesh.visible ? [sel.mesh] : [];
+    this.hoverOutline.selectedObjects = hov?.mesh.visible ? [hov.mesh] : [];
+    return true;
   }
 
   private resize(): void {
@@ -1150,6 +1186,8 @@ export class Viewport {
     const h = this.container.clientHeight;
     if (!w || !h) return;
     this.renderer.setSize(w, h);
+    this.composer.setPixelRatio(window.devicePixelRatio);
+    this.composer.setSize(w, h);
     this.focusRoot?.traverse((o) => {
       if (o instanceof LineSegments2) o.material.resolution.set(w, h);
     });
@@ -1195,6 +1233,11 @@ export class Viewport {
     const hit = this.pick(e);
     if (this.dragging === 'tool') this.handlers.onMove(hit, e);
     else this.handlers.onHover(hit);
+    const hovered = this.dragging ? null : (hit?.partId ?? null);
+    if (hovered !== this.hoveredId) {
+      this.hoveredId = hovered;
+      this.requestRender();
+    }
   };
 
   private shadeOf(obj: PartObject): Shade {
@@ -1386,6 +1429,24 @@ function writeTriangles(
   }
   posAttr.needsUpdate = true;
   nrmAttr.needsUpdate = true;
+}
+
+/** X79: dış çizgi geçişi; kalınlık ekranda yaklaşık px. Arkada kalan kısım daha soluk. */
+function outlinePass(
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+  color: string,
+  strength: number,
+  thickness: number,
+): OutlinePass {
+  const pass = new OutlinePass(new THREE.Vector2(1, 1), scene, camera);
+  pass.downSampleRatio = 1;
+  pass.edgeStrength = strength;
+  pass.edgeThickness = thickness;
+  pass.edgeGlow = 0;
+  pass.visibleEdgeColor.set(color);
+  pass.hiddenEdgeColor.set(color).multiplyScalar(0.35);
+  return pass;
 }
 
 /** X77: seçili renk sınırının ekrandaki kalınlığı, px. */

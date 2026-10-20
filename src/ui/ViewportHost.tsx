@@ -111,21 +111,41 @@ export function ViewportHost() {
       else if (drag === 'smooth') smoothAt(h.point, h.tri);
     };
 
+    const pinsShown = () => {
+      const { cut, preview, pinLayout } = get();
+      return cut.mode === 'keys' && preview !== null && pinLayout.length > 0;
+    };
+    // ekrandaki pimler: elle pim varsa onların, yoksa otomatik yerleşimin yüzey noktaları
+    const pinPoints = () => {
+      const { pins: list, pinLayout: layout } = get();
+      return list.length
+        ? list.map((p, i) => layout[i]?.surface ?? p.point)
+        : layout.map((l) => l.surface);
+    };
+
     const vp = new Viewport(ref.current, {
       onDown(hit: Hit, e: PointerEvent) {
         const { tool, selectedPartId: sel } = get();
         if (hit.partId !== sel) set({ selectedPartId: hit.partId });
+        // X74: önizlemedeki pin her araçta tutulup taşınır (boş yere tıklamak araca kalır)
+        if (tool !== 'pin' && pinsShown()) {
+          const index = vp.pickScreenPoint(e, pinPoints(), 18);
+          if (index >= 0) {
+            const picked = pinClick(index, hit.point, e.shiftKey);
+            if (picked >= 0) {
+              draggingPin = picked;
+              drag = 'pin';
+            }
+            return true;
+          }
+        }
         if (tool === 'smart') smartFillAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'bucket') bucketAt(hit.partId, hit.tri, e.shiftKey);
         else if (tool === 'line' || tool === 'seam') lineClick(hit.partId, hit.tri, hit.point);
         else if (tool === 'pin') {
           // ekranda pimin üstüne tıklama: seç (sürükleyince yüzeyde taşınır); Shift ile sil.
           // pim seçiliyken boşluğa tıklama seçimi bırakır, seçili pim yokken yeni pim ekler
-          const { pins: list, pinLayout: layout } = get();
-          const points = list.length
-            ? list.map((p, i) => layout[i]?.surface ?? p.point)
-            : layout.map((l) => l.surface);
-          const index = vp.pickScreenPoint(e, points, 18);
+          const index = vp.pickScreenPoint(e, pinPoints(), 18);
           const picked = pinClick(index, hit.point, e.shiftKey);
           if (picked >= 0) {
             draggingPin = picked;
@@ -346,7 +366,7 @@ export function ViewportHost() {
     const show = cutMode === 'keys' && (tool === 'pin' || preview !== null);
     vpRef.current?.setPins(
       show ? pinLayout : [],
-      tool === 'pin' && pins.length ? selectedPin : -1,
+      (tool === 'pin' || preview !== null) && pins.length ? selectedPin : -1,
       pinGizmo,
       commitPinHandle,
     );

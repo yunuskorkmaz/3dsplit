@@ -629,6 +629,13 @@ main .tool-options {
 .mirror-group button {
   padding: 2px 7px;
 }
+.preview-warnings {
+  margin: 6px 0;
+  padding: 4px 6px 4px 18px;
+  border-left: 3px solid #f1c40f;
+  color: #f1c40f;
+  font-size: 12px;
+}
 .suggestion {
   background: #2f6fd633;
   border: 1px solid #2f6fd6;

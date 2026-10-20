@@ -101,6 +101,8 @@ export function commitPinHandle(point: Vec3, axis: Vec3): void {
   );
 }
 
+const DISCRETE_PIN_EDITS = new Set(['Pim ekle', 'Pim sil']);
+
 /**
  * Pim listesini değiştirir ve geçmişe yazar. Aynı adlı değişiklikler art
  * arda (1 s içinde) gelirse tek adımda birleşir: sürükleme ya da sayı
@@ -115,6 +117,8 @@ export function commitPins(next: PinPlacement[], label: string, selected?: numbe
   if (
     last?.kind === 'pins' &&
     last.label === label &&
+    // ekleme ve silme her tıkta ayrı adım; birleşen yalnız sürükleme ve sayı kaydırma
+    !DISCRETE_PIN_EDITS.has(label) &&
     !redoStack.length &&
     now - (last.time ?? 0) < 1000
   ) {

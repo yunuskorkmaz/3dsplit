@@ -57,7 +57,7 @@ test('X36 çizgi aracı, X35 deneme parçası, X27 ayrık görünüm', async ({ 
 
   // önizleme açıkken pim aracıyla modele tıklamak önizlemeyi kapatmaz, pim önizlemeye girer
   await page.getByRole('button', { name: 'Pimli kes', exact: true }).first().click();
-  await page.keyboard.press('Space');
+  // X74: Pimli kes'te önizleme Space'siz açılır
   await expect
     .poll(async () => (await state(page)).preview !== null, { timeout: 30_000 })
     .toBe(true);

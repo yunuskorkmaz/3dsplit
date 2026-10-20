@@ -410,12 +410,20 @@ export function CutActions() {
   );
 }
 
+/** Seçicide her seferinde yeni dizi yeniden çizim döngüsü yapar. */
+const NO_WARNINGS: string[] = [];
+
 export function CutPanel() {
   const cut = useStore((s) => s.cut);
   const tool = useStore((s) => s.tool);
   const pinCount = useStore((s) => s.pins.length);
   const directionGizmo = useStore((s) => s.directionGizmo);
   const suggestion = useStore((s) => s.suggestion);
+  // X74: önizleme sessiz yenilenir; uyarıları (pin sığmadı gibi) burada görünür
+  const previewOn = useStore((s) => s.previewActive);
+  const previewWarnings = useStore((s) =>
+    s.previewActive ? (s.preview?.warnings ?? NO_WARNINGS) : NO_WARNINGS,
+  );
   const [ringOpen, setRingOpen] = useState(false);
   useStore((s) => s.paintVersion);
   const islands = cut.mode === 'socket' ? activeIslands() : [];
@@ -464,6 +472,13 @@ export function CutPanel() {
               </button>
             )}
           </div>
+        )}
+        {previewWarnings.length > 0 && (
+          <ul className="preview-warnings">
+            {previewWarnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
         )}
         <p className="hint">{modeHint}</p>
         {tool === 'seam' && (
@@ -573,6 +588,12 @@ export function CutPanel() {
                   </button>
                 )}
               </div>
+              {tool !== 'pin' && previewOn && (
+                <p className="hint">
+                  Pimi tutup sürükle: taşı · Delete: seçili pimi sil · yeni pim için Elle yerleştir
+                  (P).
+                </p>
+              )}
               {tool === 'pin' && (
                 <p className="hint">
                   Bölgeye tıkla: pim ekle · pime tıklayıp sürükle: taşı · Shift+tık: sil. Seçili

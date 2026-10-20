@@ -187,6 +187,36 @@ async function refreshPreview(loud = false): Promise<void> {
   else await run();
 }
 
+/**
+ * X74: Pimli kes'te boya, slot, parça ya da mod değişince önizleme kendiliğinden
+ * açılır (Space'e basmadan pin görünür). Space ile kapatılırsa bir sonraki
+ * boyaya kadar kapalı kalır. Gecikme ve eski sonucu atma aşağıdaki yenilemede.
+ */
+useStore.subscribe((s, prev) => {
+  if (s.previewActive || s.cut.mode !== 'keys' || s.tool === 'seam') return;
+  if (
+    s.paintVersion === prev.paintVersion &&
+    s.activeSlot === prev.activeSlot &&
+    s.selectedPartId === prev.selectedPartId &&
+    s.cut.mode === prev.cut.mode
+  )
+    return;
+  const part = s.parts.find((p) => p.id === s.selectedPartId);
+  if (!part || s.activeSlot === BASE_SLOT || !part.mesh.labels.includes(s.activeSlot)) return;
+  set({ previewActive: true });
+  schedulePreview();
+});
+
+function schedulePreview(): void {
+  if (previewTimer) clearTimeout(previewTimer);
+  // yeni istek beklerken eski sonuç gelirse gösterilmesin
+  previewSeq++;
+  previewTimer = setTimeout(() => {
+    previewTimer = null;
+    refreshPreview();
+  }, 300);
+}
+
 /** Önizleme açıkken girdiler değişince kısa gecikmeyle yenile (sürüklemede her adımda değil). */
 useStore.subscribe((s, prev) => {
   if (!s.previewActive) return;
@@ -201,11 +231,7 @@ useStore.subscribe((s, prev) => {
     s.tool === prev.tool
   )
     return;
-  if (previewTimer) clearTimeout(previewTimer);
-  previewTimer = setTimeout(() => {
-    previewTimer = null;
-    refreshPreview();
-  }, 300);
+  schedulePreview();
 });
 
 export async function runCut(): Promise<void> {

@@ -7,6 +7,7 @@ import {
   lineClose,
   lineUndo,
   redo,
+  removePin,
   scheduleSuggestion,
   showAllParts,
   soloPart,
@@ -112,8 +113,23 @@ function useShortcuts() {
         }
         if (e.key === 'Escape') return lineCancel();
       }
+      // X74: seçili pim Delete ile silinir (önizlemede her araçta)
+      if (
+        (e.key === 'Delete' || e.key === 'Backspace') &&
+        get().selectedPin >= 0 &&
+        get().pins.length &&
+        (get().tool === 'pin' || get().previewActive)
+      ) {
+        e.preventDefault();
+        removePin(get().selectedPin);
+        return;
+      }
       // pim aracında Esc: pim seçimini bırak
-      if (get().tool === 'pin' && e.key === 'Escape' && get().selectedPin >= 0) {
+      if (
+        (get().tool === 'pin' || get().previewActive) &&
+        e.key === 'Escape' &&
+        get().selectedPin >= 0
+      ) {
         set({ selectedPin: -1 });
         return;
       }

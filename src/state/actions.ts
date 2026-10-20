@@ -48,7 +48,9 @@ export {
 export {
   deletePart,
   hideSelectedPart,
+  modelExtent,
   renamePart,
+  scaleToPrintSize,
   selectPart,
   showAllParts,
   soloPart,

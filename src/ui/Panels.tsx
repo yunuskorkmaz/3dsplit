@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { PinShape } from '../core/cut';
+import { longestExtent, PRINT_SIZE_MAX, PRINT_SIZE_MIN, sizeWarning } from '../core/geometry';
 import {
   activeIslands,
   addSlot,
@@ -9,10 +10,12 @@ import {
   clearSlotPaint,
   deletePart,
   makeToleranceCoupon,
+  modelExtent,
   refineSelected,
   removeSlot,
   renamePart,
   runCut,
+  scaleToPrintSize,
   selectPart,
   setSocketDirection,
   showAllParts,
@@ -29,7 +32,7 @@ import { cancelGeometry } from '../worker/client';
 import { NumberField } from './fields';
 import { Group, Panel } from './Panel';
 import { RingEditor } from './RingEditor';
-import { cameraDirection } from './ViewportHost';
+import { cameraDirection, fitView } from './ViewportHost';
 
 export function CameraPanel() {
   const camera = useStore((s) => s.camera);
@@ -70,6 +73,11 @@ export function PartsPanel() {
   const selected = useStore((s) => s.selectedPartId);
   const explode = useStore((s) => s.explode);
   const keys = useKeymap((s) => s.map);
+  const [printSize, setPrintSize] = useState(100);
+  // X71: parça başına ve model için en uzun kenar, mm
+  const sizes = useMemo(() => new Map(parts.map((p) => [p.id, longestExtent([p.mesh])])), [parts]);
+  const extent = useMemo(() => modelExtent(parts), [parts]);
+  const warning = parts.length ? sizeWarning(extent) : null;
   // kaynak parçalar kesimden sonra bilerek gizli: sayılmaz
   const hidden = parts.filter(
     (p) => !p.visible && (p.badge !== 'source' || parts.every((q) => q.badge === 'source')),
@@ -120,6 +128,9 @@ export function PartsPanel() {
               title={`${p.mesh.labels.length.toLocaleString('tr-TR')} üçgen`}
               onChange={(e) => renamePart(p.id, e.target.value)}
             />
+            <span className="size" title="En uzun kenar">
+              {formatMm(sizes.get(p.id) ?? 0)}
+            </span>
             {p.badge === 'source' && (
               <span
                 className="badge source"
@@ -163,6 +174,40 @@ export function PartsPanel() {
           </li>
         ))}
       </ul>
+      {parts.length > 0 && (
+        <div className={`print-size${warning ? ' warn' : ''}`}>
+          {warning && (
+            <p>
+              Model {formatMm(extent)}:{' '}
+              {warning === 'large'
+                ? `${PRINT_SIZE_MAX} mm'den büyük, birimi inç ya da metre olabilir.`
+                : `${PRINT_SIZE_MIN} mm'den küçük; pim ve tolerans bu boyda anlamsız.`}
+            </p>
+          )}
+          <div className="row">
+            <NumberField
+              label="Baskı boyu"
+              value={printSize}
+              min={1}
+              max={1000}
+              step={1}
+              unit="mm"
+              title="Modelin en uzun kenarı bu boya ölçeklenir. Ctrl+Z ile geri alınır"
+              onChange={setPrintSize}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                scaleToPrintSize(printSize);
+                requestAnimationFrame(() => fitView());
+              }}
+              title={`Şu an ${formatMm(extent)}`}
+            >
+              Ölçekle
+            </button>
+          </div>
+        </div>
+      )}
       {explode > 0 && (
         <NumberField
           label="Ayrıklık"
@@ -177,6 +222,10 @@ export function PartsPanel() {
       )}
     </Panel>
   );
+}
+
+function formatMm(v: number): string {
+  return `${v.toLocaleString('tr-TR', { maximumFractionDigits: v < 10 ? 1 : 0 })} mm`;
 }
 
 export function MeshToolsPanel() {

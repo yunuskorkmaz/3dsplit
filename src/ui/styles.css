@@ -471,9 +471,25 @@ ul.slots li .name {
 ul.parts li button {
   padding: 0 6px;
 }
-.tris {
+.tris,
+ul.parts li .size {
   color: #777;
   font-size: 11px;
+}
+ul.parts li .size {
+  white-space: nowrap;
+}
+.print-size {
+  margin-top: 6px;
+}
+.print-size.warn {
+  border-left: 3px solid #f1c40f;
+  padding-left: 6px;
+}
+.print-size.warn p {
+  color: #f1c40f;
+  margin: 0 0 4px;
+  font-size: 12px;
 }
 .badge {
   font-size: 10px;

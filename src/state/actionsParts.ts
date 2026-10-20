@@ -1,4 +1,5 @@
-import { get, pushHistory, set } from './store';
+import { longestExtent, scaleMeshes } from '../core/geometry';
+import { get, notify, type Part, pushHistory, set } from './store';
 
 // ---------- parça yönetimi ----------
 
@@ -55,4 +56,44 @@ export function deletePart(id: string): void {
 
 export function renamePart(id: string, name: string): void {
   set((s) => ({ parts: s.parts.map((p) => (p.id === id ? { ...p, name } : p)) }));
+}
+
+/** X71: ölçülen parçalar; kaynaklar kesimden önceki hal olduğu için sayılmaz (hepsi kaynaksa onlar). */
+function measuredParts(parts: Part[]): Part[] {
+  const live = parts.filter((p) => p.badge !== 'source');
+  return live.length ? live : parts;
+}
+
+/** X71: modelin en uzun kenarı, mm. Parça yoksa 0. */
+export function modelExtent(parts: Part[]): number {
+  return parts.length ? longestExtent(measuredParts(parts).map((p) => p.mesh)) : 0;
+}
+
+/** X71: bütün parçaları birlikte ölçekler; en uzun kenar `target` mm olur. Geri alınabilir. */
+export function scaleToPrintSize(target: number): void {
+  const before = get().parts;
+  const extent = modelExtent(before);
+  if (!(extent > 0) || !(target > 0)) return;
+  const factor = target / extent;
+  if (Math.abs(factor - 1) < 1e-6) return;
+  const meshes = scaleMeshes(
+    before.map((p) => p.mesh),
+    factor,
+  );
+  const after = before.map((p, i) => ({ ...p, mesh: meshes[i] }));
+  // pim ve önizleme eski ölçüde: sıfırlanır
+  set({
+    parts: after,
+    preview: null,
+    previewActive: false,
+    pins: [],
+    selectedPin: -1,
+    suggestion: null,
+    smartAutoScale: 0,
+  });
+  pushHistory({ kind: 'parts', before, after }, `Baskı boyu ${target} mm`);
+  notify(
+    'info',
+    `Model ${extent.toFixed(1)} mm → ${target} mm ölçeklendi (×${factor.toFixed(3)}).`,
+  );
 }

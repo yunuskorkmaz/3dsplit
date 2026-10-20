@@ -1,4 +1,4 @@
-import type { MeshData } from './types';
+import type { LabeledMesh, MeshData } from './types';
 
 /** Üçgen başına birim normal (3 float) ve alan. */
 export function faceNormalsAndAreas(mesh: MeshData): {
@@ -75,6 +75,57 @@ export function boundingBox(positions: Float32Array): {
       const v = positions[i + k];
       if (v < min[k]) min[k] = v;
       if (v > max[k]) max[k] = v;
+    }
+  }
+  return { min, max };
+}
+
+/** X71: baskı boyu bu aralığın dışındaysa uyarılır, mm. */
+export const PRINT_SIZE_MAX = 250;
+export const PRINT_SIZE_MIN = 8;
+
+/** Parçaların ortak sınır kutusunun en uzun kenarı. */
+export function longestExtent(meshes: MeshData[]): number {
+  const { min, max } = unionBox(meshes);
+  return Math.max(0, max[0] - min[0], max[1] - min[1], max[2] - min[2]);
+}
+
+export function sizeWarning(extent: number): 'large' | 'small' | null {
+  if (extent > PRINT_SIZE_MAX) return 'large';
+  if (extent < PRINT_SIZE_MIN) return 'small';
+  return null;
+}
+
+/**
+ * X71: parçaları ortak kutunun merkezi çevresinde `factor` ile büyütür.
+ * Yeni mesh nesneleri döner; önbellekler ve geri al kayıtları eski nesnelerde kalır.
+ */
+export function scaleMeshes(meshes: LabeledMesh[], factor: number): LabeledMesh[] {
+  const { min, max } = unionBox(meshes);
+  const c = [0, 1, 2].map((k) => (min[k] + max[k]) / 2);
+  return meshes.map((m) => {
+    const positions = new Float32Array(m.positions.length);
+    for (let i = 0; i < positions.length; i++) {
+      const k = i % 3;
+      positions[i] = c[k] + (m.positions[i] - c[k]) * factor;
+    }
+    return {
+      positions,
+      indices: m.indices.slice(),
+      labels: m.labels.slice(),
+      ...(m.cut ? { cut: m.cut.slice() } : {}),
+    };
+  });
+}
+
+function unionBox(meshes: MeshData[]): ReturnType<typeof boundingBox> {
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  for (const m of meshes) {
+    const b = boundingBox(m.positions);
+    for (let k = 0; k < 3; k++) {
+      min[k] = Math.min(min[k], b.min[k]);
+      max[k] = Math.max(max[k], b.max[k]);
     }
   }
   return { min, max };

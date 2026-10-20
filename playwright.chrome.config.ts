@@ -3,7 +3,13 @@ import { defineConfig } from '@playwright/test';
 /** Kurulu Google Chrome. Varsayılan e2e SwiftShader Chromium'da kalır. */
 export default defineConfig({
   testDir: 'e2e',
-  testMatch: ['views.spec.ts', 'shell.spec.ts', 'slots.spec.ts', 'seam.spec.ts'],
+  testMatch: [
+    'views.spec.ts',
+    'shell.spec.ts',
+    'slots.spec.ts',
+    'seam.spec.ts',
+    'print-size.spec.ts',
+  ],
   timeout: 120_000,
   use: {
     baseURL: 'http://localhost:5301',

@@ -104,6 +104,8 @@ export class Viewport {
   private selectedId: string | null = null;
   /** X79: fare üstündeki parça (seçili değilse ince çizgiyle gösterilir). */
   private hoveredId: string | null = null;
+  /** X81: son parça sığdırma anı (olay zaman damgasıyla aynı saat). */
+  private partFitAt = -Infinity;
   /** X79: birden çok görünür parça varken seçili ve fare üstündeki parçanın dış çizgisi. */
   private composer: EffectComposer;
   private selectOutline: OutlinePass;
@@ -162,7 +164,14 @@ export class Viewport {
       MIDDLE: THREE.MOUSE.PAN,
       RIGHT: THREE.MOUSE.ROTATE,
     };
+    // X81: tekerlek imlecin altındaki noktaya yakınlaştırır
+    this.controls.zoomToCursor = true;
+    this.controls.addEventListener('start', () => this.beginPivot());
+    this.controls.addEventListener('end', () => {
+      this.pivot = null;
+    });
     this.controls.addEventListener('change', () => {
+      this.applyPivot();
       this.updateClipping();
       this.requestRender();
       this.notifyCamera();
@@ -173,9 +182,14 @@ export class Viewport {
     el.addEventListener('pointermove', this.onPointerMove);
     el.addEventListener('pointerup', this.onPointerUp);
     el.addEventListener('contextmenu', (e) => e.preventDefault());
-    // boşluğa çift tık: görünümü sığdır
+    // boşluğa çift tık: görünümü sığdır; Alt + parçaya çift tık: o parçayı sığdır
+    // (Alt'sız çift tık ViewportHost'ta: seçili olmayan parçada seçer ve sığdırır)
     el.addEventListener('dblclick', (e) => {
-      if (!this.pick(e)) this.fitView();
+      // çift tıkın ikinci tıkı parçayı zaten sığdırdı; kamera değişti, imleç boşlukta kalabilir
+      if (e.timeStamp - this.partFitAt < 500) return;
+      const hit = this.pick(e);
+      if (!hit) this.fitView();
+      else if (e.altKey) this.fitPart(hit.partId);
     });
     // bağlam düşerse varsayılan davranışı engelle ki tarayıcı geri getirebilsin
     el.addEventListener('webglcontextlost', (e) => {
@@ -575,6 +589,54 @@ export class Viewport {
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3()).length() || 1;
     this.placeView(center, size, new THREE.Vector3(0, -1, 0.6));
+  }
+
+  /** X81: tek parçayı bakış yönünü koruyarak sığdırır; dönüş merkezi o parça olur. */
+  fitPart(partId: string): void {
+    const obj = this.parts.get(partId);
+    if (!obj) return;
+    this.partFitAt = performance.now();
+    const box = new THREE.Box3().expandByObject(obj.mesh);
+    if (box.isEmpty()) return;
+    const dir = this.camera.position.clone().sub(this.controls.target);
+    if (dir.lengthSq() < 1e-12) dir.set(0, -1, 0.6);
+    const size = box.getSize(new THREE.Vector3()).length() || 1;
+    // kesme düzlemleri ve uzaklık sınırları bütün sahneye göre kalır
+    const scene = this.sceneSize;
+    this.placeView(box.getCenter(new THREE.Vector3()), size, dir);
+    this.sceneSize = scene;
+    this.controls.minDistance = Math.min(this.controls.minDistance, size * 0.02);
+    this.controls.maxDistance = Math.max(this.controls.maxDistance, scene * 10);
+    this.updateClipping();
+  }
+
+  /** X81: kullanıcı kamerayı tutarken dönüş merkezi (seçili parçanın kutu ortası). */
+  private pivot: THREE.Vector3 | null = null;
+  private pivotQuat = new THREE.Quaternion();
+
+  /** Sürükleme başında: seçili görünür parça varsa dönüş merkezi onun kutu ortası. */
+  private beginPivot(): void {
+    const obj = this.selectedId ? this.parts.get(this.selectedId) : undefined;
+    const box = obj?.mesh.visible ? new THREE.Box3().expandByObject(obj.mesh) : null;
+    this.pivot = box && !box.isEmpty() ? box.getCenter(new THREE.Vector3()) : null;
+    this.pivotQuat.copy(this.camera.quaternion);
+  }
+
+  /**
+   * OrbitControls hedef etrafında döndürür. Aynı dönüşü merkez etrafında yapmak için kamera
+   * ve hedef (I − R)(merkez − hedef) kadar kaydırılır: merkez ekranda yerinde kalır, başta
+   * görüntü zıplamaz. Kaydırma ve yakınlaştırma yönü değiştirmediği için onlara dokunulmaz.
+   */
+  private applyPivot(): void {
+    if (!this.pivot) return;
+    const q = this.camera.quaternion;
+    if (q.angleTo(this.pivotQuat) < 1e-9) return;
+    const r = q.clone().multiply(this.pivotQuat.clone().invert());
+    this.pivotQuat.copy(q);
+    const rel = this.pivot.clone().sub(this.controls.target);
+    const shift = rel.clone().sub(rel.clone().applyQuaternion(r));
+    this.controls.target.add(shift);
+    this.camera.position.add(shift);
   }
 
   /** Modeli, şerit ve yan kartların bıraktığı açıklığa sığdırır. */

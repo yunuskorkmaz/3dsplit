@@ -25,6 +25,8 @@ import { get, notify, set, useStore } from '../state/store';
 import { type Hit, Viewport } from '../viewport/Viewport';
 
 const DIMMED = new THREE.Color('#2a2a2a');
+/** X81: seçme tıkından sonra bu süre içindeki ikinci tık çift tık sayılır, ms. */
+const DOUBLE_CLICK_MS = 400;
 
 /**
  * Bütün renkler tam görünür (X77). "Seçili rengi öne çıkar" açıksa aktif slot dışındaki
@@ -101,6 +103,7 @@ export function ViewportHost() {
     let last: { x: number; y: number; point: [number, number, number] } | null = null;
     let strokePart = '';
     let draggingPin = -1;
+    let selectClick: { partId: string; time: number } | null = null;
 
     const cursor = (hit: Hit | null) => {
       const { tool, brushRadius, activeSlot, slots } = get();
@@ -133,8 +136,19 @@ export function ViewportHost() {
         // X79: seçili olmayan parçaya tık yalnız onu seçer; araç seçili parçada çalışır
         if (hit.partId !== sel) {
           set({ selectedPartId: hit.partId });
+          selectClick = { partId: hit.partId, time: e.timeStamp };
           return true;
         }
+        // X81: seçme tıkının hemen ardından ikinci tık (çift tık): parçayı sığdır, araç çalışmaz
+        if (
+          selectClick?.partId === hit.partId &&
+          e.timeStamp - selectClick.time < DOUBLE_CLICK_MS
+        ) {
+          selectClick = null;
+          vp.fitPart(hit.partId);
+          return true;
+        }
+        selectClick = null;
         // X74: önizlemedeki pin her araçta tutulup taşınır (boş yere tıklamak araca kalır)
         if (tool !== 'pin' && pinsShown()) {
           const index = vp.pickScreenPoint(e, pinPoints(), 18);

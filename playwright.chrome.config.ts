@@ -12,6 +12,7 @@ export default defineConfig({
     'suggest.spec.ts',
     'keys-flow.spec.ts',
     'select.spec.ts',
+    'navigate.spec.ts',
   ],
   timeout: 120_000,
   use: {

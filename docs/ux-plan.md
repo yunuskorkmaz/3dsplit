@@ -60,6 +60,7 @@ Olacak:
 - Tekerlek imlecin altındaki noktaya doğru yakınlaştırır.
 - Dönüş merkezi seçili parçanın kutusunun ortası. Parça değişince kamera zıplamaz, yalnız merkez kayar.
 - Parçaya çift tık: o parçayı sığdırır ve merkezi ona alır. Boşluğa çift tık: hepsini sığdırır (bugünkü gibi).
+  - Uygulamada: seçili parçada ilk tık aracı çalıştırdığı için (boyar) çift tık yalnız seçili olmayan parçada sığdırır. Seçili parçayı sığdırmak için Alt + çift tık.
 - Kamera düzeni (varsayılan/Blender) ve ters yakınlaştırma korunur.
 
 Kabul: e2e: tekerlek imleç köşedeyken o köşedeki nokta ekranda yerinde kalır (±10 px).

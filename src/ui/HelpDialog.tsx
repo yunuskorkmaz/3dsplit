@@ -148,12 +148,14 @@ function Mouse() {
           ['Orta sürükle / Ctrl(Cmd) + sağ', 'Kaydır'],
         ];
   const common: [string, string][] = [
-    ['Tekerlek', 'Yakınlaştır'],
+    ['Tekerlek', 'İmlecin altına yakınlaştır'],
     ['Model üstünde sol tık / sürükle', 'Etkin araç'],
     ['Shift + sol', 'Aracın tersi (Smart Fill/Fırça: sil, Silgi: boya)'],
     ['Alt + tekerlek', 'Fırça yarıçapı'],
     ['Shift + sağ sürükle', 'Smart Fill açı eşiği'],
     ['Boşluğa çift tık', 'Görünümü sığdır (model kaybolursa)'],
+    ['Başka parçaya çift tık / Alt + çift tık', 'O parçayı sığdır'],
+    ['Döndürme', 'Seçili parçanın ortası etrafında'],
     ['Sağ üst küp: yüz', 'Kamerayı o yana alır; küp de o yöne döner'],
     ['Küpün köşesi', 'Çapraz (köşe) bakış'],
     ['Pim aracında Shift + tık', 'Pimi sil'],

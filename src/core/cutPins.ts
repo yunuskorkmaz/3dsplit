@@ -189,7 +189,8 @@ export function pinCenters(
     const shifted = add(center, scale(axis, (ratio - 0.5) * spec.length));
     out.push({ island, center: shifted, surface: center, axis, spec });
   }
-  const bare = [...thin].filter((island) => !out.some((p) => p.island === island)).length;
+  // küçük ada pin almaz (tasarım gereği); uyarı yalnız kesimde hiç pin kalmadıysa
+  const bare = out.length ? 0 : thin.size;
   if (bare)
     warnings?.push(
       `${bare > 1 ? `${bare} bölgede ` : ''}kesit pin için çok ince; pin konmadı (en küçük pim ${MIN_PIN_RADIUS} mm yarıçap + tolerans + duvar sığmıyor).`,

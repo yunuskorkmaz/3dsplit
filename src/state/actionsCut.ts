@@ -112,7 +112,12 @@ export function scheduleSuggestion(): void {
     }
     try {
       const s = await geometry.suggest(part.mesh, slot);
-      if (seq === suggestSeq) set({ suggestion: s });
+      if (seq !== suggestSeq) return;
+      set({ suggestion: s });
+      // X72: elle seçilmediyse mod öneriye geçer (Yapıştır yalnız elle seçilir)
+      const { cut, cutModeManual } = get();
+      if (s && !cutModeManual && cut.mode !== s.mode && cut.mode !== 'fast')
+        set({ cut: { ...cut, mode: s.mode } });
     } catch {
       if (seq === suggestSeq) set({ suggestion: null });
     }

@@ -9,6 +9,7 @@ export default defineConfig({
     'slots.spec.ts',
     'seam.spec.ts',
     'print-size.spec.ts',
+    'suggest.spec.ts',
   ],
   timeout: 120_000,
   use: {

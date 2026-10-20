@@ -64,6 +64,8 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
           manifold: prepared.manifold,
         };
         const before = get().parts;
+        // X72: yeni model: mod yine öneriyi izler
+        if (!before.length) set({ cutModeManual: false });
         set({ parts: [...before, part], selectedPartId: part.id });
         pushHistory({ kind: 'parts', before, after: get().parts }, `Aç: ${part.name}`);
       }
@@ -96,6 +98,7 @@ async function openProject(file: File): Promise<void> {
       previewActive: false,
       pins: [],
       selectedPin: -1,
+      cutModeManual: false,
       undoStack: [],
       redoStack: [],
     });

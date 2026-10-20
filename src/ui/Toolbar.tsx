@@ -64,7 +64,8 @@ export function ToolBar() {
   const tool = useStore((s) => s.tool);
   const keys = useKeymap((s) => s.map);
   const mode = useStore((s) => s.cut.mode);
-  const setMode = (next: CutMode) => set((s) => ({ cut: { ...s.cut, mode: next } }));
+  const setMode = (next: CutMode) =>
+    set((s) => ({ cut: { ...s.cut, mode: next }, cutModeManual: true }));
   return (
     <div className="toolbar ribbon" role="toolbar" aria-label="Araçlar">
       <span className="gname">Seç</span>

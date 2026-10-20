@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-20):** A1–E2, X1–X71 bitti. Sıradaki işler X72–X76 (Sprint 7, `docs/catpin-flow.md`). Yeni iş **X77** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-20):** A1–E2, X1–X72 bitti. Sıradaki işler X73–X76 (Sprint 7, `docs/catpin-flow.md`). Yeni iş **X77** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -38,7 +38,7 @@ Gerekçe, hedef akış ve at modelinde bulunan hatalar: [docs/catpin-flow.md](ca
 | # | İş | Neden | Durum |
 | --- | --- | --- | --- |
 | X71 | Model ölçüsü mm olarak yazar; 250 üstü / 8 altı uyarı; "Baskı boyu" ile ölçekle | At STL'i 34 mm geliyor, ölçü hiçbir yerde görünmüyor | [x] |
-| X72 | Mod önerisi kalınlığı doğru ölçer; boya bitince öneriye geçer, elle seçim korunur | At başına "Tapa — kesit ~4 mm" öneriyor | [ ] |
+| X72 | Mod önerisi kalınlığı doğru ölçer; boya bitince öneriye geçer, elle seçim korunur | At başına "Tapa — kesit ~4 mm" öneriyor | [x] |
 | X73 | Otomatik pin kesitin içinde ve kenardan uzak; sığmazsa konmaz; küçük ada pin almaz | At başında 4 pinin 4'ü dışarı taşıyor (%24–%90 içeride) | [ ] |
 | X74 | Pimli kes'te boya değişince pin önizlemesi kendiliğinden; sürükle/ekle/sil varsayılan | Pin görmek için Önizleme'ye basmak gerekiyor | [ ] |
 | X75 | Boyanın içindeki ayrı kabuklar ana parçaya katılır; kırıntı parça çıkmaz | At başı kesimi 2 kırıntı parça daha veriyor | [ ] |

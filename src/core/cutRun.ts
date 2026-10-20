@@ -418,13 +418,22 @@ export interface CutSuggestion {
   capRadius: number;
   /** Ortalama çıkıntı yüksekliği (hacim / kesit alanı), mm. */
   height: number;
+  /** X72: bölgenin kalınlığı, 3 × hacim / yüzey alanı (kürede yarıçap), mm. */
+  thickness: number;
   reason: string;
 }
 
+/** X72: kesit alanı bölge yüzeyinin bu oranından küçükse bölge çıkıntıdır (düz boya ~0,5). */
+const PROTRUSION_CAP_RATIO = 0.3;
+/** X72: pim sığması için en az kalınlık, mm (varsayılan pim yarıçapı 2 + tolerans + duvar). */
+const MIN_KEYS_THICKNESS = 3;
+
 /**
- * X5: bölgenin biçimine göre kesim modu önerir. Kesit geniş ve çıkıntı
- * kesitine göre uzunsa (kulak, kol, kafa) Keys; yüzeysel/sığ bölgelerde
- * (göz, kaş, burun) Socket. Hacim, bölge + düz kapaktan hesaplanır (boolean yok).
+ * X5/X72: bölgenin biçimine göre kesim modu önerir. Kalın çıkıntıda (kol,
+ * kafa, kulak) Keys; yüzeysel/sığ bölgede (göz, kaş, burun) ve pimin
+ * sığmadığı ince çıkıntıda Socket. Kesit halkası eğri ya da küçük olabilir
+ * (at başında yalnız kulak dipleri), bu yüzden ölçü halkadan değil bölgenin
+ * hacmi ve yüzeyinden gelir. Hacim, bölge + düz kapaktan hesaplanır (boolean yok).
  */
 export function suggestCutMode(mesh: LabeledMesh, slot: number): CutSuggestion | null {
   let islands: Island[];
@@ -433,18 +442,21 @@ export function suggestCutMode(mesh: LabeledMesh, slot: number): CutSuggestion |
   } catch {
     return null;
   }
-  // en büyük ada belirleyici
-  let best: { island: Island; area: number; volume: number } | null = null;
+  const { areas } = meshTopology(mesh);
+  // en büyük ada (yüzey alanı) belirleyici
+  let best: { cap: number; surface: number; volume: number } | null = null;
   for (const island of islands) {
     const idx: number[] = [];
-    for (const t of island.tris)
+    let surface = 0;
+    for (const t of island.tris) {
       idx.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
-    let capArea = 0;
+      surface += areas[t];
+    }
+    let cap = 0;
     try {
       for (const loop of island.loops) {
-        const cap = triangulateLoop(mesh.positions, loop);
-        idx.push(...cap);
-        capArea += loopPlane(mesh.positions, loop).area;
+        idx.push(...triangulateLoop(mesh.positions, loop));
+        cap += loopPlane(mesh.positions, loop).area;
       }
     } catch {
       continue;
@@ -452,18 +464,25 @@ export function suggestCutMode(mesh: LabeledMesh, slot: number): CutSuggestion |
     const volume = Math.abs(
       signedVolume({ positions: mesh.positions, indices: Uint32Array.from(idx) }),
     );
-    if (!best || capArea > best.area) best = { island, area: capArea, volume };
+    if (!best || surface > best.surface) best = { cap, surface, volume };
   }
-  if (!best || best.area <= 0) return null;
-  const capRadius = Math.sqrt(best.area / Math.PI);
-  const height = best.volume / best.area;
-  const keys = capRadius >= 4 && height >= capRadius * 0.8;
+  if (!best || best.surface <= 0) return null;
+  const { cap, surface, volume } = best;
+  const capRadius = Math.sqrt(cap / Math.PI);
+  const height = cap > 0 ? volume / cap : Infinity;
+  const thickness = (3 * volume) / surface;
+  const protrusion = cap < surface * PROTRUSION_CAP_RATIO;
+  const keys = protrusion && thickness >= MIN_KEYS_THICKNESS;
+  const t = thickness.toFixed(1);
   return {
     mode: keys ? 'keys' : 'socket',
     capRadius,
     height,
+    thickness,
     reason: keys
-      ? `kalın çıkıntı (kesit ~${(2 * capRadius).toFixed(0)} mm, boy ~${height.toFixed(0)} mm): düz kesim + pim`
-      : `yüzeysel bölge (kesit ~${(2 * capRadius).toFixed(0)} mm, yükseklik ~${height.toFixed(1)} mm): tapa + yuva`,
+      ? `kalın çıkıntı (kalınlık ~${t} mm): düz kesim + pim`
+      : protrusion
+        ? `ince çıkıntı (kalınlık ~${t} mm, pim sığmaz): tapa + yuva`
+        : `yüzeysel bölge (yükseklik ~${height.toFixed(1)} mm): tapa + yuva`,
   };
 }

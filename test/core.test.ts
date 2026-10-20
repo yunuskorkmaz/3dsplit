@@ -201,11 +201,12 @@ describe('kesim', () => {
       }
       return hi - lo;
     };
-    // 20 mm kesit: 0.35·10 = 3.5 ile 0.3·√(400/π)=3.4 → r≈3.4; 8 mm yama: r = 0.3·√(64/π) ≈ 1.4
+    // 20 mm kesit: 0.35·10 = 3.5 ile 0.3·√(400/π)=3.4 → r≈3.4
     expect(size(big.pins[0]) / 2).toBeGreaterThan(3);
     expect(size(big.pins[0]) / 2).toBeLessThan(3.8);
-    expect(size(small.pins[0]) / 2).toBeGreaterThan(1.1);
-    expect(size(small.pins[0]) / 2).toBeLessThan(1.8);
+    // X73: düz yamanın kalınlığı yok, pim sığmaz
+    expect(small.pins.length).toBe(0);
+    expect(small.warnings.join(' ')).toContain('pin için çok ince');
   });
 
   it('X45: uzun kesitte otomatik pimler uzun eksen boyunca dizilir', async () => {

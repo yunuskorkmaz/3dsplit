@@ -1,7 +1,7 @@
 import type { Manifold } from 'manifold-3d';
 import { capPlugVolumes, capSplit, extrudeVolume, ringMarkersFor, triangulateLoop } from './cutCap';
 import { mergeNestedParts } from './cutDebris';
-import { checkPinContainment, makePin, pinCenters, pinDepthClearance } from './cutPins';
+import { checkPinContainment, makePin, pinCenters, pinDepthClearance, pinFit } from './cutPins';
 import { loopPlane, planePatch, planeSplit, seamCut, seamPreview } from './cutSeam';
 import {
   capProjections,
@@ -223,7 +223,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
         );
       }
       if (opts.mode === 'keys') {
-        const placed = pinCenters(mesh.positions, islands, opts.pins, opts.pin);
+        const placed = pinCenters(mesh, islands, opts.pins, opts.pin, pinFit(opts), warnings);
         let split: { body: Manifold; parts: Manifold[] } | null = null;
         const splitM = () => {
           if (!split) {
@@ -362,7 +362,7 @@ function cutIslands(
     }
 
     if (opts.mode === 'keys') {
-      const placed = pinCenters(mesh.positions, islands, opts.pins, opts.pin);
+      const placed = pinCenters(mesh, islands, opts.pins, opts.pin, pinFit(opts), warnings);
       for (const [k, { island, center, axis, spec }] of placed.entries()) {
         const i = islands.indexOf(island);
         const pin = makePin(spec, center, axis, 0, scope);

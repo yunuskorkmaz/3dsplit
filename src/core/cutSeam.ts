@@ -1,6 +1,6 @@
 import type { Manifold } from 'manifold-3d';
 import { capSplit } from './cutCap';
-import { checkPinContainment, makePin, pinCenters, pinDepthClearance } from './cutPins';
+import { checkPinContainment, makePin, pinCenters, pinDepthClearance, pinFit } from './cutPins';
 import { manifoldMesh, withFaceId } from './cutSocket';
 import {
   CutError,
@@ -381,7 +381,7 @@ function seamCap(
         'Yüz boşluğu düz kesimde uygulanır. Bu kesim çizgiyi izledi; yüzler birbirine değer.',
       );
     if (opts.mode === 'keys') {
-      const placed = pinCenters(mesh.positions, [island], opts.pins, opts.pin);
+      const placed = pinCenters(mesh, [island], opts.pins, opts.pin, pinFit(opts), warnings);
       for (const [k, pinPlace] of placed.entries()) {
         const pin = makePin(pinPlace.spec, pinPlace.center, pinPlace.axis, 0, scope);
         const hole = makePin(
@@ -467,7 +467,7 @@ export function seamCut(mesh: LabeledMesh, loop: number[], opts: CutOptions): Cu
         adj: meshTopology(mesh).adj,
         key: 0,
       };
-      const placed = pinCenters(mesh.positions, [island], opts.pins, opts.pin);
+      const placed = pinCenters(mesh, [island], opts.pins, opts.pin, pinFit(opts), warnings);
       for (const [k, pinPlace] of placed.entries()) {
         const pin = makePin(pinPlace.spec, pinPlace.center, pinPlace.axis, 0, scope);
         const hole = makePin(
@@ -526,10 +526,11 @@ export function seamPreview(mesh: LabeledMesh, loop: number[], opts: CutOptions)
     island = surface;
   }
   const scope = new Scope();
+  const warnings: string[] = [];
   try {
     const pins =
       opts.mode === 'keys'
-        ? pinCenters(mesh.positions, [island], opts.pins, opts.pin).map((p) =>
+        ? pinCenters(mesh, [island], opts.pins, opts.pin, pinFit(opts), warnings).map((p) =>
             manifoldMesh(makePin(p.spec, p.center, p.axis, 0, scope)),
           )
         : [];
@@ -538,7 +539,7 @@ export function seamPreview(mesh: LabeledMesh, loop: number[], opts: CutOptions)
       pins,
       thin: [],
       ringMarkers: [],
-      warnings: [],
+      warnings,
     };
   } finally {
     scope.dispose();

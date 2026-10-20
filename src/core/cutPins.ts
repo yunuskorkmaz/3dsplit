@@ -1,14 +1,24 @@
 import type { Manifold } from 'manifold-3d';
 import { triangulateLoop } from './cutCap';
+import { type PinFit, type Section, sectionOf, settlePin } from './cutPinFit';
 import { findIslands } from './cutRun';
 import { withFaceId } from './cutSocket';
 import type { CutOptions, Island, PinOptions, PinPlacement, PinShape } from './cutTypes';
 import { CUT_FACE_ID, kernel, Scope } from './kernel';
-import type { LabeledMesh, Vec3 } from './types';
+import type { LabeledMesh, MeshData, Vec3 } from './types';
 import { add, cross, dot, normalize, orthoBasis, scale, sub, vertexAt } from './vec';
 
 export function pinDepthClearance(opts: CutOptions): number {
   return opts.pin.depthClearance ?? opts.clearance;
+}
+
+/** X73: otomatik pimin kesite sığma ölçüleri. */
+export function pinFit(opts: CutOptions): PinFit {
+  return {
+    clearance: opts.clearance,
+    wall: opts.minWall ?? 0.8,
+    depthClearance: pinDepthClearance(opts),
+  };
 }
 
 /** `axis` boyunca uzanan, `center`'da ortalanmış pim. `growLength`: boyca (her uçta) büyüme. */
@@ -96,59 +106,131 @@ function snapPin(pin: PinOptions, grow: number, scope: Scope, growLength = grow)
 }
 
 export function pinCenters(
-  positions: Float32Array,
+  mesh: MeshData,
   islands: Island[],
   pins: PinPlacement[] | undefined,
   base: PinOptions,
+  fit?: PinFit,
+  warnings?: string[],
 ): { island: Island; center: Vec3; surface: Vec3; axis: Vec3; spec: PinOptions }[] {
+  const { positions } = mesh;
   // X75: halkası olmayan ada (boyanın içine düşmüş kapalı kabuk) kesilmez, kesim yüzü yok
   const cutIslands = islands.filter((island) => island.loops.length > 0);
-  const raw: { island: Island; pin: PinPlacement }[] =
-    !pins || pins.length === 0
-      ? cutIslands.flatMap((island) =>
-          (base.auto ? autoPinPoints(positions, island) : [island.capCenter]).map((point) => ({
-            island,
-            pin: { point },
-          })),
-        )
-      : pins.map((pin) => {
-          let best = cutIslands[0] ?? islands[0];
-          let bestDist = Infinity;
-          for (const island of cutIslands) {
-            const d = Math.hypot(...sub(pin.point, island.capCenter));
-            if (d < bestDist) {
-              best = island;
-              bestDist = d;
-            }
+  const auto = !pins || pins.length === 0;
+  const raw: { island: Island; pin: PinPlacement }[] = auto
+    ? cutIslands.flatMap((island) =>
+        (base.auto ? autoPinPoints(positions, island) : [island.capCenter]).map((point) => ({
+          island,
+          pin: { point },
+        })),
+      )
+    : pins.map((pin) => {
+        let best = cutIslands[0] ?? islands[0];
+        let bestDist = Infinity;
+        for (const island of cutIslands) {
+          const d = Math.hypot(...sub(pin.point, island.capCenter));
+          if (d < bestDist) {
+            best = island;
+            bestDist = d;
           }
-          return { island: best, pin };
-        });
-  // nokta, kapak normali boyunca kapak yüzeyine taşınır (kapak düz olmayabilir)
-  return raw.map(({ island, pin }) => {
+        }
+        return { island: best, pin };
+      });
+  const sections = new Map<Island, Section>();
+  const taken = new Map<Island, { at: [number, number]; radius: number }[]>();
+  const thin = new Set<Island>();
+  const out: { island: Island; center: Vec3; surface: Vec3; axis: Vec3; spec: PinOptions }[] = [];
+  for (const { island, pin } of raw) {
     const n = island.capNormal;
-    const onPlane = sub(pin.point, scale(n, dot(sub(pin.point, island.capCenter), n)));
-    let center = onPlane;
-    try {
-      center =
-        lineCapIntersection(positions, triangulateLoop(positions, island.mainLoop), onPlane, n) ??
-        onPlane;
-    } catch {
-      // kapak üçgenlenemedi (düzlem kesimi): pim düzlemde
-    }
     // eksen gövdeye doğru bakmalı (kapak normalinin tersi yönde)
     let axis = pin.axis ? normalize(pin.axis) : scale(n, -1);
     if (dot(axis, n) > 0) axis = scale(axis, -1);
+    const ratio = Math.min(0.95, Math.max(0.05, pin.bodyRatio ?? base.bodyRatio ?? 0.5));
+    let point = pin.point;
     let { radius, length } = base;
     if (base.auto) {
       const shared = raw.filter((r) => r.island === island).length;
-      ({ radius, length } = autoPinSize(positions, island, center, shared));
+      ({ radius, length } = autoPinSize(
+        positions,
+        island,
+        capPoint(positions, island, point),
+        shared,
+      ));
     }
-    const spec = { ...base, radius: pin.radius ?? radius, length: pin.length ?? length };
+    let spec = { ...base, radius: pin.radius ?? radius, length: pin.length ?? length };
+    // X73: otomatik pin kesitin içine oturur; sığmazsa (otomatik boyutta küçültülerek) konmaz
+    if (auto && fit) {
+      let section = sections.get(island);
+      if (!section) {
+        section = sectionOf(mesh, island, spec.radius + fit.clearance + 0.1);
+        sections.set(island, section);
+      }
+      const used = taken.get(island) ?? [];
+      let placed = settlePin(mesh, section, point, axis, spec, fit, ratio, used);
+      // otomatik boyutta önce kısalt (kalın kısa pim), sonra incelt
+      for (const next of base.auto ? smallerPins(spec) : []) {
+        if (placed) break;
+        spec = { ...spec, ...next };
+        placed = settlePin(mesh, section, point, axis, spec, fit, ratio, used);
+      }
+      if (placed) {
+        used.push({ at: placed.at, radius: spec.radius + fit.clearance });
+        taken.set(island, used);
+        point = placed.point;
+      } else if (base.auto) {
+        thin.add(island);
+        continue;
+      }
+      // boyut elle verilmiş: pim yerinde kalır, taşarsa kesim uyarır
+    }
+    // nokta, kapak normali boyunca kapak yüzeyine taşınır (kapak düz olmayabilir)
+    const center = capPoint(positions, island, point);
     // pimin gövde tarafındaki payı: merkez eksen boyunca kaydırılır (eksen gövdeye bakıyor)
-    const ratio = Math.min(0.95, Math.max(0.05, pin.bodyRatio ?? base.bodyRatio ?? 0.5));
     const shifted = add(center, scale(axis, (ratio - 0.5) * spec.length));
-    return { island, center: shifted, surface: center, axis, spec };
-  });
+    out.push({ island, center: shifted, surface: center, axis, spec });
+  }
+  const bare = [...thin].filter((island) => !out.some((p) => p.island === island)).length;
+  if (bare)
+    warnings?.push(
+      `${bare > 1 ? `${bare} bölgede ` : ''}kesit pin için çok ince; pin konmadı (en küçük pim ${MIN_PIN_RADIUS} mm yarıçap + tolerans + duvar sığmıyor).`,
+    );
+  return out;
+}
+
+/** Otomatik boyutta denenen en küçük pim yarıçapı, mm. */
+const MIN_PIN_RADIUS = 0.8;
+/** Pim boyu yarıçapın bu katından ve 3 mm'den kısa olmaz. */
+const MIN_PIN_ASPECT = 2;
+
+/** Sığmayan otomatik pim için sırayla denenecek boyutlar: aynı yarıçapta kısa, sonra ince. */
+function smallerPins(spec: PinOptions): { radius: number; length: number }[] {
+  const out: { radius: number; length: number }[] = [];
+  const half = (x: number) => Math.round(x * 2) / 2;
+  for (let r = spec.radius; ; r = Math.max(MIN_PIN_RADIUS, Math.round(r * 7) / 10)) {
+    const top = r === spec.radius ? spec.length : half(Math.max(3, 4 * r));
+    const floor = half(Math.max(3, MIN_PIN_ASPECT * r));
+    for (let l = r === spec.radius ? half(top * 0.75) : top; l >= floor; l = half(l * 0.75)) {
+      out.push({ radius: r, length: l });
+      if (l === floor) break;
+      if (half(l * 0.75) < floor) out.push({ radius: r, length: floor });
+    }
+    if (r <= MIN_PIN_RADIUS) break;
+  }
+  return out;
+}
+
+function capPoint(positions: Float32Array, island: Island, point: Vec3): Vec3 {
+  const n = island.capNormal;
+  const onPlane = sub(point, scale(n, dot(sub(point, island.capCenter), n)));
+  try {
+    return (
+      lineCapIntersection(positions, triangulateLoop(positions, island.mainLoop), onPlane, n) ??
+      onPlane
+    );
+  } catch {
+    // kapak üçgenlenemedi (düzlem kesimi): pim düzlemde
+    return onPlane;
+  }
 }
 
 /**
@@ -307,7 +389,7 @@ export interface PinLayout {
 export function pinLayout(mesh: LabeledMesh, opts: CutOptions): PinLayout[] {
   const islands = findIslands(mesh, opts.slot);
   if (!islands.length) return [];
-  return pinCenters(mesh.positions, islands, opts.pins, opts.pin).map((p) => ({
+  return pinCenters(mesh, islands, opts.pins, opts.pin, pinFit(opts)).map((p) => ({
     surface: p.surface,
     axis: p.axis,
     radius: p.spec.radius,

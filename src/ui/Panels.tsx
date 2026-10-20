@@ -272,6 +272,7 @@ export function SlotPanel() {
   const parts = useStore((s) => s.parts);
   const selectedPartId = useStore((s) => s.selectedPartId);
   const paintVersion = useStore((s) => s.paintVersion);
+  const dimOthers = useStore((s) => s.dimOthers);
   const counts = useMemo(() => {
     const part = parts.find((p) => p.id === selectedPartId);
     const n = new Map<number, number>();
@@ -289,6 +290,14 @@ export function SlotPanel() {
         Renk seçince o boyanın çevresi modelde görünür. Temizle boyayı siler, kaldır rengi listeden
         çıkarır.
       </p>
+      <label className="field" title="Seçili renk dışındaki boyaları soldurur">
+        <input
+          type="checkbox"
+          checked={dimOthers}
+          onChange={(e) => set({ dimOthers: e.target.checked })}
+        />
+        <span>Seçili rengi öne çıkar</span>
+      </label>
       <ul className="slots">
         {slots.map((s) => (
           <li

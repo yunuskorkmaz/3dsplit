@@ -97,12 +97,22 @@ export function parse3mf(bytes: Uint8Array): ThreeMfFile {
   if (settings) {
     try {
       const json = JSON.parse(settings);
-      if (Array.isArray(json.filament_colour)) filamentColors = json.filament_colour.map(String);
+      if (Array.isArray(json.filament_colour))
+        filamentColors = json.filament_colour.map((c: unknown) => normalizeHex(String(c)));
     } catch {
       // ayar dosyası okunamadı: renkler varsayılan
     }
   }
   return { objects: out, filamentColors };
+}
+
+/**
+ * Bambu renkleri `#RRGGBBAA` olabiliyor; Three.js ve renk kutusu yalnız `#rrggbb` okur.
+ * Tanınmayan biçim olduğu gibi döner.
+ */
+function normalizeHex(c: string): string {
+  const m = /^#?([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(c.trim());
+  return m ? `#${m[1].toLowerCase()}` : c;
 }
 
 function parseObjects(xml: string): Map<string, RawObject> {

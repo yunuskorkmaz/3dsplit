@@ -58,4 +58,26 @@ describe('3MF okuma', () => {
     expect(file.filamentColors).toEqual(['#111111', '#222222', '#333333']);
     expect(file.objects[0].positions[0]).toBe(10);
   });
+
+  it('alfa kanallı filament rengini #rrggbb yapar (X77)', () => {
+    const model = `<?xml version="1.0"?>
+<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+ <resources>
+  <object id="1" type="model"><mesh>
+   <vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices>
+   <triangles><triangle v1="0" v2="1" v3="2"/></triangles>
+  </mesh></object>
+ </resources>
+ <build><item objectid="1"/></build>
+</model>`;
+    const file = parse3mf(
+      zipSync({
+        '3D/3dmodel.model': strToU8(model),
+        'Metadata/project_settings.config': strToU8(
+          JSON.stringify({ filament_colour: ['#003384FF', '#FFFFFF', 'F5A623'] }),
+        ),
+      }),
+    );
+    expect(file.filamentColors).toEqual(['#003384', '#ffffff', '#f5a623']);
+  });
 });

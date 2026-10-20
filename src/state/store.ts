@@ -161,6 +161,8 @@ export interface AppState {
   selectedPin: number;
   /** B7: X-ray: model yarı saydam, fırça/silgi küredeki tüm üçgenleri boyar (arka yüzler dahil). */
   xray: boolean;
+  /** X77: seçili olmayan renkleri soldur (X57 görünümü). Kapalıyken bütün renkler tam görünür. */
+  dimOthers: boolean;
   /** E1: kamera düzeni ve ters yakınlaştırma (tarayıcıda hatırlanır). */
   camera: { mode: 'default' | 'blender'; invertZoom: boolean };
   /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
@@ -252,6 +254,7 @@ export const useStore = create<AppState>(() => ({
   mirror: { enabled: false, axis: 0, offset: null },
   camera: loadCameraPrefs(),
   xray: false,
+  dimOthers: false,
   line: { partId: null, anchors: [], path: [] },
   explode: 0,
   helpOpen: false,

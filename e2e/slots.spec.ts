@@ -32,7 +32,7 @@ async function colorAt(page: Page, p: [number, number, number]): Promise<[number
   return rgb as [number, number, number];
 }
 
-test('X57: seçilen slot öne çıkar, sil yalnız boyayı kaldırır', async ({ page }) => {
+test('X77: renkler tam görünür, seçili renk öne çıkarılabilir', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
@@ -66,12 +66,23 @@ test('X57: seçilen slot öne çıkar, sil yalnız boyayı kaldırır', async ({
   const armScreen = await screenOf(page, arm);
   await page.mouse.click(armScreen.x, armScreen.y);
 
+  // kol (slot 2) seçiliyken ve burun (slot 1) seçiliyken kolun rengi aynı
+  const armActive = await colorAt(page, arm);
   await page.locator('ul.slots li').nth(1).locator('.key').click();
   const noseOn = await colorAt(page, [0, -16.9, 62]);
-  const armDim = await colorAt(page, arm);
+  const armOther = await colorAt(page, arm);
   expect(noseOn[0]).toBeGreaterThan(150);
-  expect(armDim[1]).toBeLessThan(40);
+  expect(armOther).toEqual(armActive);
+  expect(armOther[2]).toBeGreaterThan(150);
   await page.screenshot({ path: 'test-results/chrome-slot.png' });
+
+  // "Seçili rengi öne çıkar": diğer renkler solar, kapatınca geri gelir
+  const dim = page.getByLabel('Seçili rengi öne çıkar');
+  await dim.check();
+  const armDim = await colorAt(page, arm);
+  expect(armDim[1]).toBeLessThan(40);
+  await dim.uncheck();
+  expect(await colorAt(page, arm)).toEqual(armActive);
 
   await page.locator('ul.slots li').nth(0).locator('.key').click();
   const armFull = await colorAt(page, arm);

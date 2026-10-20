@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { acceleratedRaycast, MeshBVH } from 'three-mesh-bvh';
 import type { LabeledMesh, MeshData, Vec3 } from '../core/types';
 
@@ -850,7 +853,8 @@ export class Viewport {
     const idx = mesh.indices;
     const pos = mesh.positions;
     const labels = mesh.labels;
-    const edges = new Map<string, { n: number; a: number; b: number }>();
+    // her boyalı slotun sınır kenarları: kenar o slotun üçgenlerinde bir kez geçiyorsa sınırdır
+    const edges = new Map<string, { n: number; a: number; b: number; own: boolean }>();
     let ntri = 0;
     let minX = Infinity;
     let minY = Infinity;
@@ -859,41 +863,46 @@ export class Viewport {
     let maxY = -Infinity;
     let maxZ = -Infinity;
     for (let t = 0; t < labels.length; t++) {
-      if (labels[t] !== slot) continue;
-      ntri++;
+      const label = labels[t];
+      if (label === 0) continue;
+      const own = label === slot;
       const a = idx[3 * t] ?? 0;
       const b = idx[3 * t + 1] ?? 0;
       const c = idx[3 * t + 2] ?? 0;
-      for (const v of [a, b, c]) {
-        const x = pos[3 * v] ?? 0;
-        const y = pos[3 * v + 1] ?? 0;
-        const z = pos[3 * v + 2] ?? 0;
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        minZ = Math.min(minZ, z);
-        maxX = Math.max(maxX, x);
-        maxY = Math.max(maxY, y);
-        maxZ = Math.max(maxZ, z);
+      if (own) {
+        ntri++;
+        for (const v of [a, b, c]) {
+          const x = pos[3 * v] ?? 0;
+          const y = pos[3 * v + 1] ?? 0;
+          const z = pos[3 * v + 2] ?? 0;
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          minZ = Math.min(minZ, z);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+          maxZ = Math.max(maxZ, z);
+        }
       }
       for (const [u, v] of [
         [a, b],
         [b, c],
         [c, a],
       ] as const) {
-        const key = u < v ? `${u}_${v}` : `${v}_${u}`;
+        const key = u < v ? `${label}_${u}_${v}` : `${label}_${v}_${u}`;
         const prev = edges.get(key);
         if (prev) prev.n++;
-        else edges.set(key, { n: 1, a: u, b: v });
+        else edges.set(key, { n: 1, a: u, b: v, own });
       }
     }
     if (!ntri) {
       this.requestRender();
       return;
     }
-    const linePos: number[] = [];
+    const ownPos: number[] = [];
+    const otherPos: number[] = [];
     for (const e of edges.values()) {
       if (e.n !== 1) continue;
-      linePos.push(
+      (e.own ? ownPos : otherPos).push(
         pos[3 * e.a] ?? 0,
         pos[3 * e.a + 1] ?? 0,
         pos[3 * e.a + 2] ?? 0,
@@ -903,13 +912,34 @@ export class Viewport {
       );
     }
     const group = new THREE.Group();
-    if (linePos.length) {
+    if (otherPos.length) {
+      // diğer renklerin sınırı: ince, soluk, modelin arkasında kalınca görünmez
       const geom = new THREE.BufferGeometry();
-      geom.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(otherPos, 3));
       const line = new THREE.LineSegments(
         geom,
-        new THREE.LineBasicMaterial({ color, depthTest: false }),
+        new THREE.LineBasicMaterial({
+          color: '#000000',
+          transparent: true,
+          opacity: 0.25,
+          depthFunc: THREE.LessEqualDepth,
+        }),
       );
+      line.renderOrder = 5;
+      line.raycast = () => {};
+      group.add(line);
+    }
+    if (ownPos.length) {
+      // seçili rengin sınırı: kalın, rengin zıddı (açık renkte koyu, koyu renkte açık)
+      const geom = new LineSegmentsGeometry();
+      geom.setPositions(ownPos);
+      const mat = new LineMaterial({
+        color: contrastColor(color),
+        linewidth: SLOT_FOCUS_WIDTH,
+        depthTest: false,
+      });
+      mat.resolution.set(this.container.clientWidth, this.container.clientHeight);
+      const line = new LineSegments2(geom, mat);
       line.renderOrder = 6;
       line.raycast = () => {};
       group.add(line);
@@ -955,7 +985,11 @@ export class Viewport {
     if (!root) return;
     root.removeFromParent();
     root.traverse((o) => {
-      if (o instanceof THREE.LineSegments || o instanceof THREE.Sprite) {
+      if (
+        o instanceof THREE.LineSegments ||
+        o instanceof LineSegments2 ||
+        o instanceof THREE.Sprite
+      ) {
         o.geometry?.dispose();
         const mat = o.material;
         if (mat instanceof THREE.SpriteMaterial) mat.map?.dispose();
@@ -1116,6 +1150,9 @@ export class Viewport {
     const h = this.container.clientHeight;
     if (!w || !h) return;
     this.renderer.setSize(w, h);
+    this.focusRoot?.traverse((o) => {
+      if (o instanceof LineSegments2) o.material.resolution.set(w, h);
+    });
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.requestRender();
@@ -1349,6 +1386,15 @@ function writeTriangles(
   }
   posAttr.needsUpdate = true;
   nrmAttr.needsUpdate = true;
+}
+
+/** X77: seçili renk sınırının ekrandaki kalınlığı, px. */
+const SLOT_FOCUS_WIDTH = 3;
+
+/** Açık renge koyu, koyu renge açık çizgi. */
+function contrastColor(color: string): string {
+  const c = new THREE.Color(color).convertLinearToSRGB();
+  return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b > 0.5 ? '#111111' : '#ffffff';
 }
 
 function newMaterial(): THREE.MeshStandardMaterial {

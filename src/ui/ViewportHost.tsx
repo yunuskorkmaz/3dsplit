@@ -26,12 +26,16 @@ import { type Hit, Viewport } from '../viewport/Viewport';
 
 const DIMMED = new THREE.Color('#2a2a2a');
 
-/** Aktif slot dolu renkte kalır; diğer boyalar solar. Taban seçiliyken hepsi görünür. */
+/**
+ * Bütün renkler tam görünür (X77). "Seçili rengi öne çıkar" açıksa aktif slot dışındaki
+ * boyalar solar; taban seçiliyken yine hepsi görünür.
+ */
 function slotColor(label: number): THREE.Color {
-  const { slots, activeSlot } = get();
+  const { slots, activeSlot, dimOthers } = get();
   const slot = slots.find((s) => s.id === label);
   const color = new THREE.Color(slot?.color ?? '#ff00ff');
-  if (label !== 0 && activeSlot !== 0 && label !== activeSlot) color.lerp(DIMMED, 0.78);
+  if (dimOthers && label !== 0 && activeSlot !== 0 && label !== activeSlot)
+    color.lerp(DIMMED, 0.78);
   return color;
 }
 
@@ -282,13 +286,14 @@ export function ViewportHost() {
   const directionGizmo = useStore((s) => s.directionGizmo);
   const activeSlot = useStore((s) => s.activeSlot);
   const paintVersion = useStore((s) => s.paintVersion);
+  const dimOthers = useStore((s) => s.dimOthers);
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;
     for (const p of get().parts) vp.recolor(p.id, slotColor);
     const slot = get().slots.find((s) => s.id === activeSlot);
     vp.showSlotFocus(selectedPartId, activeSlot, slot?.color ?? '#ffffff', slot?.name ?? '');
-  }, [activeSlot, selectedPartId, paintVersion, parts]);
+  }, [activeSlot, selectedPartId, paintVersion, parts, dimOthers]);
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;

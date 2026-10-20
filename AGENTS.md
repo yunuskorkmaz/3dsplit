@@ -10,7 +10,7 @@ Ana akış: yükle ve onar → Smart Fill / fırça / çizgi / kova ile seç →
 
 ## Ne bitti
 
-A1–E2 (`docs/project-brief.md`) ve X1–X70 (`docs/ROADMAP.md`) uygulandı. Sıradaki işler X71–X76: önce `docs/catpin-flow.md` oku. Yeni iş **X77**. Kullanıcı istemeden özellik ekleme. Yeni işe başlamadan önce roadmap'e yaz; bitince `[x]` yap ve "Tamamlananlar günlüğü"ne tarih + commit ekle.
+A1–E2 (`docs/project-brief.md`) ve X1–X76 (`docs/ROADMAP.md`) uygulandı. Sıradaki işler X77–X83: önce `docs/ux-plan.md` oku; davranış onaylanmadan kodlanmaz. Yeni iş **X84**. Kullanıcı istemeden özellik ekleme. Yeni işe başlamadan önce roadmap'e yaz; bitince `[x]` yap ve "Tamamlananlar günlüğü"ne tarih + commit ekle.
 
 Çelişirse şu sıra geçerlidir:
 

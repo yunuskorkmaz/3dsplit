@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-20):** A1–E2 ve X1–X76 bitti (Sprint 7, `docs/catpin-flow.md`). Yeni iş **X77** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-20):** A1–E2 ve X1–X76 bitti. Sıradaki işler X77–X83 (Sprint 8, `docs/ux-plan.md`, onay bekliyor). Yeni iş **X84** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -43,6 +43,20 @@ Gerekçe, hedef akış ve at modelinde bulunan hatalar: [docs/catpin-flow.md](ca
 | X74 | Pimli kes'te boya değişince pin önizlemesi kendiliğinden; sürükle/ekle/sil varsayılan | Pin görmek için Önizleme'ye basmak gerekiyor | [x] |
 | X75 | Boyanın içindeki ayrı kabuklar ana parçaya katılır; kırıntı parça çıkmaz | At başı kesimi 2 kırıntı parça daha veriyor | [x] |
 | X76 | `e2e/keys-flow.spec.ts` geçer (testa kulağı, Yoda başı); at yerine (aşağıda) | Akışın uçtan uca kanıtı | [x] |
+
+## Sprint 8 — slicer ve CAD gibi görünüm
+
+Ekran davranışları: [docs/ux-plan.md](ux-plan.md). Her madde, davranışı onaylanmadan kodlanmaz. Sıra: X77, X79, X81, X80, X78, X82, X83.
+
+| # | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| X77 | Bütün renkler tam görünür; seçili renk sınır çizgisiyle öne çıkar | Seçili renk beyazken Bluey_Color.3mf tamamen gri | [ ] |
+| X78 | Tapa ve Yapıştır'da da canlı önizleme (300 bin üçgen üstünde Space) | Yalnız Pimli kes'te kendiliğinden | [ ] |
+| X79 | Seçili parça turuncu çizgili; seçili olmayan parçaya ilk tık yalnız seçer | Başka parçaya tık hemen boyuyor, seçim zor görünüyor | [ ] |
+| X80 | Çok parçalı dosyada en büyük parça seçili, ölçü uyarısı parça başına, adlar okunur | Grogu'da tırnak seçili, 402 mm yanlış uyarısı | [ ] |
+| X81 | İmlece yakınlaştırma, seçili parça etrafında dönme, parçaya çift tık odak | Kamera sabit merkezde | [ ] |
+| X82 | 256 mm baskı tablası ızgarası, sığmayınca sarı | Boyut algısı yok | [ ] |
+| X83 | Örnek model düğmesi ve Aç → Seç → Kes → Aktar adım çubuğu | Yeni kullanıcı nerede olduğunu görmüyor | [ ] |
 
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
 

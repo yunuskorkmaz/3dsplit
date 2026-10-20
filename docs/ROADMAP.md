@@ -26,6 +26,7 @@ Ayrıntı ve bırakılanlar `docs/HEDEF.md`.
 | X64 | Düz kesilen yüzler arasında boşluk; 0 ise birbirine değer. Pim toleransından ayrı | Baskıda yüzler yapışmasın | [x] |
 | X65 | Tapa yuvası payı kopya birleşimi olmadan: yanlar dışarı, taban derine kayar | Yoğun boyada Kes "Kesiliyor…"da kalıyordu | [x] |
 | X66 | Worker iptali ve 120 s zaman aşımı; model ve geri alma durur | Takılan kesim arayüzü kilitliyordu | [x] |
+| X67 | Yedek prizma birleşimi en çok 200 üçgen; üstü süpürme veya seyreltme | Üçgen başına manifold yoğun bölgede bitmiyordu | [x] |
 
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
 
@@ -256,3 +257,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-18 | X56: dikiş kesimi, kapalı halkadan iki parça | — |
 | 2026-10-20 | X65: tapa yuvası payı kopya birleşimi olmadan | — |
 | 2026-10-20 | X66: worker iptali ve zaman aşımı | — |
+| 2026-10-20 | X67: yedek prizma sınırı 200; seyrek küre ölçümü ~1 s | — |

@@ -50,6 +50,11 @@ export function fitView(): void {
   activeViewport?.fitView();
 }
 
+/** X87: bakış yönü korunur, görünür parçaların hepsi sığar. */
+export function fitAll(): void {
+  activeViewport?.fitAll();
+}
+
 /** Parçayı sığdırır, dönüş merkezini ona alır. */
 export function fitPart(partId: string): void {
   activeViewport?.fitPart(partId);
@@ -388,6 +393,19 @@ export function ViewportHost() {
     vpRef.current?.setCameraMode(camera.mode, camera.invertZoom);
     vpRef.current?.setBed(camera.bed);
   }, [camera]);
+
+  // X87: gezinme kipi; araç seçilince kip biter
+  const navMode = useStore((s) => s.navMode);
+  useEffect(() => {
+    vpRef.current?.setNavMode(navMode);
+  }, [navMode]);
+  useEffect(
+    () =>
+      useStore.subscribe((s, prev) => {
+        if (s.tool !== prev.tool && s.navMode) set({ navMode: null });
+      }),
+    [],
+  );
 
   // ayna düzlemi
   const mirror = useStore((s) => s.mirror);

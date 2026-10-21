@@ -19,7 +19,16 @@ export type IconName =
   | 'refine'
   | 'printSize'
   | 'explode'
-  | 'xray';
+  | 'xray'
+  | 'orbit'
+  | 'pan'
+  | 'zoom'
+  | 'fitAll'
+  | 'fitSelected'
+  | 'home'
+  | 'views'
+  | 'bed'
+  | 'settings';
 
 const PATHS: Record<IconName, ReactNode> = {
   // tıklanan çıkıntı ve çevresindeki seçim
@@ -140,6 +149,61 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="8" />
       <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" fillOpacity="0.35" />
+    </>
+  ),
+  orbit: (
+    <>
+      <ellipse cx="12" cy="12" rx="9" ry="4" />
+      <path d="M17 6.5l2.5 1.8-2.8 1" />
+      <circle cx="12" cy="12" r="2" />
+    </>
+  ),
+  pan: (
+    <>
+      <path d="M12 3v18M3 12h18" />
+      <path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" />
+    </>
+  ),
+  zoom: (
+    <>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6" />
+    </>
+  ),
+  fitAll: (
+    <>
+      <path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
+      <path d="M8 8h8v8H8z" />
+    </>
+  ),
+  fitSelected: (
+    <>
+      <path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
+      <circle cx="12" cy="12" r="3.5" fill="currentColor" fillOpacity="0.35" />
+    </>
+  ),
+  home: (
+    <>
+      <path d="M4 11l8-7 8 7" />
+      <path d="M6 9.5V20h12V9.5" />
+    </>
+  ),
+  views: (
+    <>
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" />
+      <path d="M4 7.5l8 4.5 8-4.5M12 12v9" />
+    </>
+  ),
+  bed: (
+    <>
+      <path d="M2 16l5-6h15l-5 6z" />
+      <path d="M8.5 13h10M7 10l-2.5 6M12 10l-2.5 6M17 10l-2.5 6" strokeWidth="1" />
+    </>
+  ),
+  settings: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
     </>
   ),
 };

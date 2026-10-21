@@ -382,8 +382,7 @@ function cornerName(x: number, y: number, z: number): string {
 }
 
 /** Modelin sağ üstünde yüzen görünüş küpü. Yüz yana, köşe çapraz bakışa gider. */
-export function ViewCube({ onFit }: { onFit: () => void }) {
-  const keys = useKeymap((s) => s.map);
+export function ViewCube() {
   const [orient, setOrient] = useState('none');
   const [spin, setSpin] = useState(false);
   useEffect(() => {
@@ -434,14 +433,6 @@ export function ViewCube({ onFit }: { onFit: () => void }) {
           ))}
         </div>
       </div>
-      <button
-        type="button"
-        className="fit"
-        onClick={onFit}
-        title={`Görünümü sığdır (${keys.fit} veya boşluğa çift tık) — model kaybolursa geri getirir`}
-      >
-        Sığdır
-      </button>
     </fieldset>
   );
 }

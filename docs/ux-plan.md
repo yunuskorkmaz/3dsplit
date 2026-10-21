@@ -202,6 +202,8 @@ Olacak:
 - Alt ortada simgeli çubuk: Döndür, Kaydır, Yakınlaştır (sol tuş bu kipe geçer; Esc ya da araç seçimi bırakır), Hepsini sığdır, Seçiliyi sığdır, Ev (başlangıç bakışı), Görünüşler ▾ (Ön, Arka, Sağ, Sol, Üst, Alt, Eğik), Tabla, ⚙ (Kamera düzeni, Ters yakınlaştırma).
 - Kamera paneli kalkar. Görünüş küpü yerinde kalır, altındaki "Sığdır" kalkar.
 
+Uygulamada: "Hepsini sığdır" bakış yönünü korur; "Ev" bugünkü Sığdır gibi önden bakıp hepsini sığdırır (Home tuşu). Kip düğmesine ikinci kez basmak da kipi bitirir.
+
 Kabul: e2e: Seçiliyi sığdır parçayı ortalar; ⚙'dan Blender düzeni seçilir ve hatırlanır; Tabla düğmesi tablayı gizler.
 
 ## X88 Geçmiş şeridi

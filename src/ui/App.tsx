@@ -23,7 +23,8 @@ import { Header } from './Header';
 import { HelpDialog } from './HelpDialog';
 import { HistoryPanel } from './HistoryPanel';
 import { ModelPanel } from './ModelTree';
-import { CameraPanel, CutActions, CutPanel, StatusBar } from './Panels';
+import { NavBar } from './NavBar';
+import { CutActions, CutPanel, StatusBar } from './Panels';
 import { ToolBar, ToolPanel, ViewCube } from './Toolbar';
 import { fitView, ViewportHost } from './ViewportHost';
 
@@ -136,6 +137,11 @@ function useShortcuts() {
         set({ selectedPin: -1 });
         return;
       }
+      // X87: Esc gezinme kipini bitirir
+      if (e.key === 'Escape' && get().navMode) {
+        set({ navMode: null });
+        return;
+      }
       // yardım açıkken sadece yardım kısayolu (kapatmak için) çalışır
       if (get().helpOpen && commandFor(keyName(e)) !== 'help') return;
       const cmd = commandFor(keyName(e));
@@ -182,10 +188,10 @@ export function App() {
       <main className="stage">
         <ViewportHost />
         <EmptyStage />
-        <ViewCube onFit={fitView} />
+        <ViewCube />
+        <NavBar />
         <div className="float side-left">
           <ModelPanel />
-          <CameraPanel />
         </div>
         <div className="float side-right tool-window">
           <ToolPanel />

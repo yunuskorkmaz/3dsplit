@@ -41,9 +41,8 @@ test('X82: tabla modelin altında, sığmayınca sarı, kapatılabilir', async (
   await expect.poll(async () => (await bed(page)).fits).toBe(false);
   await page.screenshot({ path: 'test-results/bed-large.png' });
 
-  // Kamera panelinde kapat; yenileyince hatırlanır
-  await page.getByRole('heading', { name: 'Kamera' }).click();
-  await page.getByLabel('Tabla').uncheck();
+  // gezinme çubuğunda kapat; yenileyince hatırlanır
+  await page.locator('.nav-bar').getByRole('button', { name: 'Tabla' }).click();
   expect((await bed(page)).visible).toBe(false);
   await page.reload();
   await page.locator('input[type=file]').setInputFiles('samples/figure.stl');

@@ -164,8 +164,8 @@ function Mouse() {
   return (
     <>
       <p className="hint">
-        Kamera düzeni: {mode === 'blender' ? 'Blender' : 'Varsayılan'} (sol paneldeki Kamera
-        bölümünden değişir).
+        Kamera düzeni: {mode === 'blender' ? 'Blender' : 'Varsayılan'} (alttaki gezinme çubuğunda ⚙
+        ile değişir). Çubuktaki Döndür, Kaydır ve Yakınlaştır sol tuşu kameraya verir; Esc bırakır.
       </p>
       <table className="help-table">
         <tbody>

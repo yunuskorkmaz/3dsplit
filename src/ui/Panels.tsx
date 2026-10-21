@@ -11,54 +11,12 @@ import {
   togglePreview,
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
-import { type CutSettings, dismiss, get, set, setCameraPrefs, useStore } from '../state/store';
+import { type CutSettings, dismiss, get, set, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
 import { NumberField } from './fields';
 import { Group, Panel } from './Panel';
 import { RingEditor } from './RingEditor';
 import { cameraDirection } from './ViewportHost';
-
-export function CameraPanel() {
-  const camera = useStore((s) => s.camera);
-  return (
-    <Panel id="camera" title="Kamera" defaultOpen={false}>
-      <div className="row">
-        <button
-          type="button"
-          className={camera.mode === 'default' ? 'active' : ''}
-          onClick={() => setCameraPrefs({ ...camera, mode: 'default' })}
-          title="Sağ sürükle döndür, orta / Ctrl+sağ kaydır"
-        >
-          Varsayılan
-        </button>
-        <button
-          type="button"
-          className={camera.mode === 'blender' ? 'active' : ''}
-          onClick={() => setCameraPrefs({ ...camera, mode: 'blender' })}
-          title="Orta sürükle döndür, Shift+orta kaydır, sağ kaydır"
-        >
-          Blender
-        </button>
-      </div>
-      <label className="field">
-        <input
-          type="checkbox"
-          checked={camera.invertZoom}
-          onChange={(e) => setCameraPrefs({ ...camera, invertZoom: e.target.checked })}
-        />
-        <span>Ters yakınlaştırma</span>
-      </label>
-      <label className="field" title="256 × 256 mm baskı tablası; model sığmazsa kenarı sarı">
-        <input
-          type="checkbox"
-          checked={camera.bed}
-          onChange={(e) => setCameraPrefs({ ...camera, bed: e.target.checked })}
-        />
-        <span>Tabla</span>
-      </label>
-    </Panel>
-  );
-}
 
 const PIN_SHAPES: { id: PinShape; label: string; hint: string }[] = [
   { id: 'cylinder', label: 'Silindir', hint: 'En yaygın; yapıştırılır ya da sıkı geçer' },

@@ -953,8 +953,31 @@ export class Viewport {
       mode === 'blender'
         ? { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN }
         : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
+    this.setNavMode(this.navMode);
     // OrbitControls yakınlaştırma çarpanı zoomSpeed üssüyle hesaplanıyor: eksi işaret yönü çevirir
     this.controls.zoomSpeed = invertZoom ? -1 : 1;
+  }
+
+  /** X87: gezinme çubuğundan seçilen kip; sol tuş araç yerine kamerayı döndürür, kaydırır ya da yakınlaştırır. */
+  private navMode: 'orbit' | 'pan' | 'zoom' | null = null;
+
+  setNavMode(mode: 'orbit' | 'pan' | 'zoom' | null): void {
+    this.navMode = mode;
+    this.controls.mouseButtons.LEFT =
+      mode === 'pan' ? THREE.MOUSE.PAN : mode === 'zoom' ? THREE.MOUSE.DOLLY : THREE.MOUSE.ROTATE;
+    this.renderer.domElement.style.cursor =
+      mode === 'pan' ? 'move' : mode === 'zoom' ? 'zoom-in' : mode === 'orbit' ? 'grab' : '';
+  }
+
+  /** X87: bakış yönünü koruyarak görünür parçaların hepsini sığdırır. */
+  fitAll(): void {
+    const dir = this.camera.position.clone().sub(this.controls.target);
+    if (dir.lengthSq() < 1e-12) dir.set(0, -1, 0.6);
+    const box = new THREE.Box3();
+    for (const p of this.parts.values()) if (p.mesh.visible) box.expandByObject(p.mesh);
+    if (box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3()).length() || 1;
+    this.placeView(box.getCenter(new THREE.Vector3()), size, dir);
   }
 
   /** Seçili rengin sınırını ve adını modelin üstünde gösterir. Slot 0 veya boya yoksa gizler. */
@@ -1305,8 +1328,8 @@ export class Viewport {
       this.renderer.domElement.setPointerCapture(e.pointerId);
       return;
     }
-    // Alt basılıyken veya boşlukta sol tık: kamera döner
-    if (e.button !== 0 || e.altKey) {
+    // Alt basılıyken veya boşlukta sol tık: kamera döner; X87 gezinme kipinde sol tuş hep kamerada
+    if (e.button !== 0 || e.altKey || this.navMode) {
       this.controls.enabled = true;
       return;
     }

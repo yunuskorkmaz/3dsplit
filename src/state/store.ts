@@ -161,6 +161,8 @@ export interface AppState {
   selectedPin: number;
   /** B7: X-ray: model yarı saydam, fırça/silgi küredeki tüm üçgenleri boyar (arka yüzler dahil). */
   xray: boolean;
+  /** X87: gezinme çubuğundan seçilen kip; sol tuş kamerayı yönetir. Araç seçilince ya da Esc ile biter. */
+  navMode: 'orbit' | 'pan' | 'zoom' | null;
   /** X77: seçili olmayan renkleri soldur (X57 görünümü). Kapalıyken bütün renkler tam görünür. */
   dimOthers: boolean;
   /** X85: boyası geçici gizlenen renkler (yalnız görüntü; taban rengiyle çizilir). */
@@ -262,6 +264,7 @@ export const useStore = create<AppState>(() => ({
   mirror: { enabled: false, axis: 0, offset: null },
   camera: loadCameraPrefs(),
   xray: false,
+  navMode: null,
   dimOthers: false,
   hiddenSlots: [],
   line: { partId: null, anchors: [], path: [] },

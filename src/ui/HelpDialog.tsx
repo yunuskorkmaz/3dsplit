@@ -82,8 +82,8 @@ function Workflow() {
         Yumuşat (S) ile kenarı düzgünleştir. Çift özelliklerde (iki göz) sağdaki pencerede Ayna'yı
         aç. Renk satırındaki göz boyayı yalnız görüntüde gizler. Satırdaki ⋯ ya da sağ tık: “Seçili
         parçada temizle” boyayı siler, “Rengi kaldır” rengi listeden çıkarır. Tek bir yeri silmek
-        için Akıllı seç’te Shift+tık, Silgi, "Seçimi temizle" (Delete) ya da Ctrl/Cmd+Z. Sol
-        paneldeki Geçmiş'ten istediğin adıma dönebilirsin.
+        için Akıllı seç’te Shift+tık, Silgi, "Seçimi temizle" (Delete) ya da Ctrl/Cmd+Z. Alttaki
+        Geçmiş şeridinde bir adıma tıklayıp o ana dönebilirsin.
       </li>
       <li>
         <b>Kesim modunu seç.</b> Üst şeritte Tapa: ince bölgeler (göz, kaş). Pimli kes: kalın

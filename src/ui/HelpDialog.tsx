@@ -69,8 +69,8 @@ function Workflow() {
     <ol className="steps">
       <li>
         <b>Yükle.</b> STL, OBJ, 3MF veya .3dsplit dosyasını pencereye sürükle. Açık (su geçirmez
-        olmayan) mesh otomatik onarılır; olmazsa parçada kırmızı “bozuk” yazar, “Delikleri kapat”ı
-        dene.
+        olmayan) mesh otomatik onarılır; olmazsa parçada kırmızı “bozuk” yazar, şeritte Mesh ›
+        Onar’ı dene.
       </li>
       <li>
         <b>Renk seç.</b> Soldaki listede her satır bir renktir. 1–9 tuşları rengi değiştirir. Taban
@@ -103,7 +103,7 @@ function Workflow() {
       </li>
       <li>
         <b>İncele.</b> Parça listesinde göz simgesi gizler/gösterir, Alt+tık (veya Shift+H) yalnız o
-        parçayı gösterir. Üstteki Aralıklı, parçaları birbirinden ayırarak gösterir; Saydam,
+        parçayı gösterir. Şeritte Düzen › Aralıklı, parçaları birbirinden ayırarak gösterir; Saydam,
         fırçanın arkadaki yüzleri de boyamasını sağlar.
       </li>
       <li>

@@ -23,7 +23,7 @@ test('X78: Tapa ve Yapıştır önizlemesi Space olmadan açılır', async ({ pa
   await expect(page.locator('ul.parts li')).toHaveCount(1, { timeout: 30_000 });
   await page.keyboard.press('1');
   // fırçayla yalnız burun (Akıllı seç bu figürde bütün başı alıyor)
-  await page.locator('.toolbar button').nth(1).click();
+  await page.locator('.ribbon button').nth(1).click();
   const nose = await screenOf(page, [0, -16.9, 62]);
   await page.mouse.click(nose.x, nose.y);
   await expect

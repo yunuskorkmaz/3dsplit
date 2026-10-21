@@ -8,7 +8,6 @@ import {
   importFiles,
   redo,
   saveProject,
-  toggleExplode,
   undo,
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
@@ -26,8 +25,6 @@ export function Header() {
   const canUndo = useStore((s) => s.undoStack.length > 0);
   const canRedo = useStore((s) => s.redoStack.length > 0);
   const hasParts = useStore((s) => s.parts.length > 0);
-  const explode = useStore((s) => s.explode);
-  const xray = useStore((s) => s.xray);
   const keys = useKeymap((s) => s.map);
   return (
     <header className="topbar">
@@ -110,23 +107,6 @@ export function Header() {
       </button>
       <button type="button" disabled={!canRedo} onClick={redo} title="Yinele (Ctrl/Cmd+Shift+Z)">
         İleri
-      </button>
-      <span className="sep" />
-      <button
-        type="button"
-        className={explode > 0 ? 'active' : ''}
-        onClick={toggleExplode}
-        title={`Parçaları birbirinden ayırarak gösterir; model değişmez (${keys['view.explode']})`}
-      >
-        Aralıklı
-      </button>
-      <button
-        type="button"
-        className={xray ? 'active' : ''}
-        onClick={() => set({ xray: !xray })}
-        title="Model saydamlaşır; fırça arkasındaki yüzleri de boyar"
-      >
-        Saydam
       </button>
       <span className="spacer" />
       <StepBar />

@@ -1,22 +1,30 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import type { CutMode } from '../core/cut';
 import {
   autoSmartScale,
+  autoSuggestFeatures,
   gapFillSelected,
   lineCancel,
   lineClose,
   lineUndo,
   mirrorOffset,
+  modelExtent,
+  refineSelected,
   removePin,
+  scaleToPrintSize,
   setSmartAngle,
   setSmartOptions,
   smoothActiveRegion,
+  splitSelected,
+  toggleExplode,
   updatePin,
+  voxelRepairSelected,
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
 import { set, type Tool, useStore } from '../state/store';
 import { NumberField, Toggle } from './fields';
-import { cameraCssMatrix, viewToward, watchCamera } from './ViewportHost';
+import { Icon, type IconName } from './icons';
+import { cameraCssMatrix, fitView, viewToward, watchCamera } from './ViewportHost';
 
 export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: string }[] = [
   {
@@ -59,51 +67,259 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
   },
 ];
 
-/** Üstteki araç şeridi. Görünüş küpü ayrı durur. */
+type RibbonItem = {
+  id: string;
+  icon: IconName;
+  label: string;
+  title: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+};
+
+function RibbonButton({ item }: { item: RibbonItem }) {
+  return (
+    <button
+      type="button"
+      className={item.active ? 'active' : ''}
+      disabled={item.disabled}
+      onClick={item.onClick}
+      title={item.title}
+    >
+      <Icon name={item.icon} />
+      <span className="label">{item.label}</span>
+    </button>
+  );
+}
+
+function RibbonGroup({ name, children }: { name: string; children: ReactNode }) {
+  return (
+    <fieldset className="rgroup">
+      <legend className="visually-hidden">{name}</legend>
+      <div className="rbuttons">{children}</div>
+      <span className="gname" aria-hidden="true">
+        {name}
+      </span>
+    </fieldset>
+  );
+}
+
+/** Baskı boyu: şeritte açılır kutu (alan + Ölçekle). */
+function PrintSizeButton({ disabled }: { disabled: boolean }) {
+  const [size, setSize] = useState(100);
+  const parts = useStore((s) => s.parts);
+  const extent = useMemo(() => modelExtent(parts), [parts]);
+  return (
+    <details className="ribbon-pop print-size-pop">
+      <summary
+        className={disabled ? 'disabled' : ''}
+        title="En büyük parçanın en uzun kenarını verilen boya getirir"
+      >
+        <Icon name="printSize" />
+        <span className="label">Baskı boyu</span>
+      </summary>
+      <div className="pop-body">
+        <NumberField
+          label="Baskı boyu"
+          value={size}
+          min={1}
+          max={1000}
+          step={1}
+          unit="mm"
+          title="En büyük parçanın en uzun kenarı bu boya gelir; bütün parçalar birlikte ölçeklenir. Ctrl+Z ile geri alınır"
+          onChange={setSize}
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            scaleToPrintSize(size);
+            requestAnimationFrame(() => fitView());
+            (e.currentTarget.closest('details') as HTMLDetailsElement).open = false;
+          }}
+          title={`Şu an ${extent.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} mm`}
+        >
+          Ölçekle
+        </button>
+      </div>
+    </details>
+  );
+}
+
+/** X84: üstteki simgeli şerit; gruplar Seç, Kes, Mesh, Düzen. Görünüş küpü ayrı durur. */
 export function ToolBar() {
   const tool = useStore((s) => s.tool);
   const keys = useKeymap((s) => s.map);
   const mode = useStore((s) => s.cut.mode);
+  const hasParts = useStore((s) => s.parts.length > 0);
+  const explode = useStore((s) => s.explode);
+  const xray = useStore((s) => s.xray);
   const setMode = (next: CutMode) =>
     set((s) => ({ cut: { ...s.cut, mode: next }, cutModeManual: true }));
+  // açık kutu dışarı tıklanınca kapanır
+  useEffect(() => {
+    const close = (e: PointerEvent) => {
+      for (const d of document.querySelectorAll<HTMLDetailsElement>('details.ribbon-pop[open]'))
+        if (!d.contains(e.target as Node)) d.open = false;
+    };
+    window.addEventListener('pointerdown', close);
+    return () => window.removeEventListener('pointerdown', close);
+  }, []);
+  const toolItem = (id: Tool): RibbonItem => {
+    const t = TOOLS.find((x) => x.id === id) as (typeof TOOLS)[number];
+    return {
+      id,
+      icon: id as IconName,
+      label: t.label,
+      title: `${t.label} (${keys[`tool.${id}`]}) — ${t.hint}`,
+      active: tool === id,
+      onClick: () => set({ tool: id }),
+    };
+  };
+  const select: RibbonItem[] = [
+    ...(['smart', 'brush', 'erase', 'smooth', 'bucket', 'line', 'seam'] as Tool[]).map(toolItem),
+    {
+      id: 'suggest',
+      icon: 'suggest',
+      label: 'Çıkıntılar',
+      title:
+        'Göz, burun, kaş, kulak gibi çıkıntıları bulup her birini yeni renge boyar (tek Ctrl+Z ile geri alınır)',
+      disabled: !hasParts,
+      onClick: autoSuggestFeatures,
+    },
+  ];
+  const cut: RibbonItem[] = [
+    {
+      id: 'socket',
+      icon: 'socket',
+      label: 'Tapa',
+      title: 'Tapa: bölge gövdeye girer, gövdede yuva kalır (göz, kaş, burun)',
+      active: mode === 'socket',
+      onClick: () => setMode('socket'),
+    },
+    {
+      id: 'keys',
+      icon: 'keys',
+      label: 'Pimli kes',
+      title: 'Pimli kes: iki parça pimle birleşir (kol, kulak, baş)',
+      active: mode === 'keys',
+      onClick: () => setMode('keys'),
+    },
+    {
+      id: 'fast',
+      icon: 'fast',
+      label: 'Yapıştır',
+      title: 'Yapıştır: düz kesilir, parçalar yapıştırılır',
+      active: mode === 'fast',
+      onClick: () => setMode('fast'),
+    },
+    {
+      ...toolItem('pin'),
+      disabled: mode !== 'keys',
+      title:
+        mode === 'keys'
+          ? `Pim (${keys['tool.pin']}) — ${TOOLS.find((t) => t.id === 'pin')?.hint}`
+          : 'Pim: yalnız Pimli kes modunda',
+    },
+  ];
+  const mesh: RibbonItem[] = [
+    {
+      id: 'split',
+      icon: 'split',
+      label: 'Kopukları ayır',
+      title: 'Seçili parçadaki kopuk kabukları ayrı parçalara böler',
+      disabled: !hasParts,
+      onClick: splitSelected,
+    },
+    {
+      id: 'repair',
+      icon: 'repair',
+      label: 'Onar',
+      title: 'Bozuk parçayı yeniden kurar: delikler kapanır, ince ayrıntı biraz yumuşar',
+      disabled: !hasParts,
+      onClick: () => voxelRepairSelected(),
+    },
+  ];
+  const arrange: RibbonItem[] = [
+    {
+      id: 'explode',
+      icon: 'explode',
+      label: 'Aralıklı',
+      title: `Parçaları birbirinden ayırarak gösterir; model değişmez (${keys['view.explode']})`,
+      active: explode > 0,
+      disabled: !hasParts,
+      onClick: toggleExplode,
+    },
+    {
+      id: 'xray',
+      icon: 'xray',
+      label: 'Saydam',
+      title: 'Model saydamlaşır; fırça arkasındaki yüzleri de boyar',
+      active: xray,
+      onClick: () => set({ xray: !xray }),
+    },
+  ];
   return (
-    <div className="toolbar ribbon" role="toolbar" aria-label="Araçlar">
-      <span className="gname">Seç</span>
-      {TOOLS.filter((t) => t.id !== 'pin').map((t) => (
-        <button
-          key={t.id}
-          type="button"
-          className={tool === t.id ? 'active' : ''}
-          onClick={() => set({ tool: t.id })}
-          title={`${t.label} (${keys[`tool.${t.id}`]}) — ${t.hint}`}
-        >
-          {t.label}
-        </button>
-      ))}
-      <span className="sep" />
-      <span className="gname">Kes</span>
-      <button
-        type="button"
-        className={mode === 'socket' ? 'active' : ''}
-        onClick={() => setMode('socket')}
-      >
-        Tapa
-      </button>
-      <button
-        type="button"
-        className={mode === 'keys' ? 'active' : ''}
-        onClick={() => setMode('keys')}
-      >
-        Pimli kes
-      </button>
-      <button
-        type="button"
-        className={mode === 'fast' ? 'active' : ''}
-        onClick={() => setMode('fast')}
-      >
-        Yapıştır
-      </button>
+    <div className="ribbon" role="toolbar" aria-label="Araçlar">
+      <RibbonGroup name="Seç">
+        {select.map((it) => (
+          <RibbonButton key={it.id} item={it} />
+        ))}
+      </RibbonGroup>
+      <RibbonGroup name="Kes">
+        {cut.map((it) => (
+          <RibbonButton key={it.id} item={it} />
+        ))}
+      </RibbonGroup>
+      <RibbonGroup name="Mesh">
+        {mesh.map((it) => (
+          <RibbonButton key={it.id} item={it} />
+        ))}
+        <RefineButton disabled={!hasParts} />
+      </RibbonGroup>
+      <RibbonGroup name="Düzen">
+        <PrintSizeButton disabled={!hasParts} />
+        {arrange.map((it) => (
+          <RibbonButton key={it.id} item={it} />
+        ))}
+      </RibbonGroup>
     </div>
+  );
+}
+
+/** Üçgenleri böl: açılır kutuda üçgen boyu. */
+function RefineButton({ disabled }: { disabled: boolean }) {
+  const refineEdge = useStore((s) => s.refineEdge);
+  return (
+    <details className="ribbon-pop">
+      <summary
+        className={disabled ? 'disabled' : ''}
+        title="Seçili parçayı küçük üçgenlere böler; ince sınırlar için"
+      >
+        <Icon name="refine" />
+        <span className="label">İncelt</span>
+      </summary>
+      <div className="pop-body">
+        <NumberField
+          label="Üçgen boyu"
+          value={refineEdge}
+          min={0.1}
+          max={5}
+          step={0.05}
+          unit="mm"
+          onChange={(v) => set({ refineEdge: v })}
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            refineSelected();
+            (e.currentTarget.closest('details') as HTMLDetailsElement).open = false;
+          }}
+        >
+          İncelt
+        </button>
+        <p className="hint">Sınır tırtıklıysa önce inceltin; boya korunur.</p>
+      </div>
+    </details>
   );
 }
 

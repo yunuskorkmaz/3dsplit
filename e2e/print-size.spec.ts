@@ -14,7 +14,8 @@ test('X71 model ölçüsü ve baskı boyu', async ({ page }) => {
   const before = await row.textContent();
 
   // 5 mm: küçük uyarı
-  const field = page.locator('.print-size input.num');
+  await page.locator('.print-size-pop summary').click();
+  const field = page.locator('.print-size-pop input.num');
   await field.fill('5');
   await page.getByRole('button', { name: 'Ölçekle', exact: true }).click();
   await expect(row).toHaveText('5 mm');

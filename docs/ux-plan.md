@@ -141,6 +141,7 @@ Olacak:
 - Seçili araç mavi zeminli. Üstüne gelince ad, kısayol ve ipucu.
 - Mesh araçları paneli kalkar. "Aralıklı" ve "Saydam" üst çubuktan şeride iner. Baskı boyu düğmesi küçük bir açılır kutu gösterir (bugünkü alan + Ölçekle).
 - Dar ekranda (< 1100 px) adlar gizlenir, yalnız simge kalır.
+- Uygulamada: Çıkıntıları öner boyadığı için Mesh'e değil Seç grubuna kondu ("Çıkıntılar"). Ayrıklık alanı Aralıklı açıkken Parçalar panelinde kalır.
 
 Kabul: e2e: bütün araçlar şeritten seçilir; Mesh paneli yok; bugünkü testler şerit düğmelerinin erişilebilir adıyla geçer.
 

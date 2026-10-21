@@ -34,7 +34,8 @@ test('X82: tabla modelin altında, sığmayınca sarı, kapatılabilir', async (
   expect(empty).toBeNull();
 
   // 400 mm'ye ölçekle: sığmaz
-  const size = page.locator('.print-size input').first();
+  await page.locator('.print-size-pop summary').click();
+  const size = page.locator('.print-size-pop input').first();
   await size.fill('400');
   await page.getByRole('button', { name: 'Ölçekle' }).click();
   await expect.poll(async () => (await bed(page)).fits).toBe(false);

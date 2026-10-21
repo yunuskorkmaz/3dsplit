@@ -75,16 +75,16 @@ select {
   overflow: auto;
 }
 .float.side-left {
-  top: 118px;
+  top: 60px;
   left: 10px;
   width: 260px;
-  max-height: calc(100% - 136px);
+  max-height: calc(100% - 78px);
 }
 .float.side-right {
-  top: 118px;
+  top: 60px;
   right: 10px;
   width: 248px;
-  max-height: calc(100% - 136px);
+  max-height: calc(100% - 78px);
 }
 .float section {
   background: transparent;
@@ -145,51 +145,122 @@ select {
 .top-stack > * {
   pointer-events: auto;
 }
+/* X84: simgeli, gruplu şerit; üst çubuğun altında sabit */
 .ribbon {
   display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 4px;
-  padding: 6px 8px;
+  align-items: stretch;
+  gap: 0;
+  padding: 4px 8px 2px;
   overflow-x: auto;
-  background: rgba(18, 20, 24, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(16px);
+  background: #18191c;
+  border-bottom: 1px solid #2c2e33;
+  flex: none;
+}
+.ribbon .rgroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0 6px;
+  border: 0;
+  border-right: 1px solid #2c2e33;
+  min-inline-size: 0;
+}
+.ribbon .rgroup:last-child {
+  border-right: 0;
+}
+.ribbon .rbuttons {
+  display: flex;
+  gap: 2px;
 }
 .ribbon .gname {
-  color: #8b93a0;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0 4px;
+  color: #7d8592;
+  font-size: 10.5px;
+  padding: 1px 0 2px;
 }
-.ribbon .sep {
-  width: 1px;
-  height: 18px;
-  background: rgba(255, 255, 255, 0.12);
-  margin: 0 4px;
-}
-main .ribbon button {
-  width: auto;
-  height: auto;
-  flex-direction: row;
-  padding: 5px 10px;
+.rbuttons > button,
+.ribbon-pop > summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 56px;
+  padding: 5px 6px 4px;
   background: transparent;
-  border-color: transparent;
-  border-radius: 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: #d6d9de;
+}
+.rbuttons > button .icon,
+.ribbon-pop > summary .icon {
+  color: #8fb8ff;
+}
+.rbuttons > button:hover:not(:disabled),
+.ribbon-pop > summary:hover,
+.ribbon-pop[open] > summary {
+  background: #262930;
+  border-color: #34373e;
+}
+.rbuttons > button.active {
+  background: #1f3a66;
+  border-color: #2f6fd6;
+  color: #fff;
+}
+.rbuttons > button.active .icon {
+  color: #fff;
+}
+.ribbon-pop {
+  position: relative;
+}
+.ribbon-pop > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.ribbon-pop > summary::-webkit-details-marker {
+  display: none;
+}
+.ribbon-pop > summary.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.ribbon-pop .pop-body {
+  position: fixed;
+  z-index: 20;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 220px;
+  padding: 10px;
+  background: #1d1f23;
+  border: 1px solid #3a3c42;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
   white-space: nowrap;
 }
-main .ribbon button.active {
-  background: #fff;
-  color: #17191d;
-  border-color: #fff;
+@media (max-width: 1100px) {
+  .ribbon .label {
+    display: none;
+  }
+  .rbuttons > button,
+  .ribbon-pop > summary {
+    min-width: 36px;
+  }
 }
 .viewcube {
   position: absolute;
   z-index: 4;
-  top: 122px;
+  top: 64px;
   right: 272px;
   width: 148px;
   margin: 0;

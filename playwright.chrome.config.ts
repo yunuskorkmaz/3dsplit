@@ -5,6 +5,7 @@ export default defineConfig({
   testDir: 'e2e',
   testMatch: [
     'views.spec.ts',
+    'ribbon.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

@@ -29,7 +29,7 @@ test('X83: örnek model ve adım çubuğu: Aç → Seç → Kes → Aktar', asyn
 
   // fırçayla burun
   await page.keyboard.press('1');
-  await page.locator('.toolbar button').nth(1).click();
+  await page.locator('.ribbon button').nth(1).click();
   const nose = await screenOf(page, [0, -16.9, 62]);
   await page.mouse.click(nose.x, nose.y);
   await expect(current).toHaveText('Kes');

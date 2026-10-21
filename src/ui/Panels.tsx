@@ -4,7 +4,6 @@ import { longestExtent, PRINT_SIZE_MAX, PRINT_SIZE_MIN, sizeWarning } from '../c
 import {
   activeIslands,
   addSlot,
-  autoSuggestFeatures,
   clearActiveSlot,
   clearPins,
   clearSlotPaint,
@@ -12,20 +11,16 @@ import {
   isSlowPreview,
   makeToleranceCoupon,
   modelExtent,
-  refineSelected,
   removeSlot,
   renamePart,
   runCut,
-  scaleToPrintSize,
   selectPart,
   setSocketDirection,
   showAllParts,
   soloPart,
-  splitSelected,
   togglePreview,
   toggleVisible,
   updateSlot,
-  voxelRepairSelected,
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
 import { type CutSettings, dismiss, set, setCameraPrefs, useStore } from '../state/store';
@@ -33,7 +28,7 @@ import { cancelGeometry } from '../worker/client';
 import { NumberField } from './fields';
 import { Group, Panel } from './Panel';
 import { RingEditor } from './RingEditor';
-import { cameraDirection, fitView } from './ViewportHost';
+import { cameraDirection } from './ViewportHost';
 
 export function CameraPanel() {
   const camera = useStore((s) => s.camera);
@@ -82,7 +77,6 @@ export function PartsPanel() {
   const selected = useStore((s) => s.selectedPartId);
   const explode = useStore((s) => s.explode);
   const keys = useKeymap((s) => s.map);
-  const [printSize, setPrintSize] = useState(100);
   // X71: parça başına ve model için en uzun kenar, mm
   const sizes = useMemo(() => new Map(parts.map((p) => [p.id, longestExtent([p.mesh])])), [parts]);
   const extent = useMemo(() => modelExtent(parts), [parts]);
@@ -156,7 +150,7 @@ export function PartsPanel() {
               </span>
             )}
             {!p.manifold && (
-              <span className="badge bad" title="Kapalı değil. Mesh araçlarından Delikleri kapat">
+              <span className="badge bad" title="Kapalı değil. Şeritte Mesh › Onar">
                 bozuk
               </span>
             )}
@@ -185,38 +179,15 @@ export function PartsPanel() {
           </li>
         ))}
       </ul>
-      {parts.length > 0 && (
-        <div className={`print-size${warning ? ' warn' : ''}`}>
-          {warning && (
-            <p>
-              {parts.length > 1 ? 'En büyük parça' : 'Model'} {formatMm(extent)}:{' '}
-              {warning === 'large'
-                ? `${PRINT_SIZE_MAX} mm'den büyük, birimi inç ya da metre olabilir.`
-                : `${PRINT_SIZE_MIN} mm'den küçük; pim ve tolerans bu boyda anlamsız.`}
-            </p>
-          )}
-          <div className="row">
-            <NumberField
-              label="Baskı boyu"
-              value={printSize}
-              min={1}
-              max={1000}
-              step={1}
-              unit="mm"
-              title="En büyük parçanın en uzun kenarı bu boya gelir; bütün parçalar birlikte ölçeklenir. Ctrl+Z ile geri alınır"
-              onChange={setPrintSize}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                scaleToPrintSize(printSize);
-                requestAnimationFrame(() => fitView());
-              }}
-              title={`Şu an ${formatMm(extent)}`}
-            >
-              Ölçekle
-            </button>
-          </div>
+      {warning && (
+        <div className="print-size warn">
+          <p>
+            {parts.length > 1 ? 'En büyük parça' : 'Model'} {formatMm(extent)}:{' '}
+            {warning === 'large'
+              ? `${PRINT_SIZE_MAX} mm'den büyük, birimi inç ya da metre olabilir.`
+              : `${PRINT_SIZE_MIN} mm'den küçük; pim ve tolerans bu boyda anlamsız.`}{' '}
+            Şeritte Düzen › Baskı boyu ile düzeltin.
+          </p>
         </div>
       )}
       {explode > 0 && (
@@ -244,43 +215,6 @@ function partSizeTitle(size: number): string {
 
 function formatMm(v: number): string {
   return `${v.toLocaleString('tr-TR', { maximumFractionDigits: v < 10 ? 1 : 0 })} mm`;
-}
-
-export function MeshToolsPanel() {
-  const refineEdge = useStore((s) => s.refineEdge);
-  return (
-    <Panel id="meshTools" title="Mesh araçları" defaultOpen={false}>
-      <div className="row">
-        <button type="button" onClick={splitSelected} title="Kopuk parçaları ayrı nesnelere böl">
-          Kopukları ayır
-        </button>
-        <button
-          type="button"
-          onClick={() => voxelRepairSelected()}
-          title="Bozuk parçayı yeniden kurar: delikler kapanır, ince ayrıntı biraz yumuşar"
-        >
-          Delikleri kapat
-        </button>
-      </div>
-      <NumberField
-        label="Üçgen boyu"
-        value={refineEdge}
-        min={0.1}
-        max={5}
-        step={0.05}
-        unit="mm"
-        onChange={(v) => set({ refineEdge: v })}
-      />
-      <button
-        type="button"
-        onClick={refineSelected}
-        title="Seçili parçayı küçük üçgenlere böler; ince sınırlar için"
-      >
-        İncelt
-      </button>
-      <p className="hint">Sınır tırtıklıysa önce inceltin; etiketler korunur.</p>
-    </Panel>
-  );
 }
 
 export function SlotPanel() {
@@ -371,13 +305,6 @@ export function SlotPanel() {
       <div className="row">
         <button type="button" onClick={addSlot}>
           + Renk
-        </button>
-        <button
-          type="button"
-          onClick={autoSuggestFeatures}
-          title="Göz, burun, kaş, kulak gibi çıkıntıları bulup her birini yeni slota boyar (tek Ctrl+Z ile geri alınır)"
-        >
-          Çıkıntıları öner
         </button>
         <button
           type="button"

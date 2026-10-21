@@ -25,11 +25,21 @@ for (const file of models) {
       .poll(async () => (await state(page)).parts.length, { timeout: 180_000 })
       .toBeGreaterThan(0);
     await expect.poll(async () => (await state(page)).busy, { timeout: 180_000 }).toBeNull();
-    const box = await page.locator('canvas').first().boundingBox();
-    if (!box) throw new Error('kanvas yok');
     await page.keyboard.press('1');
     await page.keyboard.press('f');
-    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
+    // seçili parçanın ekrandaki ortası (çok parçalı plakada ekran ortası boşluk olabilir)
+    const target = await page.evaluate(() => {
+      // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+      const w = window as any;
+      const vp = w.viewport;
+      const mesh = vp.parts.get(w.app.store.get().selectedPartId).mesh;
+      mesh.geometry.computeBoundingBox();
+      const c = mesh.geometry.boundingBox.getCenter(vp.camera.position.clone());
+      mesh.localToWorld(c).project(vp.camera);
+      const r = vp.renderer.domElement.getBoundingClientRect();
+      return { x: r.left + ((c.x + 1) / 2) * r.width, y: r.top + ((1 - c.y) / 2) * r.height };
+    });
+    await page.mouse.click(target.x, target.y);
     await page.waitForTimeout(1500);
     const s = await state(page);
     const before = s.parts.length;

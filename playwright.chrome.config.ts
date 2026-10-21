@@ -15,6 +15,7 @@ export default defineConfig({
     'navigate.spec.ts',
     'multipart.spec.ts',
     'live-preview.spec.ts',
+    'bed.spec.ts',
   ],
   timeout: 120_000,
   use: {

@@ -104,6 +104,9 @@ export class Viewport {
   private selectedId: string | null = null;
   /** X79: fare üstündeki parça (seçili değilse ince çizgiyle gösterilir). */
   private hoveredId: string | null = null;
+  /** X82: baskı tablası; modelin en alt noktasının hizasında, ortası modelin altında. */
+  private bed = buildBed();
+  private bedEnabled = true;
   /** X81: son parça sığdırma anı (olay zaman damgasıyla aynı saat). */
   private partFitAt = -Infinity;
   /** X79: birden çok görünür parça varken seçili ve fare üstündeki parçanın dış çizgisi. */
@@ -136,6 +139,7 @@ export class Viewport {
     this.camera.add(key);
     this.scene.add(this.camera);
     this.scene.add(this.anchor);
+    this.scene.add(this.bed);
     this.anchor.add(this.overlay);
     this.anchor.add(this.errorLines);
     this.anchor.add(this.lineGroup);
@@ -513,7 +517,37 @@ export class Viewport {
     const sel = this.selectedId ? this.parts.get(this.selectedId) : undefined;
     this.anchor.position.copy(sel ? sel.mesh.position : new THREE.Vector3());
     this.anchor.updateMatrixWorld();
+    this.updateBed();
     this.requestRender();
+  }
+
+  /** X82: tablayı aç/kapat. */
+  setBed(on: boolean): void {
+    this.bedEnabled = on;
+    this.updateBed();
+    this.requestRender();
+  }
+
+  /** Tabla görünür parçaların altına taşınır; sığmazsa kenarı sarı. */
+  private updateBed(): void {
+    const box = new THREE.Box3();
+    const part = new THREE.Box3();
+    for (const p of this.parts.values()) {
+      if (!p.mesh.visible) continue;
+      const g = p.mesh.geometry;
+      if (!g.boundingBox) g.computeBoundingBox();
+      box.union(part.copy(g.boundingBox as THREE.Box3).applyMatrix4(p.mesh.matrixWorld));
+    }
+    this.bed.visible = this.bedEnabled && !box.isEmpty();
+    if (!this.bed.visible) return;
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    // en alt noktanın biraz altında: alt yüzle aynı derinlikte titremesin
+    this.bed.position.set(center.x, center.y, box.min.z - Math.max(0.05, size.z * 0.001));
+    this.bed.updateMatrixWorld();
+    const fits = Math.max(size.x, size.y, size.z) <= BED_SIZE;
+    (this.bed.userData.border as THREE.LineBasicMaterial).color.set(fits ? '#5a6272' : '#f5c542');
+    this.bed.userData.fits = fits;
   }
 
   private offsetOf(partId: string): THREE.Vector3 {
@@ -1491,6 +1525,63 @@ function writeTriangles(
   }
   posAttr.needsUpdate = true;
   nrmAttr.needsUpdate = true;
+}
+
+/** X82: tabla kenarı, mm (Bambu X1/P1). */
+const BED_SIZE = 256;
+
+/** 10 mm'de ince, 50 mm'de kalın çizgili tabla; tıklanamaz. */
+function buildBed(): THREE.Group {
+  const half = BED_SIZE / 2;
+  const thin: number[] = [];
+  const thick: number[] = [];
+  for (let v = -half + (half % 10); v < half; v += 10) {
+    const list = Math.round(v) % 50 === 0 ? thick : thin;
+    list.push(v, -half, 0, v, half, 0, -half, v, 0, half, v, 0);
+  }
+  const group = new THREE.Group();
+  const lines = (pos: number[], color: string) => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    const mat = new THREE.LineBasicMaterial({ color });
+    const l = new THREE.LineSegments(g, mat);
+    l.raycast = () => {};
+    group.add(l);
+    return mat;
+  };
+  lines(thin, '#2a2f38');
+  lines(thick, '#3c4350');
+  group.userData.border = lines(
+    [
+      -half,
+      -half,
+      0,
+      half,
+      -half,
+      0,
+      half,
+      -half,
+      0,
+      half,
+      half,
+      0,
+      half,
+      half,
+      0,
+      -half,
+      half,
+      0,
+      -half,
+      half,
+      0,
+      -half,
+      -half,
+      0,
+    ],
+    '#5a6272',
+  );
+  group.name = 'bed';
+  return group;
 }
 
 /** X79: dış çizgi geçişi; kalınlık ekranda yaklaşık px. Arkada kalan kısım daha soluk. */

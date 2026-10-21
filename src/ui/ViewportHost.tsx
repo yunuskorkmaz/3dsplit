@@ -378,6 +378,7 @@ export function ViewportHost() {
   const camera = useStore((s) => s.camera);
   useEffect(() => {
     vpRef.current?.setCameraMode(camera.mode, camera.invertZoom);
+    vpRef.current?.setBed(camera.bed);
   }, [camera]);
 
   // ayna düzlemi

@@ -65,6 +65,14 @@ export function CameraPanel() {
         />
         <span>Ters yakınlaştırma</span>
       </label>
+      <label className="field" title="256 × 256 mm baskı tablası; model sığmazsa kenarı sarı">
+        <input
+          type="checkbox"
+          checked={camera.bed}
+          onChange={(e) => setCameraPrefs({ ...camera, bed: e.target.checked })}
+        />
+        <span>Tabla</span>
+      </label>
     </Panel>
   );
 }

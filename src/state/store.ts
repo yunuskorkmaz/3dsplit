@@ -163,8 +163,8 @@ export interface AppState {
   xray: boolean;
   /** X77: seçili olmayan renkleri soldur (X57 görünümü). Kapalıyken bütün renkler tam görünür. */
   dimOthers: boolean;
-  /** E1: kamera düzeni ve ters yakınlaştırma (tarayıcıda hatırlanır). */
-  camera: { mode: 'default' | 'blender'; invertZoom: boolean };
+  /** E1: kamera düzeni, ters yakınlaştırma ve X82 tabla (tarayıcıda hatırlanır). */
+  camera: CameraPrefs;
   /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
   mirror: { enabled: boolean; axis: 0 | 1 | 2; offset: number | null };
   /** X36: çizgi aracında tıklanan köşeler ve aralarındaki yüzey yolu (köşe numaraları). */
@@ -278,20 +278,31 @@ export const useStore = create<AppState>(() => ({
   redoStack: [],
 }));
 
-function loadCameraPrefs(): { mode: 'default' | 'blender'; invertZoom: boolean } {
+export interface CameraPrefs {
+  mode: 'default' | 'blender';
+  invertZoom: boolean;
+  /** X82: baskı tablası görünür. */
+  bed: boolean;
+}
+
+function loadCameraPrefs(): CameraPrefs {
   try {
     const raw = localStorage.getItem('3dsplit.camera');
     if (raw) {
       const v = JSON.parse(raw);
-      return { mode: v.mode === 'blender' ? 'blender' : 'default', invertZoom: !!v.invertZoom };
+      return {
+        mode: v.mode === 'blender' ? 'blender' : 'default',
+        invertZoom: !!v.invertZoom,
+        bed: v.bed !== false,
+      };
     }
   } catch {
     // depolama kapalı olabilir: varsayılan
   }
-  return { mode: 'default', invertZoom: false };
+  return { mode: 'default', invertZoom: false, bed: true };
 }
 
-export function setCameraPrefs(camera: { mode: 'default' | 'blender'; invertZoom: boolean }): void {
+export function setCameraPrefs(camera: CameraPrefs): void {
   useStore.setState({ camera });
   try {
     localStorage.setItem('3dsplit.camera', JSON.stringify(camera));

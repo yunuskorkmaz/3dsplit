@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-21):** A1–E2 ve X1–X90 bitti (Sprint 8 ve 9: `docs/ux-plan.md`). Yeni iş **X91** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-21):** A1–E2 ve X1–X92 bitti (Sprint 8 ve 9: `docs/ux-plan.md`). Yeni iş **X93** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -81,7 +81,7 @@ Kullanıcı "sırada ne varsa yap" dedi; Sprint 9 raporunda açık bırakılan i
 | ID | İş | Neden | Durum |
 | --- | --- | --- | --- |
 | X91 | Seçili parçada aktif rengin boyası yoksa Kes ve Önizleme kapalı | Seçim satırı "Seçim yok" derken Kes açık görünüyor, basınca uyarı veriyor | [x] |
-| X92 | Akıllı seç figür burnuna tıklayınca yalnız burnu seçer | Bugün bütün başı seçiyor; testlerde burun fırçayla boyanıyor | [ ] |
+| X92 | Akıllı seç figür burnuna tıklayınca yalnız burnu seçer | Bugün bütün başı seçiyor; testlerde burun fırçayla boyanıyor | [x] |
 
 ## Ana akış
 
@@ -335,3 +335,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-21 | X89: `src/ui/ValueTags.tsx`. Tapa yön oku görünürken okun dibinde derinlik kutusu; arkada kalırsa (kameradan ışın modele önce çarparsa) gizlenir. Pimli kes'te seçili pimin yanında "Ø · boy" kutusu. İkisi tıklanınca yazılır: Enter ya da odak kaybı uygular, Esc vazgeçer. Fırça, Silgi, Yumuşat'ta çap [ ] ya da Alt+tekerlekle değişince imleç yanında 1 s "Ø … mm". Konum bir kare sonra ve kamera değişince yenilenir. `e2e/value-tags.spec.ts`; npm test 111, Chrome e2e 23, e2e 26 | — |
 | 2026-10-21 | X90: Ctrl/Cmd+K ya da üst çubukta "Komut ara" (`src/ui/CommandPalette.tsx`): araçlar, kesim modları, Kes, Önizleme, Çıkıntıları öner, renk, Mesh, Düzen, dosya ve dışa aktarma, geri al/yinele, sığdırma ve 7 görünüş, Tabla, Yardım. Türkçe harf ve büyük/küçük duyarsız (`yapistir` → Yapıştır), bütün sözcükler adda ya da ek sözcüklerde geçmeli; adın başında geçen önce. Boşken son kullanılan 5 komut önde (tarayıcıda). ↑ ↓ Enter Esc. O an çalışmayan komut soluk, nedeni yanında ("seçili parça yok"). `e2e/palette.spec.ts`; npm test 111, Chrome e2e 24, e2e 27 | — |
 | 2026-10-21 | X91: seçili parçada aktif rengin boyası yoksa (`activePaintCount`) Kes düğmesi ve Önizleme kutusu kapalı; dikiş halkası kapalıysa açık. Komut aramada Kes ve Önizleme "boyalı bölge yok" der. tool-window e2e'sine eklendi | — |
+| 2026-10-21 | X92: Smart Fill aday üçgeni atasının yanında komşusuyla da karşılaştırır. Burnun dibindeki 90° kıvrımda ata (3 mm geride, burnun önünde) başla aynı yöne bakıyordu, kıvrım görünmüyordu. Figür burnu 2313 → 61 mm². 5 gerçek modelde 40 rastgele tıklama: testa, robo, at değişmedi; Meshy köpekte 1 tıklama biraz küçüldü; Bluey'de eskiden modelin %40'ını aşıp taşan 9 tıklama %28–34'lük bölgede durdu, 1 tıklama %8,9'dan taşmaya döndü. `test/smartfill.test.ts`; live-preview e2e burnu artık Akıllı seç ile seçiyor | — |

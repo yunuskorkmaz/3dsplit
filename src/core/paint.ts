@@ -19,8 +19,8 @@ export interface SmartFillOptions {
 
 /**
  * Smart Fill: tohum üçgenden BFS. Aday üçgenin normali, yolda `scale` kadar
- * geride kalan atasının normaliyle karşılaştırılır; açı eşiği aşarsa
- * (concaveOnly'de: kıvrım içbükeyse ve eşiği aşarsa) geçilmez.
+ * geride kalan atasının ve komşusunun normaliyle karşılaştırılır; biri açı
+ * eşiğini aşarsa (concaveOnly'de: kıvrım içbükeyse ve eşiği aşarsa) geçilmez.
  */
 export function smartFill(
   adj: Int32Array,
@@ -51,7 +51,14 @@ export function smartFill(
         normals[3 * a] * normals[3 * n] +
         normals[3 * a + 1] * normals[3 * n + 1] +
         normals[3 * a + 2] * normals[3 * n + 2];
-      if (d < cosLimit) {
+      // X92: keskin kıvrım komşu üçgenle de karşılaştırılır. Küçük tümseğin (burun) dibinde
+      // geride kalan ata tümseğin önündedir ve normali başın yüzeyiyle aynı yöne bakar;
+      // yalnız ataya bakınca 90° kıvrım görünmez.
+      const local =
+        normals[3 * t] * normals[3 * n] +
+        normals[3 * t + 1] * normals[3 * n + 1] +
+        normals[3 * t + 2] * normals[3 * n + 2];
+      if (d < cosLimit || local < cosLimit) {
         if (!opts.concaveOnly) continue;
         // kıvrımın yönü yerel kenardan okunur: aday, t'nin teğet düzleminin üstündeyse içbükey.
         // Atanın düzlemi kullanılmaz; ata köşenin öbür yüzünde kalabiliyor.

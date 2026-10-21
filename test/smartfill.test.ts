@@ -76,3 +76,38 @@ describe('otomatik ölçek', () => {
     expect(a).toBeCloseTo(132, 0);
   });
 });
+
+describe('X92: küçük tümseğin dibinde durur', () => {
+  it('figür burnuna tıklayınca yalnız burun seçilir, baş değil', async () => {
+    const { chooseSmartScale, meanEdgeLength } = await import('../src/core/paint');
+    const { sampleFigure } = await import('../src/core/sample');
+    const fig = sampleFigure();
+    const adj = buildAdjacency(fig);
+    const { normals, areas } = faceNormalsAndAreas(fig);
+    const c = faceCentroids(fig);
+    let seed = 0;
+    let best = Infinity;
+    for (let t = 0; t < areas.length; t++) {
+      // burun ucu: r=3 küre, merkezi (0, -14, 62)
+      const d = Math.hypot(c[3 * t], c[3 * t + 1] + 16.9, c[3 * t + 2] - 62);
+      if (d < best) {
+        best = d;
+        seed = t;
+      }
+    }
+    const r = chooseSmartScale(adj, normals, c, areas, seed, meanEdgeLength(fig), {
+      maxAngleDeg: 20,
+      concaveOnly: true,
+    });
+    let a = 0;
+    let far = 0;
+    for (const t of r.tris) {
+      a += areas[t];
+      far = Math.max(far, Math.hypot(c[3 * t], c[3 * t + 1] + 14, c[3 * t + 2] - 62));
+    }
+    // dışarıda kalan burun yüzeyi ~57 mm²; baş ~2300 mm² idi
+    expect(a).toBeGreaterThan(40);
+    expect(a).toBeLessThan(80);
+    expect(far).toBeLessThan(3.2);
+  });
+});

@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-21):** A1–E2 ve X1–X93 bitti (Sprint 8 ve 9: `docs/ux-plan.md`). Yeni iş **X94** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-21):** A1–E2 ve X1–X94 bitti (Sprint 8 ve 9: `docs/ux-plan.md`). Yeni iş **X95** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -82,6 +82,7 @@ Kullanıcı "sırada ne varsa yap" dedi; Sprint 9 raporunda açık bırakılan i
 | --- | --- | --- | --- |
 | X91 | Seçili parçada aktif rengin boyası yoksa Kes ve Önizleme kapalı | Seçim satırı "Seçim yok" derken Kes açık görünüyor, basınca uyarı veriyor | [x] |
 | X92 | Akıllı seç figür burnuna tıklayınca yalnız burnu seçer | Bugün bütün başı seçiyor; testlerde burun fırçayla boyanıyor | [x] |
+| X94 | Açılışta temel onarım yetmezse önce yerel onarım (hatalı kenar çevresini sil, deliği kapat); voxel yalnız o da olmazsa | Birkaç yüz hatalı kenar yüzünden bütün model voxel ile yeniden kuruluyor, gözler gidiyor (BLUEY+SENTADA 1,47M → 11k üçgen) | [x] |
 | X93 | X92'nin komşu karşılaştırması yalnız 70°'den keskin kıvrımda | Uygulamanın yeniden kurduğu (voxel) Bluey'de 200 tıklamanın 62'si küçüldü; başa tıklayınca yalnız tepe seçiliyordu | [x] |
 
 ## Ana akış
@@ -338,3 +339,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-21 | X91: seçili parçada aktif rengin boyası yoksa (`activePaintCount`) Kes düğmesi ve Önizleme kutusu kapalı; dikiş halkası kapalıysa açık. Komut aramada Kes ve Önizleme "boyalı bölge yok" der. tool-window e2e'sine eklendi | — |
 | 2026-10-21 | X92: Smart Fill aday üçgeni atasının yanında komşusuyla da karşılaştırır. Burnun dibindeki 90° kıvrımda ata (3 mm geride, burnun önünde) başla aynı yöne bakıyordu, kıvrım görünmüyordu. Figür burnu 2313 → 61 mm². 5 gerçek modelde 40 rastgele tıklama: testa, robo, at değişmedi; Meshy köpekte 1 tıklama biraz küçüldü; Bluey'de eskiden modelin %40'ını aşıp taşan 9 tıklama %28–34'lük bölgede durdu, 1 tıklama %8,9'dan taşmaya döndü. `test/smartfill.test.ts`; live-preview e2e burnu artık Akıllı seç ile seçiyor | — |
 | 2026-10-21 | X93: X92'deki komşu üçgen karşılaştırması 20° açı eşiğini kullanıyordu; kapalı olmadığı için açılışta voxel ile yeniden kurulan BLUEY+SENTADA (11.192 üçgen, kenar 2,4 mm) yüzeyinde komşular 20–60° basamak yapıyor, seçim parçalanıyordu (200 tıklamanın 62'si küçüldü; başa tıklayınca %39,6 → %1,1). Komşu eşiği `SHARP_CREASE_DEG = 70` (burnun dibi 83–91°). Bluey'de 200 tıklamanın 3'ü değişiyor, göğüste eski seçim dağınık yamalardı, yeni seçim göğüste toplu. Ham mesh'li 6 modelde 40'ar tıklama eskisiyle aynı; figür burnu testi geçiyor | — |
+| 2026-10-21 | X94: açılışta manifold doğrulaması geçmezse voxel'den önce `cutOutDefects`: açık/non-manifold kenarlı üçgenlerin köşelerine değen üçgenler silinir, temel onarım delikleri kapatır; en çok 3 tur, silinen %2'yi geçerse voxel. Boyalı 3MF etiketleri `source` ile taşınır. BLUEY+SENTADA (510 hatalı, 170 açık kenar, 86 kabuk): 1.844 üçgen silindi, 1.472.852 üçgen kaldı, gözler ve kaşlar yerinde; açılış ~60 s → 5,4 s. robo.stl 201 üçgen kaybıyla kapanıyor. Bildirim: "N hatalı kenar çevresinde M üçgen silinip delikler kapatıldı". `test/core.test.ts` (küpe yapışık kanat) | — |

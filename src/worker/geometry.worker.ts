@@ -15,7 +15,7 @@ import {
 import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from '../core/kernel';
 import { computeMeshTopology, type MeshTopology, withMeshTopology } from '../core/meshTopology';
 import { refineMesh } from '../core/refine';
-import { type RepairReport, repairMesh } from '../core/repair';
+import { cutOutDefects, type RepairReport, repairMesh } from '../core/repair';
 import { sampleFigure } from '../core/sample';
 import { smoothCutEdge } from '../core/smooth';
 import { BASE_SLOT, type LabeledMesh, type MeshData } from '../core/types';
@@ -26,6 +26,8 @@ export interface PreparedMesh {
   report: RepairReport;
   /** Temel onarım yetmediyse voxel onarım uygulandı (A2). */
   voxel?: { voxelSize: number; closedGap: number };
+  /** X94: hatalı kenar çevresi silinip kapatıldı; silinen üçgen sayısı. */
+  local?: { removed: number };
   /** Kernel doğrulamasından geçti mi (kesim için gerekli). */
   manifold: boolean;
   error?: string;
@@ -103,11 +105,15 @@ const api = {
   ): Promise<PreparedMesh> {
     await ready;
     const { mesh, report, source } = repairMesh(positions, indices);
-    const mapped = new Uint16Array(source.length);
-    if (labels)
-      for (let t = 0; t < source.length; t++)
-        mapped[t] = source[t] >= 0 ? labels[source[t]] : BASE_SLOT;
-    let result: PreparedMesh;
+    const labelsOf = (src: Int32Array) => {
+      const out = new Uint16Array(src.length);
+      if (labels)
+        for (let t = 0; t < src.length; t++) out[t] = src[t] >= 0 ? labels[src[t]] : BASE_SLOT;
+      return out;
+    };
+    const mapped = labelsOf(source);
+    let result: PreparedMesh | null = null;
+    let firstError: unknown = null;
     try {
       // faceID = etiket: manifold üçgen sırasını değiştirse de etiket üçgenle birlikte gider
       const man = toManifold(mesh, mapped);
@@ -115,6 +121,31 @@ const api = {
       man.delete();
       result = { mesh: canonical, report, manifold: true };
     } catch (e) {
+      firstError = e;
+    }
+    // X94: birkaç hatalı kenar için bütün modeli voxel'e sokmadan önce yerel onarım
+    if (!result) {
+      let cur = { mesh, source };
+      let removed = 0;
+      for (let round = 0; round < 3 && !result; round++) {
+        const next = cutOutDefects(cur.mesh, cur.source);
+        if (!next) break;
+        removed += next.removed;
+        cur = next;
+        // ayrıntı korunmuyorsa (çok üçgen gitti) voxel'e bırak
+        if (removed > source.length * 0.02) break;
+        try {
+          const man = toManifold(cur.mesh, labelsOf(cur.source));
+          const canonical = fromManifold(man, BASE_SLOT);
+          man.delete();
+          result = { mesh: canonical, report, manifold: true, local: { removed } };
+        } catch {
+          // bir tur daha
+        }
+      }
+    }
+    if (!result) {
+      const e = firstError;
       const error = e instanceof KernelError ? e.message : String(e);
       // A2: temel onarım yetmedi, voxel yedek onarım
       try {

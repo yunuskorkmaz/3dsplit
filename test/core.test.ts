@@ -456,3 +456,48 @@ describe('kesim', () => {
     expect(pieces.length).toBe(2);
   });
 });
+
+describe('X94: yerel onarım', () => {
+  it('küpe yapışık tek üçgen (kanat) voxel olmadan temizlenir, ayrıntı yerinde kalır', async () => {
+    const { cutOutDefects } = await import('../src/core/repair');
+    const { initKernel, kernel, toManifold, fromManifold } = await import('../src/core/kernel');
+    await initKernel();
+    const { Manifold } = kernel();
+    const cube = fromManifold(Manifold.cube([10, 10, 10]).refineToLength(1), 0);
+    // bir yüzey kenarına dışarı doğru tek üçgen: o kenar üç üçgende, kanadın iki kenarı açık
+    const i0 = cube.indices[0];
+    const i1 = cube.indices[1];
+    const p = cube.positions;
+    const n = p.length / 3;
+    const tip = [
+      (p[3 * i0] + p[3 * i1]) / 2 + 5,
+      (p[3 * i0 + 1] + p[3 * i1 + 1]) / 2 + 5,
+      (p[3 * i0 + 2] + p[3 * i1 + 2]) / 2 + 5,
+    ];
+    const positions = new Float32Array([...p, ...tip]);
+    const indices = new Uint32Array([...cube.indices, i0, i1, n]);
+    const first = repairMesh(positions, indices);
+    expect(first.report.nonManifoldEdges).toBeGreaterThan(0);
+    expect(() => toManifold(first.mesh).delete()).toThrow();
+    let cur = { mesh: first.mesh, source: first.source };
+    let ok = false;
+    for (let round = 0; round < 3 && !ok; round++) {
+      const next = cutOutDefects(cur.mesh, cur.source);
+      if (!next) break;
+      cur = next;
+      try {
+        toManifold(cur.mesh).delete();
+        ok = true;
+      } catch {
+        // bir tur daha
+      }
+    }
+    expect(ok).toBe(true);
+    const before = first.mesh.indices.length / 3;
+    const after = cur.mesh.indices.length / 3;
+    // kanadın çevresi dışında üçgen gitmez
+    expect(before - after).toBeLessThan(before * 0.05);
+    // source girdideki üçgenlere ya da kapağa (-1) bağlı
+    for (const s of cur.source) expect(s).toBeLessThan(indices.length / 3);
+  });
+});

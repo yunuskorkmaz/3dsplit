@@ -220,3 +220,41 @@ function fillHoles(mesh: MeshData, adjIn: Int32Array): { mesh: MeshData; holes: 
     holes: openLoops.length,
   };
 }
+
+/**
+ * X94: yerel onarım turu. Açık ya da non-manifold kenarı olan üçgenlerin köşelerine
+ * değen bütün üçgenler silinir, kalan mesh temel onarımdan geçer (açılan delikler
+ * kapanır). `source` girdideki üçgen numaralarıdır; çıktıdakiler aynı numaralara
+ * bağlanır (kapak üçgeni -1). Hatalı kenar yoksa null.
+ */
+export function cutOutDefects(
+  mesh: MeshData,
+  source: Int32Array,
+): { mesh: MeshData; source: Int32Array; removed: number } | null {
+  const adj = buildAdjacency(mesh);
+  const triCount = adj.length / 3;
+  const idx = mesh.indices;
+  const badVertex = new Uint8Array(mesh.positions.length / 3);
+  let any = false;
+  for (let t = 0; t < triCount; t++) {
+    if (adj[3 * t] >= 0 && adj[3 * t + 1] >= 0 && adj[3 * t + 2] >= 0) continue;
+    any = true;
+    for (let k = 0; k < 3; k++) badVertex[idx[3 * t + k]] = 1;
+  }
+  if (!any) return null;
+  const keep: number[] = [];
+  const keptSource: number[] = [];
+  for (let t = 0; t < triCount; t++) {
+    const a = idx[3 * t];
+    const b = idx[3 * t + 1];
+    const c = idx[3 * t + 2];
+    if (badVertex[a] || badVertex[b] || badVertex[c]) continue;
+    keep.push(a, b, c);
+    keptSource.push(source[t]);
+  }
+  const removed = triCount - keptSource.length;
+  const r = repairMesh(mesh.positions, Uint32Array.from(keep));
+  const out = new Int32Array(r.source.length);
+  for (let t = 0; t < out.length; t++) out[t] = r.source[t] >= 0 ? keptSource[r.source[t]] : -1;
+  return { mesh: r.mesh, source: out, removed };
+}

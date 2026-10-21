@@ -56,6 +56,12 @@ async function addObjects(objects: ImportedObject[]): Promise<void> {
       r.filledHoles && `${r.filledHoles} delik kapatıldı`,
     ].filter(Boolean);
     if (fixes.length) notify('info', `${obj.name}: ${fixes.join(', ')}.`);
+    if (prepared.local) {
+      notify(
+        'info',
+        `${obj.name}: ${r.nonManifoldEdges} hatalı kenar çevresinde ${prepared.local.removed.toLocaleString('tr-TR')} üçgen silinip delikler kapatıldı; modelin geri kalanı aynı.`,
+      );
+    }
     if (prepared.voxel) {
       notify(
         'warn',

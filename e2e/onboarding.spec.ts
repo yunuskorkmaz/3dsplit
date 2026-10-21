@@ -16,8 +16,8 @@ test('X83: örnek model ve adım çubuğu: Aç → Seç → Kes → Aktar', asyn
   await page.goto('/');
   const current = page.locator('.step-bar li.current');
   await expect(current).toHaveText('Aç');
-  // model yokken Renkler ve Kesim soluk ve kapalı
-  await expect(page.locator('section.panel.disabled')).toHaveCount(2);
+  // model yokken Kesim soluk ve kapalı; Renkler (X85: Model ağacında) görünmez
+  await expect(page.locator('section.panel.disabled')).toHaveCount(1);
   await expect(page.locator('ul.slots')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Örnek modeli aç' }).click();

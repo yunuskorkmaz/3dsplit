@@ -89,9 +89,12 @@ test('X77: renkler tam görünür, seçili renk öne çıkarılabilir', async ({
   expect(armFull[1]).toBeGreaterThan(60);
   expect(armFull[2]).toBeGreaterThan(150);
 
-  await page.locator('ul.slots li').nth(2).getByRole('button', { name: 'temizle' }).click();
+  // X85: temizle ve kaldır renk menüsünde (⋯ ya da sağ tık)
+  await page.locator('ul.slots li').nth(2).locator('button.more').click();
+  await page.getByRole('menuitem', { name: 'Seçili parçada temizle' }).click();
   await expect(page.locator('ul.slots input.name')).toHaveCount(4);
-  await page.locator('ul.slots li').nth(2).getByRole('button', { name: 'kaldır' }).click();
+  await page.locator('ul.slots li').nth(2).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Rengi kaldır' }).click();
   await expect(page.locator('ul.slots input.name')).toHaveCount(3);
   const armGone = await colorAt(page, arm);
   expect(Math.abs(armGone[0] - armGone[1])).toBeLessThan(20);

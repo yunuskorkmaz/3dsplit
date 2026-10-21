@@ -73,16 +73,17 @@ function Workflow() {
         Onar’ı dene.
       </li>
       <li>
-        <b>Renk seç.</b> Soldaki listede her satır bir renktir. 1–9 tuşları rengi değiştirir. Taban
-        (0) gövdedir.
+        <b>Renk seç.</b> Soldaki Model ağacında Renkler'de her satır bir renktir. 1–9 tuşları rengi
+        değiştirir. Taban (0) gövdedir. Gövdeler'de her parçanın altında o parçadaki boyalı renkler
+        üçgen sayısıyla durur; birine tıklamak parçayı ve rengi seçer.
       </li>
       <li>
         <b>Bölgeyi seç.</b> Smart Fill (F) ile çıkıntıya tıkla, Fırça (B) / Silgi (E) ile düzelt,
         Yumuşat (S) ile kenarı düzgünleştir. Çift özelliklerde (iki göz) üst şeritteki Ayna'yı aç.
-        Renk satırına tıklayınca o boya modelde öne çıkar, diğerleri solar. “temizle” boyayı siler,
-        “kaldır” rengi listeden çıkarır. Tek bir yeri silmek için Akıllı seç’te Shift+tık, Silgi,
-        "Seçimi temizle" (Delete) ya da Ctrl/Cmd+Z. Sol paneldeki Geçmiş'ten istediğin adıma
-        dönebilirsin.
+        Renk satırındaki göz boyayı yalnız görüntüde gizler. Satırdaki ⋯ ya da sağ tık: “Seçili
+        parçada temizle” boyayı siler, “Rengi kaldır” rengi listeden çıkarır. Tek bir yeri silmek
+        için Akıllı seç’te Shift+tık, Silgi, "Seçimi temizle" (Delete) ya da Ctrl/Cmd+Z. Sol
+        paneldeki Geçmiş'ten istediğin adıma dönebilirsin.
       </li>
       <li>
         <b>Kesim modunu seç.</b> Üst şeritte Tapa: ince bölgeler (göz, kaş). Pimli kes: kalın

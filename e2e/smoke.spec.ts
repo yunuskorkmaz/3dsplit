@@ -58,8 +58,8 @@ test('yükle → Smart Fill → Socket kes → 3MF', async ({ page }) => {
   await expect(page.locator('.badge.source')).toHaveCount(1);
   // yalnız yeni parçayı göster, sonra hepsini geri getir
   await page
-    .locator('ul.parts li')
-    .nth(2)
+    .locator('ul.parts li', { has: page.locator('.badge.new') })
+    .nth(1)
     .locator('button.eye')
     .click({ modifiers: ['Alt'] });
   await expect(page.locator('ul.parts li.hidden-part')).toHaveCount(2);

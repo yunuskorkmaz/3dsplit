@@ -22,7 +22,8 @@ import { cancelGeometry } from '../worker/client';
 import { Header } from './Header';
 import { HelpDialog } from './HelpDialog';
 import { HistoryPanel } from './HistoryPanel';
-import { CameraPanel, CutActions, CutPanel, PartsPanel, SlotPanel, StatusBar } from './Panels';
+import { ModelPanel } from './ModelTree';
+import { CameraPanel, CutActions, CutPanel, StatusBar } from './Panels';
 import { ToolBar, ToolOptions, ViewCube } from './Toolbar';
 import { fitView, ViewportHost } from './ViewportHost';
 
@@ -186,8 +187,7 @@ export function App() {
         </div>
         <ViewCube onFit={fitView} />
         <div className="float side-left">
-          <PartsPanel />
-          <SlotPanel />
+          <ModelPanel />
           <CameraPanel />
         </div>
         <div className="float side-right">

@@ -33,8 +33,10 @@ const DOUBLE_CLICK_MS = 400;
  * boyalar solar; taban seçiliyken yine hepsi görünür.
  */
 function slotColor(label: number): THREE.Color {
-  const { slots, activeSlot, dimOthers } = get();
-  const slot = slots.find((s) => s.id === label);
+  const { slots, activeSlot, dimOthers, hiddenSlots } = get();
+  // X85: gizlenen rengin boyası taban rengiyle çizilir
+  const shown = hiddenSlots.includes(label) ? 0 : label;
+  const slot = slots.find((s) => s.id === shown);
   const color = new THREE.Color(slot?.color ?? '#ff00ff');
   if (dimOthers && label !== 0 && activeSlot !== 0 && label !== activeSlot)
     color.lerp(DIMMED, 0.78);
@@ -46,6 +48,11 @@ let activeViewport: Viewport | null = null;
 /** Görünümü sığdır (araç çubuğu, Home tuşu). */
 export function fitView(): void {
   activeViewport?.fitView();
+}
+
+/** Parçayı sığdırır, dönüş merkezini ona alır. */
+export function fitPart(partId: string): void {
+  activeViewport?.fitPart(partId);
 }
 
 export const VIEWS = [
@@ -318,13 +325,14 @@ export function ViewportHost() {
   const activeSlot = useStore((s) => s.activeSlot);
   const paintVersion = useStore((s) => s.paintVersion);
   const dimOthers = useStore((s) => s.dimOthers);
+  const hiddenSlots = useStore((s) => s.hiddenSlots);
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;
     for (const p of get().parts) vp.recolor(p.id, slotColor);
     const slot = get().slots.find((s) => s.id === activeSlot);
     vp.showSlotFocus(selectedPartId, activeSlot, slot?.color ?? '#ffffff', slot?.name ?? '');
-  }, [activeSlot, selectedPartId, paintVersion, parts, dimOthers]);
+  }, [activeSlot, selectedPartId, paintVersion, parts, dimOthers, hiddenSlots]);
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;

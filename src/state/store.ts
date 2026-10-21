@@ -163,6 +163,8 @@ export interface AppState {
   xray: boolean;
   /** X77: seçili olmayan renkleri soldur (X57 görünümü). Kapalıyken bütün renkler tam görünür. */
   dimOthers: boolean;
+  /** X85: boyası geçici gizlenen renkler (yalnız görüntü; taban rengiyle çizilir). */
+  hiddenSlots: number[];
   /** E1: kamera düzeni, ters yakınlaştırma ve X82 tabla (tarayıcıda hatırlanır). */
   camera: CameraPrefs;
   /** B8: ayna boyama. `offset` null ise parçanın sınır kutusunun ortası. */
@@ -261,6 +263,7 @@ export const useStore = create<AppState>(() => ({
   camera: loadCameraPrefs(),
   xray: false,
   dimOthers: false,
+  hiddenSlots: [],
   line: { partId: null, anchors: [], path: [] },
   explode: 0,
   helpOpen: false,

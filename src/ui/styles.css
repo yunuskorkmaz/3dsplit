@@ -77,7 +77,7 @@ select {
 .float.side-left {
   top: 60px;
   left: 10px;
-  width: 260px;
+  width: 290px;
   max-height: calc(100% - 78px);
 }
 .float.side-right {
@@ -99,7 +99,7 @@ select {
 .timeline {
   position: absolute;
   z-index: 4;
-  left: 242px;
+  left: 310px;
   bottom: 10px;
   max-width: calc(100% - 520px);
   background: rgba(18, 20, 24, 0.72);
@@ -472,7 +472,7 @@ main {
 }
 .status {
   position: absolute;
-  left: 242px;
+  left: 310px;
   bottom: 52px;
   right: auto;
   max-width: 420px;
@@ -521,7 +521,7 @@ ul.slots {
   padding: 0;
   margin: 0;
 }
-ul.parts li,
+ul.parts li .part-main,
 ul.slots li {
   display: flex;
   align-items: center;
@@ -546,11 +546,8 @@ ul.slots li .name {
 ul.parts li button {
   padding: 0 6px;
 }
-.tris,
 /* X80: 250 mm'den büyük ya da 8 mm'den küçük parça */
-  ul.parts
-  li.size-warn
-  .size {
+ul.parts li.size-warn .size {
   color: #f5c542;
   font-weight: 600;
 }
@@ -590,10 +587,6 @@ ul.parts li .size {
 }
 .badge.bad {
   background: #e74c3c;
-}
-ul.slots li button.slot-clear {
-  padding: 0 5px;
-  font-size: 11px;
 }
 .slots input[type="color"] {
   width: 24px;
@@ -1195,4 +1188,158 @@ details.advanced[open] summary {
 }
 .flash {
   animation: flash 0.5s ease-in-out 2;
+}
+
+/* X85: Model ağacı */
+ul.parts > li {
+  border-radius: 4px;
+  cursor: pointer;
+}
+ul.parts > li:hover:not(.selected) {
+  background: #ffffff0a;
+}
+.panel-count {
+  color: #8b93a0;
+  font-size: 11px;
+}
+.tree-folder + .tree-folder {
+  margin-top: 6px;
+}
+.folder-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.folder-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  color: #b9bec7;
+  font-weight: 600;
+  font-size: 12px;
+}
+.folder-toggle:hover:not(:disabled) {
+  background: transparent;
+  color: #fff;
+}
+.folder-toggle .caret {
+  width: 10px;
+  color: #777;
+}
+.folder-toggle .count {
+  color: #7d8592;
+  font-weight: 400;
+}
+.folder-action {
+  padding: 1px 6px;
+  font-size: 11px;
+}
+.folder-body {
+  padding-left: 4px;
+  border-left: 1px solid #2c2e33;
+  margin-left: 6px;
+}
+.folder-body[hidden] {
+  display: none;
+}
+ul.parts li .twisty {
+  width: 14px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: #777;
+  font-size: 10px;
+}
+ul.parts li .twisty:disabled {
+  opacity: 1;
+}
+ul.parts li .more,
+ul.slots li .more {
+  padding: 0 5px;
+  background: transparent;
+  border-color: transparent;
+  color: #999;
+  opacity: 0;
+}
+ul.parts li:hover .more,
+ul.parts li.selected .more,
+ul.slots li:hover .more,
+ul.slots li.selected .more,
+.more:focus-visible {
+  opacity: 1;
+}
+.part-colors {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 3px 36px;
+}
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  text-align: left;
+  font-size: 12px;
+}
+.color-row.active {
+  background: #2f6fd640;
+  border-color: #2f6fd6;
+}
+.color-row .swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+  box-shadow: 0 0 0 1px #0006;
+}
+.color-row .cname {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.color-row .tris {
+  color: #7d8592;
+  font-size: 11px;
+}
+ul.slots li .eye {
+  width: 22px;
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+  font-size: 11px;
+}
+ul.slots li.hidden-slot .name {
+  color: #666;
+  text-decoration: line-through;
+}
+.context-menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: #1d1f23;
+  border: 1px solid #3a3c42;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+.context-menu button {
+  padding: 6px 10px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+}
+.context-menu button:hover:not(:disabled) {
+  background: #2f6fd6;
 }

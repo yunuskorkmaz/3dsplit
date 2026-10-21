@@ -6,6 +6,7 @@ export default defineConfig({
   testMatch: [
     'views.spec.ts',
     'ribbon.spec.ts',
+    'tree.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

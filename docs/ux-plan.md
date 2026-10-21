@@ -158,6 +158,13 @@ Olacak: tek "Model" paneli, ağaç biçiminde:
 - Sağ tık menüsü: parçada Göster/Gizle, Yalnız bu, Sığdır, Sil; renkte Temizle, Kaldır, Bu renkle seçili parçada Kes.
 - Panel başlığında gövde sayısı ("3 gövde"), SolidCraft'taki gibi.
 
+Uygulamada:
+
+- Renk boyasını gizleyen göz parça altındaki satırda değil, Renkler'deki satırda (bütün parçalarda gizler). Parça altındaki satır yalnız seçer.
+- Parça satırındaki "Tek" ve × düğmeleri kalktı; ⋯ düğmesi ve sağ tık menüsü (Gizle/Göster, Yalnız bunu göster, Sığdır, Sil). Alt + göz yine yalnız o parçayı gösterir.
+- Renk satırında temizle ve kaldır yalnız ⋯ / sağ tık menüsünde. "Seçili rengi öne çıkar" kutusu Renkler klasörünün altında kaldı. "Bu renkle kes" menüsü eklenmedi: kesim sağdaki pencereden.
+- Sol panel 290 px.
+
 Kabul: e2e: figure aç → Akıllı seç ile boya → ağaçta figure altında "Renk 1" satırı çıkar; ona tık aktif rengi değiştirir; Bluey'de Gövdeler altında renkleri sayılır; kesimden sonra eski parça Kaynaklar'da.
 
 ## X86 Araç penceresi

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { PinShape } from '../core/cut';
 import {
   activeIslands,
+  activePaintCount,
   clearActiveSlot,
   clearPins,
   isSlowPreview,
@@ -48,7 +49,14 @@ export function CutActions() {
   const tool = useStore((s) => s.tool);
   const keys = useKeymap((s) => s.map);
   const seamReady = useStore((s) => s.tool === 'seam' && !!s.line.closed && !s.line.bad);
-  const disabled = !hasParts || (!seamReady && activeSlot === 0);
+  // X91: aktif rengin bu parçada boyası yoksa kesilecek bir şey yok
+  const paintVersion = useStore((s) => s.paintVersion);
+  const selectedPartId = useStore((s) => s.selectedPartId);
+  const painted = useMemo(() => {
+    void [paintVersion, selectedPartId, activeSlot, hasParts];
+    return activePaintCount() > 0;
+  }, [paintVersion, selectedPartId, activeSlot, hasParts]);
+  const disabled = !hasParts || (!seamReady && !painted);
   return (
     <div className="cut-actions">
       <label className="field preview-toggle" title={`Kesimi uygulamadan göster (${keys.preview})`}>

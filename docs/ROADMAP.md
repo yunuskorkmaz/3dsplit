@@ -74,6 +74,15 @@ Ekran davranışları: [docs/ux-plan.md](ux-plan.md) (Sprint 9). Kaynak: SolidCr
 | X89 | Tapa derinliği, pim ölçüsü ve fırça çapı model üstünde | Değer girmek için gözü panele kaydırmak gerekiyor | [x] |
 | X90 | Ctrl+K komut arama | Komutların yeri bilinmeden bulunamıyor | [x] |
 
+## Sprint 10 — Sprint 9'dan kalan pürüzler
+
+Kullanıcı "sırada ne varsa yap" dedi; Sprint 9 raporunda açık bırakılan iki sorun.
+
+| ID | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| X91 | Seçili parçada aktif rengin boyası yoksa Kes ve Önizleme kapalı | Seçim satırı "Seçim yok" derken Kes açık görünüyor, basınca uyarı veriyor | [x] |
+| X92 | Akıllı seç figür burnuna tıklayınca yalnız burnu seçer | Bugün bütün başı seçiyor; testlerde burun fırçayla boyanıyor | [ ] |
+
 ## Ana akış
 
 Her iş bu akışı iyileştirdiği ölçüde önceliklidir:
@@ -325,3 +334,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-21 | X88: Geçmiş paneli yerine en altta tam genişlikte şerit: |◀ ◀ ▶ ▶|, Başlangıç ve her adım bir simge (kayıt türü ve adından: fırça, silgi, akıllı seç, kova, çizgi, yumuşat, pim, aç, kes modları, onar, incelt, ölçek, sil). Boyama adımı boyanan rengin renginde; bulunulan adımdan sonra mavi çizgi, geri alınmış adımlar soluk; değişince bulunulan adım görünür kayar. Sağda "bulunulan/toplam". `e2e/history.spec.ts`; tools testi yeni şeride göre; npm test 111, Chrome e2e 22, e2e 25 | — |
 | 2026-10-21 | X89: `src/ui/ValueTags.tsx`. Tapa yön oku görünürken okun dibinde derinlik kutusu; arkada kalırsa (kameradan ışın modele önce çarparsa) gizlenir. Pimli kes'te seçili pimin yanında "Ø · boy" kutusu. İkisi tıklanınca yazılır: Enter ya da odak kaybı uygular, Esc vazgeçer. Fırça, Silgi, Yumuşat'ta çap [ ] ya da Alt+tekerlekle değişince imleç yanında 1 s "Ø … mm". Konum bir kare sonra ve kamera değişince yenilenir. `e2e/value-tags.spec.ts`; npm test 111, Chrome e2e 23, e2e 26 | — |
 | 2026-10-21 | X90: Ctrl/Cmd+K ya da üst çubukta "Komut ara" (`src/ui/CommandPalette.tsx`): araçlar, kesim modları, Kes, Önizleme, Çıkıntıları öner, renk, Mesh, Düzen, dosya ve dışa aktarma, geri al/yinele, sığdırma ve 7 görünüş, Tabla, Yardım. Türkçe harf ve büyük/küçük duyarsız (`yapistir` → Yapıştır), bütün sözcükler adda ya da ek sözcüklerde geçmeli; adın başında geçen önce. Boşken son kullanılan 5 komut önde (tarayıcıda). ↑ ↓ Enter Esc. O an çalışmayan komut soluk, nedeni yanında ("seçili parça yok"). `e2e/palette.spec.ts`; npm test 111, Chrome e2e 24, e2e 27 | — |
+| 2026-10-21 | X91: seçili parçada aktif rengin boyası yoksa (`activePaintCount`) Kes düğmesi ve Önizleme kutusu kapalı; dikiş halkası kapalıysa açık. Komut aramada Kes ve Önizleme "boyalı bölge yok" der. tool-window e2e'sine eklendi | — |

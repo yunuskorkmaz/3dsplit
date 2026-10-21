@@ -82,6 +82,16 @@ export function cutOptions(): CutOptions {
   };
 }
 
+/** X91: seçili parçada aktif rengin boyalı üçgen sayısı (taban ya da parça yoksa 0). */
+export function activePaintCount(): number {
+  const { activeSlot } = get();
+  const part = selectedPart();
+  if (!part || activeSlot === BASE_SLOT) return 0;
+  let n = 0;
+  for (const l of part.mesh.labels) if (l === activeSlot) n++;
+  return n;
+}
+
 function cutTarget(): Part | null {
   const part = selectedPart();
   if (!part) {

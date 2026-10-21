@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CutMode } from '../core/cut';
 import {
+  activePaintCount,
   addSlot,
   autoSuggestFeatures,
   clearActiveSlot,
@@ -63,7 +64,15 @@ export function foldTurkish(text: string): string {
 const noParts = (s: State) => (s.parts.length ? null : 'parça yok');
 const noSelection = (s: State) => (s.selectedPartId ? null : 'seçili parça yok');
 const noPaint = (s: State) =>
-  !s.parts.length ? 'parça yok' : s.activeSlot === 0 ? 'renk seçilmedi' : null;
+  s.tool === 'seam' && s.line.closed && !s.line.bad
+    ? null
+    : !s.parts.length
+      ? 'parça yok'
+      : s.activeSlot === 0
+        ? 'renk seçilmedi'
+        : activePaintCount() === 0
+          ? 'boyalı bölge yok'
+          : null;
 
 function setMode(mode: CutMode): void {
   set((s) => ({ cut: { ...s.cut, mode }, cutModeManual: true }));

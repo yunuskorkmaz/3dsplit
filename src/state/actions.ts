@@ -1,4 +1,5 @@
 export {
+  activePaintCount,
   isSlowPreview,
   makeToleranceCoupon,
   refineSelected,

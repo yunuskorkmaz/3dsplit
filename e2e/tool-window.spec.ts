@@ -36,6 +36,9 @@ test('X86: araç penceresi: ayarlar, seçim satırı, Önizleme kutusu, İptal /
   await expect(win.getByText('Yalnız çukur')).toBeVisible();
   await expect(page.locator('.top-stack')).toHaveCount(0);
   await expect(win.locator('.selection-row.empty')).toBeVisible();
+  // X91: boya yokken Kes ve Önizleme kapalı
+  await expect(win.getByRole('button', { name: 'Kes', exact: true })).toBeDisabled();
+  await expect(win.getByRole('checkbox', { name: 'Önizleme' })).toBeDisabled();
 
   // fırçayla burun: seçim satırı
   await page.keyboard.press('1');
@@ -63,6 +66,7 @@ test('X86: araç penceresi: ayarlar, seçim satırı, Önizleme kutusu, İptal /
   await row.getByRole('button', { name: 'Seçimi temizle' }).click();
   await expect(win.locator('.selection-row.empty')).toBeVisible();
   expect(await painted(page)).toBe(0);
+  await expect(win.getByRole('button', { name: 'Kes', exact: true })).toBeDisabled();
   await page.keyboard.press('Control+z');
   await expect(row).toBeVisible();
   expect(await painted(page)).toBe(n);

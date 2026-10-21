@@ -26,6 +26,7 @@ import { ModelPanel } from './ModelTree';
 import { NavBar } from './NavBar';
 import { CutActions, CutPanel, StatusBar } from './Panels';
 import { ToolBar, ToolPanel, ViewCube } from './Toolbar';
+import { ValueTags } from './ValueTags';
 import { fitView, ViewportHost } from './ViewportHost';
 
 function openModel(): void {
@@ -190,6 +191,7 @@ export function App() {
         <EmptyStage />
         <ViewCube />
         <NavBar />
+        <ValueTags />
         <div className="float side-left">
           <ModelPanel />
         </div>

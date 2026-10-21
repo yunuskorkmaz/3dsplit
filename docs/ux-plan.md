@@ -228,6 +228,8 @@ Olacak:
 - **Fırça, Silgi, Yumuşat**: [ ve ] ile çap değişince imleç yanında 1 s "Ø 4 mm" görünür.
 - Kutular modelle birlikte döner, modelin arkasına geçince gizlenir.
 
+Uygulamada: derinlik kutusu okun dibinde, yüzeyin biraz dışında (ucu gövdenin içinde kalıyor). Pim kutusu örtülme denetlemez: pim modelin içinde ama üstte çizilir. Pim kutusunda çap (Ø) gösterilir, alan yarıçapı yazar.
+
 Kabul: e2e: figure burun Tapa önizlemesinde kutu görünür; 5 yazıp Enter → cut.depth 5, önizleme yenilenir.
 
 ## X90 Komut arama

@@ -1253,6 +1253,44 @@ export class Viewport {
     this.requestRender();
   }
 
+  /** X89: Tapa derinlik kutusunun yeri: yön okunun dibi, ok yönünde biraz dışarıda (dünya). */
+  depthTagAnchor(): THREE.Vector3 | null {
+    if (!this.dirHandle.visible) return null;
+    const base = this.dirHandle.getWorldPosition(new THREE.Vector3());
+    const dir = new THREE.Vector3(0, 0, 1).applyQuaternion(this.dirHandle.quaternion).normalize();
+    return base.addScaledVector(dir, this.sceneDiagonal() * 0.03);
+  }
+
+  /** X89: seçili pimin kutusunun yeri (dünya); seçili pim yoksa null. */
+  pinTagAnchor(): THREE.Vector3 | null {
+    if (this.gizmo.object !== this.pinHandle) return null;
+    return this.pinHandle.getWorldPosition(new THREE.Vector3());
+  }
+
+  /**
+   * Dünya noktasının ekran (client) konumu. `occlusion` açıksa model noktayı örtüyorsa null:
+   * kameradan noktaya ışın, noktadan önce bir yüzeye çarparsa nokta arkada kalmıştır.
+   */
+  screenPoint(p: THREE.Vector3, occlusion: boolean): { x: number; y: number } | null {
+    const v = p.clone().project(this.camera);
+    if (v.z > 1 || Math.abs(v.x) > 1 || Math.abs(v.y) > 1) return null;
+    if (occlusion) {
+      const origin = this.camera.position.clone();
+      const toPoint = p.clone().sub(origin);
+      const dist = toPoint.length();
+      this.raycaster.set(origin, toPoint.normalize());
+      this.raycaster.firstHitOnly = true;
+      const targets = [...this.parts.values()].filter((q) => q.mesh.visible).map((q) => q.mesh);
+      const hit = this.raycaster.intersectObjects(targets, false)[0];
+      if (hit && hit.distance < dist * 0.98) return null;
+    }
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    return {
+      x: rect.left + ((v.x + 1) / 2) * rect.width,
+      y: rect.top + ((1 - v.y) / 2) * rect.height,
+    };
+  }
+
   pick(e: { clientX: number; clientY: number }): Hit | null {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const ndc = new THREE.Vector2(

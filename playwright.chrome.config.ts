@@ -10,6 +10,7 @@ export default defineConfig({
     'tool-window.spec.ts',
     'navbar.spec.ts',
     'history.spec.ts',
+    'value-tags.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

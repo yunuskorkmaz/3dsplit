@@ -50,6 +50,22 @@ export function fitView(): void {
   activeViewport?.fitView();
 }
 
+/** X89: model üstündeki değer kutularının ekran konumları; görünmüyorsa null. */
+export function valueTagPositions(): {
+  depth: { x: number; y: number } | null;
+  pin: { x: number; y: number } | null;
+} {
+  const vp = activeViewport;
+  if (!vp) return { depth: null, pin: null };
+  const d = vp.depthTagAnchor();
+  const p = vp.pinTagAnchor();
+  return {
+    depth: d ? vp.screenPoint(d, true) : null,
+    // pim modelin içinde ama üstte çizilir: örtülme denetlenmez
+    pin: p ? vp.screenPoint(p, false) : null,
+  };
+}
+
 /** X87: bakış yönü korunur, görünür parçaların hepsi sığar. */
 export function fitAll(): void {
   activeViewport?.fitAll();

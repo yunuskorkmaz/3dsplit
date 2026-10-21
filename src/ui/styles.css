@@ -1473,3 +1473,41 @@ ul.slots li.hidden-slot .name {
   font-size: 11px;
   color: #8b93a0;
 }
+
+/* X89: model üstünde değer kutuları */
+.value-tag {
+  position: fixed;
+  z-index: 6;
+  transform: translate(-50%, -130%);
+  font-size: 12px;
+}
+.value-tag > button,
+.value-tag form,
+.value-tag.brush-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  background: rgba(18, 20, 24, 0.9);
+  border: 1px solid #ff9900;
+  border-radius: 6px;
+  color: #fff;
+  white-space: nowrap;
+}
+.value-tag.brush-tag {
+  transform: none;
+  pointer-events: none;
+  border-color: #5c6370;
+}
+.value-tag label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.value-tag input {
+  width: 44px;
+  padding: 1px 4px;
+  background: #2b2d31;
+  border: 1px solid #44464d;
+  border-radius: 3px;
+}

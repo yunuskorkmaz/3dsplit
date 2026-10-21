@@ -16,6 +16,7 @@ export default defineConfig({
     'multipart.spec.ts',
     'live-preview.spec.ts',
     'bed.spec.ts',
+    'onboarding.spec.ts',
   ],
   timeout: 120_000,
   use: {

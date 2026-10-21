@@ -13,6 +13,7 @@ import {
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
 import { get, set, useStore } from '../state/store';
+import { StepBar } from './StepBar';
 
 /** Menüden bir öğe seçilince açılır listeyi kapatır. */
 function closeMenu(e: React.MouseEvent) {
@@ -127,6 +128,8 @@ export function Header() {
       >
         Saydam
       </button>
+      <span className="spacer" />
+      <StepBar />
       <span className="spacer" />
       <button
         type="button"

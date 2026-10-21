@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-20):** A1–E2 ve X1–X76 bitti. Sıradaki işler X77–X83 (Sprint 8, `docs/ux-plan.md`, onay bekliyor). Yeni iş **X84** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-21):** A1–E2 ve X1–X83 bitti (Sprint 8: `docs/ux-plan.md`). Yeni iş **X84** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -56,7 +56,7 @@ Ekran davranışları: [docs/ux-plan.md](ux-plan.md). Her madde, davranışı on
 | X80 | Çok parçalı dosyada en büyük parça seçili, ölçü uyarısı parça başına, adlar okunur | Grogu'da tırnak seçili, 402 mm yanlış uyarısı | [x] |
 | X81 | İmlece yakınlaştırma, seçili parça etrafında dönme, parçaya çift tık odak | Kamera sabit merkezde | [x] |
 | X82 | 256 mm baskı tablası ızgarası, sığmayınca sarı | Boyut algısı yok | [x] |
-| X83 | Örnek model düğmesi ve Aç → Seç → Kes → Aktar adım çubuğu | Yeni kullanıcı nerede olduğunu görmüyor | [ ] |
+| X83 | Örnek model düğmesi ve Aç → Seç → Kes → Aktar adım çubuğu | Yeni kullanıcı nerede olduğunu görmüyor | [x] |
 
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
 
@@ -303,3 +303,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-20 | X80: dosya açılınca hacmi en büyük parça seçilir (Grogu'da gövde: baştan uzun değil ama hacmi büyük). Model ölçüsü en büyük parçanın en uzun kenarı (`largestExtent`); plaka toplamı 402 mm uyarısı gitti; Baskı boyu bütün parçaları birlikte ölçekleyip en büyük parçayı hedef boya getirir. 250 mm üstü ya da 8 mm altı parçanın satırı sarı (Grogu tırnakları 4 mm: sarı). Sol panel 260 px, ad üstüne gelince tam görünür, `.stl`/`.obj`/`.3mf` adlardan silinir (`nails_v1.0.stl_5` → `nails_v1.0_5`). Boş sahneye açılan çok parçalı dosya bitince görünüm hepsine sığdırılır (önce yalnız ilk parçaya sığıyordu). `e2e/multipart.spec.ts` | — |
 | 2026-10-21 | X78: Tapa ve Yapıştır'da da boya, slot, parça ya da mod değişince önizleme 300 ms sonra kendiliğinden açılır. Mod öneriyi izliyorsa önizleme önerinin sonucunu bekler (testa kulağında önce Tapa önizlemesi başlıyor, 18 dk Worker'ı tutuyordu). Önizleme 1,5 s'yi geçerse o mesh ve mod yavaş sayılır: sonraki değişiklikte önizleme kapanır, panelde "önizleme için Space" yazar; hızlı biten önizleme işareti kaldırır. Ayrı Worker'da süre sınırıyla çalıştırma denendi, geri alındı: yeni Worker manifold önbelleğini yeniden kurduğu için testa'nın Pimli kes önizlemesi de sınırı aşıyordu. Kalan risk: Tapa elle seçiliyken ağır bölgede otomatik önizleme bitene kadar kesim bekler (Space'teki ile aynı). smoke e2e Space'siz; `e2e/live-preview.spec.ts` (Bluey kısmı HEAVY=1 ile tek başına; paralel takımda 120 s Worker sınırına takılıyor). Gece testleri Mac uykusu yüzünden 15 dk sürmüştü; `caffeinate -i` ile çalıştırıldı | — |
 | 2026-10-21 | X82: görünür parçaların altında, en alt noktanın hizasında 256 × 256 mm tabla: 10 mm'de ince, 50 mm'de belirgin çizgi; ortası modelin ortasının altında. En uzun kenar (x, y ya da z) 256 mm'yi geçerse kenar sarı. Tabla tıklanamaz. Kamera panelinde "Tabla" kutusu (varsayılan açık, kamera tercihleriyle tarayıcıda hatırlanır). `e2e/bed.spec.ts` | — |
+| 2026-10-21 | X83: boş ekranda "Örnek modeli aç": figür Worker'da manifold ile üretilir (`src/core/sample.ts`, `samples/figure.stl` ile aynı üçgen sayısı). Üst şeritte Aç → Seç → Kes → Aktar: parça yok / boya yok / boya var / kesimden yeni parça var; geçilen adım ✓. Adıma tık: Aç dosya penceresi, Seç Akıllı seç aracı, Kes düğmesini yanıp söndürür, Aktar Dışa aktar menüsünü açar. Adım düğmelerinin erişilebilir adı "Adım: …" (ana Kes düğmesiyle karışmasın). Model yokken Renkler ve Kesim panelleri soluk ve kapalı. `e2e/onboarding.spec.ts`; npm test 111, Chrome e2e 17, e2e 20 | — |

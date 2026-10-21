@@ -16,6 +16,7 @@ export {
   exportPartStl,
   exportStlZip,
   importFiles,
+  openSample,
   saveProject,
 } from './actionsFile';
 export { jumpToHistory, redo, undo } from './actionsHistory';

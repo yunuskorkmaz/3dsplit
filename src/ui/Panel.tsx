@@ -17,10 +17,14 @@ export function Panel(props: {
   extra?: ReactNode;
   grow?: boolean;
   defaultOpen?: boolean;
+  /** X83: model yokken soluk ve kapalı; açılmaz. */
+  disabled?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(() => loadState()[props.id] ?? props.defaultOpen ?? true);
+  const shown = open && !props.disabled;
   const toggle = () => {
+    if (props.disabled) return;
     const next = !open;
     setOpen(next);
     try {
@@ -30,15 +34,17 @@ export function Panel(props: {
     }
   };
   return (
-    <section className={`panel${props.grow && open ? ' grow' : ''}`}>
+    <section
+      className={`panel${props.grow && shown ? ' grow' : ''}${props.disabled ? ' disabled' : ''}`}
+    >
       <header className="panel-head">
         <h3 onClick={toggle}>
-          <span className="caret">{open ? '▾' : '▸'}</span>
+          <span className="caret">{shown ? '▾' : '▸'}</span>
           {props.title}
         </h3>
         {props.extra && <div className="panel-extra">{props.extra}</div>}
       </header>
-      {open && <div className="panel-body">{props.children}</div>}
+      {shown && <div className="panel-body">{props.children}</div>}
     </section>
   );
 }

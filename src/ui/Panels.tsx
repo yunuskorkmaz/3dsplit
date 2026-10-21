@@ -285,6 +285,7 @@ export function MeshToolsPanel() {
 
 export function SlotPanel() {
   const keys = useKeymap((s) => s.map);
+  const hasParts = useStore((s) => s.parts.length > 0);
   const slots = useStore((s) => s.slots);
   const active = useStore((s) => s.activeSlot);
   const parts = useStore((s) => s.parts);
@@ -303,7 +304,7 @@ export function SlotPanel() {
     return n;
   }, [parts, selectedPartId, paintVersion]);
   return (
-    <Panel id="slots" title="Renkler">
+    <Panel id="slots" title="Renkler" disabled={!hasParts}>
       <p className="hint">
         Renk seçince o boyanın çevresi modelde görünür. Temizle boyayı siler, kaldır rengi listeden
         çıkarır.
@@ -442,6 +443,7 @@ const NO_WARNINGS: string[] = [];
 
 export function CutPanel() {
   const keys = useKeymap((s) => s.map);
+  const hasParts = useStore((s) => s.parts.length > 0);
   const cut = useStore((s) => s.cut);
   const tool = useStore((s) => s.tool);
   const pinCount = useStore((s) => s.pins.length);
@@ -481,6 +483,7 @@ export function CutPanel() {
     <Panel
       id="cut"
       grow
+      disabled={!hasParts}
       title={`${modeTitle} — ${tool === 'seam' ? 'dikiş' : activeSlot === 0 ? 'renk seçin' : slotName}`}
     >
       <div id="kesim">

@@ -16,6 +16,7 @@ import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from
 import { computeMeshTopology, type MeshTopology, withMeshTopology } from '../core/meshTopology';
 import { refineMesh } from '../core/refine';
 import { type RepairReport, repairMesh } from '../core/repair';
+import { sampleFigure } from '../core/sample';
 import { smoothCutEdge } from '../core/smooth';
 import { BASE_SLOT, type LabeledMesh, type MeshData } from '../core/types';
 import { voxelRepair } from '../core/voxelRepair';
@@ -197,6 +198,12 @@ const api = {
     const c = toleranceCoupon(pin, clearances, depthClearance);
     const all = [c.plate, ...c.pins];
     return Comlink.transfer(c, buffersOf(all));
+  },
+  /** X83: örnek figür. */
+  async sample() {
+    await ready;
+    const m = sampleFigure();
+    return Comlink.transfer(m, buffersOf([m]));
   },
   async split(mesh: LabeledMesh) {
     await ready;

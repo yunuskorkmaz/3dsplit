@@ -1074,3 +1074,54 @@ details.advanced summary {
 details.advanced[open] summary {
   margin-bottom: 4px;
 }
+
+/* X83: adım çubuğu */
+.step-bar {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step-bar li + li::before {
+  content: "→";
+  color: #555;
+  margin: 0 4px;
+}
+.step-bar li {
+  display: flex;
+  align-items: center;
+}
+.step-bar button {
+  color: #888;
+}
+.step-bar li.done button {
+  color: #6fbf73;
+}
+.step-bar li.current button {
+  background: #2f6fd6;
+  color: #fff;
+  font-weight: 600;
+}
+.empty-stage .row {
+  display: flex;
+  gap: 8px;
+}
+.panel.disabled {
+  opacity: 0.45;
+}
+.panel.disabled h3 {
+  cursor: default;
+}
+@keyframes flash {
+  0%,
+  100% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 0 3px #ff9900;
+  }
+}
+.flash {
+  animation: flash 0.5s ease-in-out 2;
+}

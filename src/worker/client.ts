@@ -96,4 +96,5 @@ export const geometry: GeometryApi = {
   coupon: (pin, clearances, depthClearance) =>
     call((api) => api.coupon(pin, clearances, depthClearance)),
   split: (mesh) => call((api) => api.split(mesh)),
+  sample: () => call((api) => api.sample()),
 };

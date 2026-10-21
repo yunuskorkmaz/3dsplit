@@ -8,7 +8,7 @@ import {
   writeStl,
   writeStlZip,
 } from '../io/exportFile';
-import { importFile } from '../io/importFile';
+import { type ImportedObject, importFile } from '../io/importFile';
 import { PROJECT_EXTENSION, readProject, writeProject } from '../io/project';
 import { geometry } from '../worker/client';
 import { busy } from './actionsHooks';
@@ -30,53 +30,63 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
       await openProject(file);
       continue;
     }
-    await busy(`${file.name} yükleniyor…`, async () => {
-      const objects = await importFile(file);
-      const added: Part[] = [];
-      for (const obj of objects) {
-        const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
-        if (obj.labels) ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []);
-        const r = prepared.report;
-        const fixes = [
-          r.removedDegenerate && `${r.removedDegenerate} dejenere üçgen silindi`,
-          r.removedDuplicate && `${r.removedDuplicate} tekrarlı üçgen silindi`,
-          r.flippedTriangles && `${r.flippedTriangles} üçgenin yönü düzeltildi`,
-          r.filledHoles && `${r.filledHoles} delik kapatıldı`,
-        ].filter(Boolean);
-        if (fixes.length) notify('info', `${obj.name}: ${fixes.join(', ')}.`);
-        if (prepared.voxel) {
-          notify(
-            'warn',
-            `${obj.name}: mesh bozuk olduğu için voxel onarım yapıldı (voksel ${prepared.voxel.voxelSize.toFixed(2)} mm; ${prepared.voxel.closedGap.toFixed(1)} mm'den küçük delikler kapandı, ince ayrıntı yumuşamış olabilir).`,
-          );
-        }
-        if (!prepared.manifold) {
-          notify(
-            'warn',
-            `${obj.name}: onarım sonrası mesh kapalı değil, kesim çalışmayabilir. ${prepared.error ?? ''}`,
-          );
-        }
-        const part: Part = {
-          id: newPartId(),
-          name: stripModelExtension(obj.name),
-          mesh: prepared.mesh,
-          visible: true,
-          badge: null,
-          colorSlot: BASE_SLOT,
-          manifold: prepared.manifold,
-        };
-        const before = get().parts;
-        // X72: yeni model: mod yine öneriyi izler
-        if (!before.length) set({ cutModeManual: false });
-        set({ parts: [...before, part], selectedPartId: part.id });
-        pushHistory({ kind: 'parts', before, after: get().parts }, `Aç: ${part.name}`);
-        added.push(part);
-      }
-      // X80: çok parçalı dosyada son yüklenen değil, en büyük (hacim) parça seçili
-      const big = added[largestPart(added.map((p) => p.mesh))];
-      if (big) set({ selectedPartId: big.id });
-    });
+    await busy(`${file.name} yükleniyor…`, async () => addObjects(await importFile(file)));
   }
+}
+
+/** X83: örnek figür tarayıcıda üretilir, dosya gibi açılır. */
+export async function openSample(): Promise<void> {
+  await busy('Örnek model hazırlanıyor…', async () => {
+    const m = await geometry.sample();
+    await addObjects([{ name: 'örnek figür', positions: m.positions, indices: m.indices }]);
+  });
+}
+
+/** İçe aktarılan nesneleri onarıp parça olarak ekler. */
+async function addObjects(objects: ImportedObject[]): Promise<void> {
+  const added: Part[] = [];
+  for (const obj of objects) {
+    const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
+    if (obj.labels) ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []);
+    const r = prepared.report;
+    const fixes = [
+      r.removedDegenerate && `${r.removedDegenerate} dejenere üçgen silindi`,
+      r.removedDuplicate && `${r.removedDuplicate} tekrarlı üçgen silindi`,
+      r.flippedTriangles && `${r.flippedTriangles} üçgenin yönü düzeltildi`,
+      r.filledHoles && `${r.filledHoles} delik kapatıldı`,
+    ].filter(Boolean);
+    if (fixes.length) notify('info', `${obj.name}: ${fixes.join(', ')}.`);
+    if (prepared.voxel) {
+      notify(
+        'warn',
+        `${obj.name}: mesh bozuk olduğu için voxel onarım yapıldı (voksel ${prepared.voxel.voxelSize.toFixed(2)} mm; ${prepared.voxel.closedGap.toFixed(1)} mm'den küçük delikler kapandı, ince ayrıntı yumuşamış olabilir).`,
+      );
+    }
+    if (!prepared.manifold) {
+      notify(
+        'warn',
+        `${obj.name}: onarım sonrası mesh kapalı değil, kesim çalışmayabilir. ${prepared.error ?? ''}`,
+      );
+    }
+    const part: Part = {
+      id: newPartId(),
+      name: stripModelExtension(obj.name),
+      mesh: prepared.mesh,
+      visible: true,
+      badge: null,
+      colorSlot: BASE_SLOT,
+      manifold: prepared.manifold,
+    };
+    const before = get().parts;
+    // X72: yeni model: mod yine öneriyi izler
+    if (!before.length) set({ cutModeManual: false });
+    set({ parts: [...before, part], selectedPartId: part.id });
+    pushHistory({ kind: 'parts', before, after: get().parts }, `Aç: ${part.name}`);
+    added.push(part);
+  }
+  // X80: çok parçalı dosyada son yüklenen değil, en büyük (hacim) parça seçili
+  const big = added[largestPart(added.map((p) => p.mesh))];
+  if (big) set({ selectedPartId: big.id });
 }
 
 /** X80: parça adında model dosyası uzantısı gösterilmez. */

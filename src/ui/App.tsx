@@ -6,6 +6,7 @@ import {
   lineCancel,
   lineClose,
   lineUndo,
+  openSample,
   redo,
   removePin,
   scheduleSuggestion,
@@ -43,9 +44,18 @@ function EmptyStage() {
   return (
     <div className="empty-stage">
       <p>Modeli aç, bölgeyi seç, kes, slicer'a aktar.</p>
-      <button type="button" onClick={openModel}>
-        Aç
-      </button>
+      <div className="row">
+        <button type="button" onClick={openModel}>
+          Aç
+        </button>
+        <button
+          type="button"
+          onClick={openSample}
+          title="Baş, burun, kollu basit figür; dosya gerekmez"
+        >
+          Örnek modeli aç
+        </button>
+      </div>
     </div>
   );
 }

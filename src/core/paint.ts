@@ -17,10 +17,14 @@ export interface SmartFillOptions {
   areas?: Float32Array;
 }
 
+/** X92: komşu üçgenle karşılaştırmada keskin kıvrım eşiği, derece. */
+export const SHARP_CREASE_DEG = 70;
+
 /**
  * Smart Fill: tohum üçgenden BFS. Aday üçgenin normali, yolda `scale` kadar
- * geride kalan atasının ve komşusunun normaliyle karşılaştırılır; biri açı
- * eşiğini aşarsa (concaveOnly'de: kıvrım içbükeyse ve eşiği aşarsa) geçilmez.
+ * geride kalan atasının normaliyle (açı eşiği) ve komşusunun normaliyle
+ * (`SHARP_CREASE_DEG`) karşılaştırılır; biri aşılırsa (concaveOnly'de: kıvrım
+ * içbükeyse ve aşılırsa) geçilmez.
  */
 export function smartFill(
   adj: Int32Array,
@@ -30,6 +34,7 @@ export function smartFill(
   opts: SmartFillOptions,
 ): Uint32Array {
   const cosLimit = Math.cos((opts.maxAngleDeg * Math.PI) / 180);
+  const cosSharp = Math.min(cosLimit, Math.cos((SHARP_CREASE_DEG * Math.PI) / 180));
   const triCount = adj.length / 3;
   const visited = new Uint8Array(triCount);
   const parent = new Int32Array(triCount).fill(-1);
@@ -53,12 +58,13 @@ export function smartFill(
         normals[3 * a + 2] * normals[3 * n + 2];
       // X92: keskin kıvrım komşu üçgenle de karşılaştırılır. Küçük tümseğin (burun) dibinde
       // geride kalan ata tümseğin önündedir ve normali başın yüzeyiyle aynı yöne bakar;
-      // yalnız ataya bakınca 90° kıvrım görünmez.
+      // yalnız ataya bakınca 90° kıvrım görünmez. Eşik yüksek: yeniden kurulmuş (voxel)
+      // mesh'te komşu üçgenler 20–60° basamak yapar, onlarda durulmaz.
       const local =
         normals[3 * t] * normals[3 * n] +
         normals[3 * t + 1] * normals[3 * n + 1] +
         normals[3 * t + 2] * normals[3 * n + 2];
-      if (d < cosLimit || local < cosLimit) {
+      if (d < cosLimit || local < cosSharp) {
         if (!opts.concaveOnly) continue;
         // kıvrımın yönü yerel kenardan okunur: aday, t'nin teğet düzleminin üstündeyse içbükey.
         // Atanın düzlemi kullanılmaz; ata köşenin öbür yüzünde kalabiliyor.

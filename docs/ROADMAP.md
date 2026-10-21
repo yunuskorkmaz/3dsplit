@@ -60,6 +60,20 @@ Ekran davranışları: [docs/ux-plan.md](ux-plan.md). Her madde, davranışı on
 
 **İşaretler:** `[x]` bitti · `[~]` kısmen var · `[ ]` yapılacak
 
+## Sprint 9 — araç kullanımı CAD programı gibi
+
+Ekran davranışları: [docs/ux-plan.md](ux-plan.md) (Sprint 9). Kaynak: SolidCraft web sürümü. Her madde, davranışı onaylanmadan kodlanmaz. Sıra: X84–X90.
+
+| ID | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| X84 | Simgeli, gruplu şerit (Seç, Kes, Mesh, Düzen); Mesh paneli kalkar | Düğmeler yalnız yazı, araçlar dağınık | [ ] |
+| X85 | Solda Model ağacı: gövdeler, her gövdenin altında boyalı renkleri, Renkler ve Kaynaklar klasörleri | Parçalar ve Renkler ayrı panel; hangi parçada hangi renk var görünmüyor | [ ] |
+| X86 | Sağda araç penceresi: araç ayarları, seçim satırı, Önizleme kutusu, İptal / Kes | Ayarlar şerit altında ve ayrı panelde | [ ] |
+| X87 | Alt ortada gezinme çubuğu; Kamera paneli kalkar | Kamera ayarları sol panelde gizli | [ ] |
+| X88 | Altta simgeli geçmiş şeridi; Geçmiş paneli kalkar | Geçmiş katlı panelde, yazıyla | [ ] |
+| X89 | Tapa derinliği, pim ölçüsü ve fırça çapı model üstünde | Değer girmek için gözü panele kaydırmak gerekiyor | [ ] |
+| X90 | Ctrl+K komut arama | Komutların yeri bilinmeden bulunamıyor | [ ] |
+
 ## Ana akış
 
 Her iş bu akışı iyileştirdiği ölçüde önceliklidir:

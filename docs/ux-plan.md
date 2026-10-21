@@ -90,3 +90,136 @@ Olacak:
 - Model yokken Renkler ve Kesim panelleri soluk ve kapalı; yalnız Parçalar paneli ve boş ekran yazısı görünür.
 
 Kabul: e2e: boş ekran → Örnek modeli aç → adım "Seç" → boya → "Kes" → kes → "Aktar".
+
+# Sprint 9: araç kullanımı CAD programı gibi
+
+21 Ekim 2026. Kaynak: SolidCraft web sürümü (docs.solidcraft.io/app, v0.18.2) Chrome'da denendi, Fillet aracı kullanıldı. Kullanıcı hepsini istedi ve sol tarafta gövdeler ile renk seçimlerinin ağaç olarak görünmesini ekledi. Her madde, ekran davranışı onaylanmadan kodlanmaz.
+
+SolidCraft'ta görülen düzen: üstte simgeli ve gruplu şerit; solda "Browser" ağacı (gözlü satırlar, klasörler); araca basınca sağda başlıklı pencere (seçim alanı, ayar satırları, Preview kutusu, katlanır Advanced, Cancel / OK); değer modelin üstünde imleç yanında da girilir; altta simgeli geçmiş şeridi; alt ortada gezinme düğmeleri; sağ üstte komut arama.
+
+Bizdeki fark: SolidCraft'ta her araç işi bitince kapanır. Bizde boyama araçları sürekli açık kalır, asıl "komut" kesimdir. Bu yüzden İptal / Kes yalnız kesimde vardır.
+
+Sıra: X84, X85, X86, X87, X88, X89, X90.
+
+Kararlar (kullanıcı kararı bana bıraktı, 21 Ekim 2026):
+
+- İptal boyayı silmez: önizlemeyi kapatır, Akıllı seç'e döner. Boyayı silmek seçim satırındaki × ile; Ctrl+Z geri getirir. Neden: yanlışlıkla basılan İptal emeği silmemeli.
+- Komut arama Ctrl+K (Mac'te Cmd+K). S Yumuşat'ta kalır; tek harfli araç kısayolları değişmez.
+- Mesh araçları, Kamera ve Geçmiş panelleri kalkar; içerikleri şeride, gezinme çubuğuna ve alt şeride taşınır. Aynı iş iki yerde durmaz.
+- Simgeler kendi çizdiğimiz satır içi SVG (24 × 24, 1,75 px çizgi, `currentColor`). Tapa ve pim gibi bize özgü simgeler hiçbir kütüphanede yok; tek elden çizilince hepsi aynı görünür, bağımlılık eklenmez.
+
+Hedef yerleşim:
+
+```
+┌ 3dsplit  Dosya ▾  ↶ ↷ │ Aç → Seç → Kes → Aktar │            [ Komut ara  Ctrl+K ] ? ┐
+├ [✦]  [●]  [◌]  [≈]  [▣]  [✎]  [⌇] │ [▲]  [⊕]  [▬] │ [⧉]  [✚]  [▦] │ [⤢]  [⇔]  [◐] ┤
+│ Akıllı Fırça Silgi Yum. Kova Çizgi Dikiş│Tapa Pimli Yapış│ Böl  Onar Üçgen│Boy Aralık Saydam│
+│              Seç                     │     Kes       │    Mesh       │    Düzen      │
+├──────────────┬───────────────────────────────────────────────┬─────────────────────┤
+│ Model        │                                     [küp]     │ ▲ Tapa          ×   │
+│ ▾ figure ... │                                               │ Seçim  ■ Renk 1 ×   │
+│  ▾ Gövdeler  │                                               │ Derinlik  [3 mm]    │
+│   👁 figure  │               (model)                         │ Tolerans  Sıkı|Norm │
+│     ■ Renk 1 │                     ┌──────┐                  │ ☑ Önizleme          │
+│     ■ Renk 2 │                     │ 3 mm │                  │ › İnce ayar         │
+│  ▾ Renkler   │                                               │      [İptal] [Kes]  │
+│   ■ Taban    │                                               │                     │
+│   ■ Renk 1   │        [⟳][✥][⌕][⤢][⌂][▣▾][⚙]                 │                     │
+│  › Kaynaklar │                                               │                     │
+├──────────────┴───────────────────────────────────────────────┴─────────────────────┤
+│ Geçmiş  |◀ ◀ ▶ ▶|   [◻][●][●][▲][⊕] ┃                                              │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+## X84 Simgeli şerit
+
+Bugün: üstte yalnız yazılı düğmeler (Seç / Kes), altında seçili aracın ayar satırı. Mesh araçları, Baskı boyu, Aralıklı ve Saydam başka yerlerde.
+
+Olacak:
+
+- Her düğmede üstte simge (24 px, kendi çizdiğimiz satır içi SVG; kütüphane eklenmez), altında ad. Grup adı düğmelerin altında: **Seç** (Akıllı seç, Fırça, Silgi, Yumuşat, Kova, Çizgi, Dikiş), **Kes** (Tapa, Pimli kes, Yapıştır, Pim), **Mesh** (Kopukları böl, Onar, Üçgenleri böl, Çıkıntıları öner), **Düzen** (Baskı boyu, Aralıklı, Saydam).
+- Seçili araç mavi zeminli. Üstüne gelince ad, kısayol ve ipucu.
+- Mesh araçları paneli kalkar. "Aralıklı" ve "Saydam" üst çubuktan şeride iner. Baskı boyu düğmesi küçük bir açılır kutu gösterir (bugünkü alan + Ölçekle).
+- Dar ekranda (< 1100 px) adlar gizlenir, yalnız simge kalır.
+
+Kabul: e2e: bütün araçlar şeritten seçilir; Mesh paneli yok; bugünkü testler şerit düğmelerinin erişilebilir adıyla geçer.
+
+## X85 Sol ağaç: gövdeler ve renkler
+
+Bugün: solda ayrı Parçalar ve Renkler panelleri.
+
+Olacak: tek "Model" paneli, ağaç biçiminde:
+
+- **Gövdeler (N)**: her parça bir satır: göz (gizle/göster, Alt+tık yalnız bu), ad, ölçü (sarı uyarı korunur), rozetler (yeni, açık mesh). Satıra tık parçayı seçer (turuncu kenar korunur).
+  - Parçanın altında, o parçada boyası olan renkler: renk karesi, ad, üçgen sayısı. Renk satırına tık: parçayı ve o rengi seçer. Gözü o rengin boyasını geçici gizler (yalnız görüntü).
+- **Renkler**: bugünkü renk listesi (Taban dahil): kare (renk seç), ad (çift tıkla düzenle), kısayol numarası. Temizle ve Kaldır satırın üstüne gelince çıkan simgeler ve sağ tık menüsünde. Sonda "+ Renk". "Seçili rengi öne çıkar" kutusu klasör başlığındaki menüye taşınır.
+- **Kaynaklar**: kesimden önceki gizli parçalar ayrı, kapalı klasörde (bugün listede sarı rozetle duruyor).
+- Sağ tık menüsü: parçada Göster/Gizle, Yalnız bu, Sığdır, Sil; renkte Temizle, Kaldır, Bu renkle seçili parçada Kes.
+- Panel başlığında gövde sayısı ("3 gövde"), SolidCraft'taki gibi.
+
+Kabul: e2e: figure aç → Akıllı seç ile boya → ağaçta figure altında "Renk 1" satırı çıkar; ona tık aktif rengi değiştirir; Bluey'de Gövdeler altında renkleri sayılır; kesimden sonra eski parça Kaynaklar'da.
+
+## X86 Araç penceresi
+
+Bugün: boyama aracının ayarları şeridin altında yatay satırda; kesim ayarları sağda sürekli açık panelde.
+
+Olacak: sağda tek pencere, başlığı aktif araç ya da kesim modu, simgesiyle.
+
+- **Boyama aracı seçiliyken**: ayarlar alt alta etiketli satırlar (Akıllı seç: Açı, Ölçek, Yalnız çukur, Dibe oturt, Ayna; Fırça: Çap…). İpucu metni en altta. İptal / OK yok.
+- **Boya varken pencerenin altında kesim bölümü** açılır (bugünkü Kesim paneli), sırası:
+  1. Seçim satırı: renk karesi, "Renk 1 · figure · 1.240 üçgen", × (o boyayı temizler, Ctrl+Z geri getirir).
+  2. Mod düğmeleri (Tapa / Pimli kes / Yapıştır; şeritle aynı).
+  3. Mod ayarları (Derinlik, Gidiş, Pim, Tolerans).
+  4. "Önizleme" kutusu (Space ile aynı; X78 kuralları korunur). Önizleme düğmesi kalkar.
+  5. Katlanır "İnce ayar" (bugünkü gibi).
+  6. Altta **İptal** ve **Kes** (mavi). İptal önizlemeyi kapatır ve Akıllı seç'e döner; boya silinmez.
+- Şeritte Tapa / Pimli kes / Yapıştır'a basınca pencere kesim bölümüne kayar; boya yoksa "Önce bir bölge boyayın" yazar ve Kes kapalıdır.
+- Pencere başlığından katlanabilir; × yok (her zaman bir araç seçili).
+
+Kabul: e2e: Akıllı seç ayarları pencerede; boya sonrası seçim satırı ve Kes görünür; × boyayı siler, Ctrl+Z geri getirir; İptal önizlemeyi kapatır, boya kalır.
+
+## X87 Gezinme çubuğu
+
+Bugün: görünüş küpünün altında "Sığdır"; kamera ayarları sol paneldeki Kamera bölümünde.
+
+Olacak:
+
+- Alt ortada simgeli çubuk: Döndür, Kaydır, Yakınlaştır (sol tuş bu kipe geçer; Esc ya da araç seçimi bırakır), Hepsini sığdır, Seçiliyi sığdır, Ev (başlangıç bakışı), Görünüşler ▾ (Ön, Arka, Sağ, Sol, Üst, Alt, Eğik), Tabla, ⚙ (Kamera düzeni, Ters yakınlaştırma).
+- Kamera paneli kalkar. Görünüş küpü yerinde kalır, altındaki "Sığdır" kalkar.
+
+Kabul: e2e: Seçiliyi sığdır parçayı ortalar; ⚙'dan Blender düzeni seçilir ve hatırlanır; Tabla düğmesi tablayı gizler.
+
+## X88 Geçmiş şeridi
+
+Bugün: sol altta katlanmış "Geçmiş" paneli, adımlar yazıyla.
+
+Olacak:
+
+- En altta, tam genişlikte ince şerit: solda "Geçmiş" ve |◀ ◀ ▶ ▶| (başa, geri, ileri, sona). Sağında her adım bir simge: boya, sil, yumuşat, kes, pim, onar, ölçek, renk. Simgenin rengi adım bir renge aitse o renk.
+- Bulunulan adımdan sonra mavi çizgi; geri alınmış adımlar soluk. Simgeye tık o adıma gider (bugünkü `jumpToHistory`). Üstüne gelince adım adı.
+- Çok adımda şerit yana kayar, son adım hep görünür.
+- Geçmiş paneli kalkar.
+
+Kabul: e2e: iki boya + kes → 3 simge; ilk simgeye tık sonrası ikisi soluk; ▶| hepsini yineler.
+
+## X89 Değer model üstünde
+
+Olacak:
+
+- **Tapa**: önizlemede yön okunun ucunda küçük "3 mm" kutusu; tıklayınca yazılır, Enter uygular (pencerede Derinlik ile aynı değer).
+- **Pimli kes**: seçili pimin yanında "Ø 3 · 12 mm" kutusu; tıklayınca çap ve boy yazılır.
+- **Fırça, Silgi, Yumuşat**: [ ve ] ile çap değişince imleç yanında 1 s "Ø 4 mm" görünür.
+- Kutular modelle birlikte döner, modelin arkasına geçince gizlenir.
+
+Kabul: e2e: figure burun Tapa önizlemesinde kutu görünür; 5 yazıp Enter → cut.depth 5, önizleme yenilenir.
+
+## X90 Komut arama
+
+Olacak:
+
+- Sağ üstte "Komut ara" kutusu, kısayol **Ctrl+K** (S Yumuşat'ta, / tarayıcıda hızlı bulmada).
+- Açılınca bütün komutlar: araçlar, kesim modları, Mesh ve Düzen işleri, Dışa aktar, Kaydet, Aç, görünüşler, yardım. Her satırda simge, ad, kısayol.
+- Yazdıkça süzülür (Türkçe harf ve aksan duyarsız: "yapistir" → Yapıştır). ↑ ↓ seçer, Enter çalıştırır, Esc kapatır. Son kullanılan 5 komut boşken en üstte.
+- O an çalışmayan komut soluk ve nedeni yanında ("parça yok").
+
+Kabul: e2e: Ctrl+K → "pimli" → Enter → kesim modu keys.

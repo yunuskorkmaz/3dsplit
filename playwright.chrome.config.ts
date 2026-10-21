@@ -9,6 +9,7 @@ export default defineConfig({
     'tree.spec.ts',
     'tool-window.spec.ts',
     'navbar.spec.ts',
+    'history.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

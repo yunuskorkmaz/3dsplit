@@ -28,7 +28,12 @@ export type IconName =
   | 'home'
   | 'views'
   | 'bed'
-  | 'settings';
+  | 'settings'
+  | 'open'
+  | 'trash'
+  | 'start'
+  | 'coupon'
+  | 'parts';
 
 const PATHS: Record<IconName, ReactNode> = {
   // tıklanan çıkıntı ve çevresindeki seçim
@@ -204,6 +209,34 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="3" />
       <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+    </>
+  ),
+  open: (
+    <>
+      <path d="M3 6h6l2 2h10v11H3z" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16M10 7V4h4v3M6 7l1 13h10l1-13" />
+    </>
+  ),
+  start: (
+    <>
+      <circle cx="12" cy="12" r="7" />
+      <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+    </>
+  ),
+  coupon: (
+    <>
+      <path d="M3 14h18v5H3z" />
+      <path d="M6 14V9h2v5M11 14V8h2v6M16 14V7h2v7" />
+    </>
+  ),
+  parts: (
+    <>
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" />
+      <path d="M4 7.5l8 4.5 8-4.5M12 12v9" />
     </>
   ),
 };

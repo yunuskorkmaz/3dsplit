@@ -98,7 +98,6 @@ test('X36 çizgi aracı, X35 deneme parçası, X27 ayrık görünüm', async ({ 
 
   // geçmiş: başlangıca dön, sonra son adıma geri gel
   const steps = (await state(page)).undoStack.length;
-  await page.getByRole('heading', { name: /Geçmiş/ }).click();
   await page.getByRole('button', { name: 'Başlangıç' }).click();
   expect((await state(page)).undoStack.length).toBe(0);
   await page.locator('ol.history li').last().locator('button').click();

@@ -21,7 +21,7 @@ import { get, set, type Tool, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
 import { Header } from './Header';
 import { HelpDialog } from './HelpDialog';
-import { HistoryPanel } from './HistoryPanel';
+import { HistoryBar } from './HistoryPanel';
 import { ModelPanel } from './ModelTree';
 import { NavBar } from './NavBar';
 import { CutActions, CutPanel, StatusBar } from './Panels';
@@ -198,11 +198,9 @@ export function App() {
           <CutPanel />
           <CutActions />
         </div>
-        <div className="timeline">
-          <HistoryPanel />
-        </div>
         <StatusBar />
       </main>
+      <HistoryBar />
       <HelpDialog />
     </div>
   );

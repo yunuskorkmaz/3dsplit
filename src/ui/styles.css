@@ -96,41 +96,6 @@ select {
 .float .hint {
   margin: 4px 0 6px;
 }
-.timeline {
-  position: absolute;
-  z-index: 4;
-  left: 310px;
-  bottom: 10px;
-  max-width: calc(100% - 520px);
-  background: rgba(18, 20, 24, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(16px);
-  padding: 4px 8px;
-}
-.timeline section {
-  border: 0;
-  padding: 4px 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.timeline h3 {
-  margin: 0;
-  flex: none;
-}
-.timeline ol.history {
-  display: flex;
-  max-height: none;
-  overflow-x: auto;
-  gap: 4px;
-}
-.timeline ol.history li button {
-  width: auto;
-  border-radius: 999px;
-  white-space: nowrap;
-}
 /* X84: simgeli, gruplu şerit; üst çubuğun altında sabit */
 .ribbon {
   display: flex;
@@ -1138,40 +1103,82 @@ ol.steps li {
   margin: 2px 0 0;
 }
 
-/* geçmiş zaman çizelgesi */
-ol.history {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 260px;
-  overflow-y: auto;
+/* X88: en altta geçmiş şeridi */
+.history-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: #18191c;
+  border-top: 1px solid #2c2e33;
 }
-ol.history li button {
-  width: 100%;
-  text-align: left;
+.history-bar .hname {
+  color: #8b93a0;
+  font-size: 12px;
+}
+.history-bar .hnav {
+  display: flex;
+  gap: 2px;
+}
+.history-bar .hnav button {
+  padding: 2px 6px;
   background: transparent;
   border-color: transparent;
-  padding: 2px 6px;
+  font-size: 11px;
+  color: #c9ced6;
+}
+.history-bar .hnav button:hover:not(:disabled) {
+  background: #262930;
+}
+.history-bar .hcount {
+  color: #7d8592;
+  font-size: 11px;
+}
+ol.history {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 3px;
+  list-style: none;
+  padding: 2px 0;
+  margin: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+ol.history li {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+ol.history li button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  background: #24262b;
+  border: 1px solid #34373e;
+  border-radius: 5px;
+  color: #c9ced6;
 }
 ol.history li button:hover {
-  background: #3a3c42;
+  border-color: #6b7380;
 }
-ol.history li.current button {
-  background: #2f6fd655;
-  border-color: #2f6fd6;
+/* bulunulan adımdan sonra mavi çizgi */
+ol.history li.current::after {
+  content: "";
+  width: 3px;
+  height: 24px;
+  margin-left: 4px;
+  border-radius: 2px;
+  background: #2f6fd6;
 }
 ol.history li.undone button {
-  color: #777;
-  font-style: italic;
+  opacity: 0.35;
 }
-ol.history .step {
-  color: #777;
-  min-width: 20px;
-  text-align: right;
-}
-
 /* kesim paneli: sade görünüm + gelişmiş ayarlar */
 .pin-placement {
   margin-top: 6px;

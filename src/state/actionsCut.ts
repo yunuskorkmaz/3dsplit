@@ -1,4 +1,4 @@
-import type { CutOptions } from '../core/cut';
+import type { CutMode, CutOptions } from '../core/cut';
 import { boundingBox } from '../core/geometry';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { geometry } from '../worker/client';
@@ -100,14 +100,28 @@ let suggestTimer: ReturnType<typeof setTimeout> | null = null;
 let suggestSeq = 0;
 
 /** X5: boyama durulunca aktif slot bölgesi için kesim modu önerisini (Worker'da) yeniler. */
+/** X78: son istenen öneri sonuçlanınca (ya da gerek kalmayınca) çözülür. */
+let suggestionSettled: Promise<void> = Promise.resolve();
+let settleSuggestion: (() => void) | null = null;
+
 export function scheduleSuggestion(): void {
   if (suggestTimer) clearTimeout(suggestTimer);
+  if (!settleSuggestion)
+    suggestionSettled = new Promise((resolve) => {
+      settleSuggestion = resolve;
+    });
   suggestTimer = setTimeout(async () => {
     const part = selectedPart();
     const slot = get().activeSlot;
     const seq = ++suggestSeq;
+    const settle = () => {
+      if (seq !== suggestSeq) return;
+      settleSuggestion?.();
+      settleSuggestion = null;
+    };
     if (!part || slot === BASE_SLOT || !part.mesh.labels.includes(slot)) {
       set({ suggestion: null });
+      settle();
       return;
     }
     try {
@@ -120,6 +134,8 @@ export function scheduleSuggestion(): void {
         set({ cut: { ...cut, mode: s.mode } });
     } catch {
       if (seq === suggestSeq) set({ suggestion: null });
+    } finally {
+      settle();
     }
   }, 400);
 }
@@ -143,11 +159,38 @@ function seamOptions(loop: number[]): CutOptions {
 export async function togglePreview(): Promise<void> {
   if (get().previewActive) return set({ previewActive: false, preview: null });
   if (!seamReady() && !cutTarget()) return;
+  autoOpened = false;
   set({ previewActive: true });
   await refreshPreview(true);
 }
 
 let previewSeq = 0;
+
+/** X78: önizlemeyi boya açtı (Space değil). Yavaş parçada sonraki değişiklikte kapanır. */
+let autoOpened = false;
+
+/** X78: bundan uzun süren önizleme canlı önizlemeyi o parçada kapatır, ms. */
+const SLOW_PREVIEW_MS = 1500;
+
+/** X78: bu meshte bu modun önizlemesi uzun sürdü mü. */
+export function isSlowPreview(
+  list: { mesh: LabeledMesh; mode: CutMode }[],
+  mesh: LabeledMesh,
+  mode: CutMode,
+): boolean {
+  return list.some((x) => x.mesh === mesh && x.mode === mode);
+}
+
+/** Meshi o mod için yavaş listesine ekler ya da çıkarır (son 8 kayıt tutulur). */
+function markSlow(mesh: LabeledMesh, mode: CutMode, slow: boolean): void {
+  const list = get().slowPreview;
+  if (slow === isSlowPreview(list, mesh, mode)) return;
+  set({
+    slowPreview: slow
+      ? [...list, { mesh, mode }].slice(-8)
+      : list.filter((x) => x.mesh !== mesh || x.mode !== mode),
+  });
+}
 
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -166,13 +209,19 @@ async function refreshPreview(loud = false): Promise<void> {
   }
   const target = seam?.part ?? part;
   if (!target) return;
+  // X78: boyarken kendiliğinden açılan önizleme
+  const live = !loud && autoOpened && !seam;
   const run = async () => {
     try {
-      const p = await geometry.preview(
-        target.mesh,
-        seam ? seamOptions(seam.loop) : cutOptions(),
-        geomKey(target.mesh),
-      );
+      // mod öneriyi izliyorsa önce öneri gelsin: yanlış modda boşuna hesap yapılmaz
+      if (live && !get().cutModeManual) {
+        await suggestionSettled;
+        if (seq !== previewSeq) return;
+      }
+      const opts = seam ? seamOptions(seam.loop) : cutOptions();
+      const started = performance.now();
+      const p = await geometry.preview(target.mesh, opts, geomKey(target.mesh));
+      if (!seam) markSlow(target.mesh, opts.mode, performance.now() - started > SLOW_PREVIEW_MS);
       // bu arada yeni istek geldiyse ya da mod kapandıysa eski sonucu gösterme
       if (seq !== previewSeq || !get().previewActive) return;
       if (loud) for (const w of p.warnings) notify('warn', w);
@@ -188,12 +237,13 @@ async function refreshPreview(loud = false): Promise<void> {
 }
 
 /**
- * X74: Pimli kes'te boya, slot, parça ya da mod değişince önizleme kendiliğinden
- * açılır (Space'e basmadan pin görünür). Space ile kapatılırsa bir sonraki
- * boyaya kadar kapalı kalır. Gecikme ve eski sonucu atma aşağıdaki yenilemede.
+ * X74/X78: boya, slot, parça ya da mod değişince önizleme kendiliğinden açılır
+ * (üç modda da; Space'e basmadan pin ve tapa görünür). Space ile kapatılırsa bir
+ * sonraki boyaya kadar kapalı kalır. Önizlemesi uzun süren parçada açılmaz.
+ * Gecikme ve eski sonucu atma aşağıdaki yenilemede.
  */
 useStore.subscribe((s, prev) => {
-  if (s.previewActive || s.cut.mode !== 'keys' || s.tool === 'seam') return;
+  if (s.previewActive || s.tool === 'seam') return;
   if (
     s.paintVersion === prev.paintVersion &&
     s.activeSlot === prev.activeSlot &&
@@ -203,6 +253,8 @@ useStore.subscribe((s, prev) => {
     return;
   const part = s.parts.find((p) => p.id === s.selectedPartId);
   if (!part || s.activeSlot === BASE_SLOT || !part.mesh.labels.includes(s.activeSlot)) return;
+  if (isSlowPreview(s.slowPreview, part.mesh, s.cut.mode)) return;
+  autoOpened = true;
   set({ previewActive: true });
   schedulePreview();
 });
@@ -231,6 +283,15 @@ useStore.subscribe((s, prev) => {
     s.tool === prev.tool
   )
     return;
+  // X78: kendiliğinden açılan önizleme yavaş parçada yenilenmez, kapanır (Space ile açılır)
+  const part = s.parts.find((p) => p.id === s.selectedPartId);
+  if (autoOpened && part && isSlowPreview(s.slowPreview, part.mesh, s.cut.mode)) {
+    if (previewTimer) clearTimeout(previewTimer);
+    previewTimer = null;
+    previewSeq++;
+    set({ previewActive: false, preview: null });
+    return;
+  }
   schedulePreview();
 });
 

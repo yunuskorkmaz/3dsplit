@@ -9,6 +9,7 @@ import {
   clearPins,
   clearSlotPaint,
   deletePart,
+  isSlowPreview,
   makeToleranceCoupon,
   modelExtent,
   refineSelected,
@@ -432,6 +433,7 @@ export function CutActions() {
 const NO_WARNINGS: string[] = [];
 
 export function CutPanel() {
+  const keys = useKeymap((s) => s.map);
   const cut = useStore((s) => s.cut);
   const tool = useStore((s) => s.tool);
   const pinCount = useStore((s) => s.pins.length);
@@ -442,6 +444,11 @@ export function CutPanel() {
   const previewWarnings = useStore((s) =>
     s.previewActive ? (s.preview?.warnings ?? NO_WARNINGS) : NO_WARNINGS,
   );
+  // X78: önizlemesi uzun süren parçada canlı önizleme kapalı
+  const slowPreview = useStore((s) => {
+    const part = s.parts.find((p) => p.id === s.selectedPartId);
+    return !!part && isSlowPreview(s.slowPreview, part.mesh, s.cut.mode);
+  });
   const [ringOpen, setRingOpen] = useState(false);
   useStore((s) => s.paintVersion);
   const islands = cut.mode === 'socket' ? activeIslands() : [];
@@ -497,6 +504,11 @@ export function CutPanel() {
               <li key={w}>{w}</li>
             ))}
           </ul>
+        )}
+        {slowPreview && !previewOn && tool !== 'seam' && (
+          <p className="hint slow-preview">
+            Bu model büyük: önizleme için {keys.preview}. Boyarken kendiliğinden açılmaz.
+          </p>
         )}
         <p className="hint">{modeHint}</p>
         {tool === 'seam' && (

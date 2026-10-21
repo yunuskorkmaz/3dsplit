@@ -43,8 +43,15 @@ test('yükle → Smart Fill → Socket kes → 3MF', async ({ page }) => {
   });
   expect(painted).toBeGreaterThan(50);
 
-  // Socket varsayılan; önizleme ve kes
-  await page.getByRole('button', { name: 'Önizleme', exact: true }).click();
+  // Socket varsayılan; X78: önizleme Space'siz açılır, sonra kes
+  await expect
+    .poll(
+      () =>
+        // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+        page.evaluate(() => (window as any).app.store.get().preview?.volumes?.length ?? 0),
+      { timeout: 30_000 },
+    )
+    .toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Kes', exact: true }).click();
   await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('ul.parts li')).toHaveCount(3);

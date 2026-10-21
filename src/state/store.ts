@@ -186,6 +186,12 @@ export interface AppState {
    * değişince önizleme kendiliğinden yenilenir (kapanmaz).
    */
   previewActive: boolean;
+  /**
+   * X78: son önizlemesi uzun süren (1,5 s üstü) parça meshleri, kesim modu başına.
+   * Bunlarda önizleme kendiliğinden açılmaz; Space ile açılır. Mesh değişince
+   * (kesim, onarım, ölçek) düşer.
+   */
+  slowPreview: { mesh: LabeledMesh; mode: CutMode }[];
   /** Socket yön gizmosu açık mı. */
   directionGizmo: boolean;
   preview: CutPreview | null;
@@ -261,6 +267,7 @@ export const useStore = create<AppState>(() => ({
   directionGizmo: false,
   preview: null,
   previewActive: false,
+  slowPreview: [],
   suggestion: null,
   cutModeManual: false,
   errorLoops: null,

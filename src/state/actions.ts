@@ -1,4 +1,5 @@
 export {
+  isSlowPreview,
   makeToleranceCoupon,
   refineSelected,
   regionFrame,

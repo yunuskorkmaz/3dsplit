@@ -19,6 +19,7 @@ import {
 import { type Command, commandFor, keyName, shortcutCapture } from '../state/keymap';
 import { get, set, type Tool, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
+import { CommandPalette } from './CommandPalette';
 import { Header } from './Header';
 import { HelpDialog } from './HelpDialog';
 import { HistoryBar } from './HistoryPanel';
@@ -97,6 +98,12 @@ function useShortcuts() {
         return;
       if (target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') return;
       const mod = e.metaKey || e.ctrlKey;
+      // X90: komut arama
+      if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        set((s) => ({ paletteOpen: !s.paletteOpen }));
+        return;
+      }
       if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) redo();
@@ -204,6 +211,7 @@ export function App() {
       </main>
       <HistoryBar />
       <HelpDialog />
+      <CommandPalette />
     </div>
   );
 }

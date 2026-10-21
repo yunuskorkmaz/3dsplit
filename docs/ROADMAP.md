@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-21):** A1–E2 ve X1–X83 bitti (Sprint 8: `docs/ux-plan.md`). Yeni iş **X84** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-21):** A1–E2 ve X1–X90 bitti (Sprint 8 ve 9: `docs/ux-plan.md`). Yeni iş **X91** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -72,7 +72,7 @@ Ekran davranışları: [docs/ux-plan.md](ux-plan.md) (Sprint 9). Kaynak: SolidCr
 | X87 | Alt ortada gezinme çubuğu; Kamera paneli kalkar | Kamera ayarları sol panelde gizli | [x] |
 | X88 | Altta simgeli geçmiş şeridi; Geçmiş paneli kalkar | Geçmiş katlı panelde, yazıyla | [x] |
 | X89 | Tapa derinliği, pim ölçüsü ve fırça çapı model üstünde | Değer girmek için gözü panele kaydırmak gerekiyor | [x] |
-| X90 | Ctrl+K komut arama | Komutların yeri bilinmeden bulunamıyor | [ ] |
+| X90 | Ctrl+K komut arama | Komutların yeri bilinmeden bulunamıyor | [x] |
 
 ## Ana akış
 
@@ -324,3 +324,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-21 | X87: alt ortada gezinme çubuğu (`src/ui/NavBar.tsx`): Döndür, Kaydır, Yakınlaştır kipleri sol tuşu kameraya verir (model üstünde de boyamaz; Esc, ikinci tık ya da araç seçimi bırakır); Hepsini sığdır (yön korunur), Seçiliyi sığdır, Ev (önden, Home), Görünüşler (Ön, Arka, Sağ, Sol, Üst, Alt, Eğik), Tabla, ⚙ (Varsayılan/Blender, Ters yakınlaştırma). Kamera paneli ve küpün altındaki Sığdır kalktı. `e2e/navbar.spec.ts`; npm test 111, Chrome e2e 21, e2e 24 | — |
 | 2026-10-21 | X88: Geçmiş paneli yerine en altta tam genişlikte şerit: |◀ ◀ ▶ ▶|, Başlangıç ve her adım bir simge (kayıt türü ve adından: fırça, silgi, akıllı seç, kova, çizgi, yumuşat, pim, aç, kes modları, onar, incelt, ölçek, sil). Boyama adımı boyanan rengin renginde; bulunulan adımdan sonra mavi çizgi, geri alınmış adımlar soluk; değişince bulunulan adım görünür kayar. Sağda "bulunulan/toplam". `e2e/history.spec.ts`; tools testi yeni şeride göre; npm test 111, Chrome e2e 22, e2e 25 | — |
 | 2026-10-21 | X89: `src/ui/ValueTags.tsx`. Tapa yön oku görünürken okun dibinde derinlik kutusu; arkada kalırsa (kameradan ışın modele önce çarparsa) gizlenir. Pimli kes'te seçili pimin yanında "Ø · boy" kutusu. İkisi tıklanınca yazılır: Enter ya da odak kaybı uygular, Esc vazgeçer. Fırça, Silgi, Yumuşat'ta çap [ ] ya da Alt+tekerlekle değişince imleç yanında 1 s "Ø … mm". Konum bir kare sonra ve kamera değişince yenilenir. `e2e/value-tags.spec.ts`; npm test 111, Chrome e2e 23, e2e 26 | — |
+| 2026-10-21 | X90: Ctrl/Cmd+K ya da üst çubukta "Komut ara" (`src/ui/CommandPalette.tsx`): araçlar, kesim modları, Kes, Önizleme, Çıkıntıları öner, renk, Mesh, Düzen, dosya ve dışa aktarma, geri al/yinele, sığdırma ve 7 görünüş, Tabla, Yardım. Türkçe harf ve büyük/küçük duyarsız (`yapistir` → Yapıştır), bütün sözcükler adda ya da ek sözcüklerde geçmeli; adın başında geçen önce. Boşken son kullanılan 5 komut önde (tarayıcıda). ↑ ↓ Enter Esc. O an çalışmayan komut soluk, nedeni yanında ("seçili parça yok"). `e2e/palette.spec.ts`; npm test 111, Chrome e2e 24, e2e 27 | — |

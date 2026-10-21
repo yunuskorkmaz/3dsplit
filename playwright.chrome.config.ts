@@ -11,6 +11,7 @@ export default defineConfig({
     'navbar.spec.ts',
     'history.spec.ts',
     'value-tags.spec.ts',
+    'palette.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

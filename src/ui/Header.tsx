@@ -14,6 +14,8 @@ import { useKeymap } from '../state/keymap';
 import { get, set, useStore } from '../state/store';
 import { StepBar } from './StepBar';
 
+const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
+
 /** Menüden bir öğe seçilince açılır listeyi kapatır. */
 function closeMenu(e: React.MouseEvent) {
   (e.currentTarget.closest('details') as HTMLDetailsElement | null)?.removeAttribute('open');
@@ -111,6 +113,15 @@ export function Header() {
       <span className="spacer" />
       <StepBar />
       <span className="spacer" />
+      <button
+        type="button"
+        className="search-btn"
+        onClick={() => set({ paletteOpen: true })}
+        title="Bütün komutlar: araçlar, kesim, mesh, dosya, görünüşler"
+      >
+        <span>Komut ara</span>
+        <kbd>{IS_MAC ? '⌘K' : 'Ctrl+K'}</kbd>
+      </button>
       <button
         type="button"
         className="help-btn"

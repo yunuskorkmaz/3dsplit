@@ -185,6 +185,8 @@ export interface AppState {
   explode: number;
   /** X26: yardım penceresi açık mı. */
   helpOpen: boolean;
+  /** X90: komut arama açık. */
+  paletteOpen: boolean;
   /**
    * Önizleme modu açık mı. Açıkken kesim ayarı, pim, slot, boyama veya parça
    * değişince önizleme kendiliğinden yenilenir (kapanmaz).
@@ -270,6 +272,7 @@ export const useStore = create<AppState>(() => ({
   line: { partId: null, anchors: [], path: [] },
   explode: 0,
   helpOpen: false,
+  paletteOpen: false,
   directionGizmo: false,
   preview: null,
   previewActive: false,

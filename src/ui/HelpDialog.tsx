@@ -16,12 +16,12 @@ const TABS: { id: Tab; label: string }[] = [
 /** Araç çubuğundaki kısa ipucuna ek, yardımda gösterilen ayrıntı. */
 const TOOL_DETAILS: Record<string, string> = {
   smart:
-    'Çıkıntıya (göz, burun, kaş) tıkla: çevresindeki kıvrıma kadar seçer. Taşarsa üst şeritten açıyı düşür ya da Shift+sağ sürükle. Shift+tık seçimi siler.',
+    'Çıkıntıya (göz, burun, kaş) tıkla: çevresindeki kıvrıma kadar seçer. Taşarsa sağdaki pencerede açıyı düşür ya da Shift+sağ sürükle. Shift+tık seçimi siler.',
   brush:
     'Smart Fill eksik bıraktıysa sürükleyerek ekle. Yarıçap: Alt+tekerlek veya [ ]. Shift basılıyken siler.',
   erase: 'Fazla seçilen yeri sürükleyerek geri al. Shift basılıyken boyar.',
   smooth:
-    'Seçimin kenarında gezdir: tırtıklı sınırı düzgün bir eğriye çeker. Güç arttıkça daha çok düzeltir. Üst şeritteki "Tüm sınırı yumuşat" bütün sınırı bir kerede düzeltir.',
+    'Seçimin kenarında gezdir: tırtıklı sınırı düzgün bir eğriye çeker. Güç arttıkça daha çok düzeltir. Sağdaki penceredeki "Tüm sınırı yumuşat" bütün sınırı bir kerede düzeltir.',
   bucket: 'Tıklanan aynı renkli bağlı bölgeyi aktif slota boyar.',
   line: 'Doğal kıvrımı olmayan bölgeler için: yüzeye noktalar tıkla, yol yüzey üzerinden en kısa yoldan geçer. İlk noktaya tıklayınca ya da Enter ile halka kapanır, içi aktif slota boyanır ve kenar çizgi boyunca düzeltilip üçgenlerin içinden geçirilir. Backspace son noktayı siler, Esc iptal eder.',
   seam: 'Kol ve bacak için: yüzeye kapalı bir halka çiz. İçi boyanmaz. Kes, halkanın düzleminden iki parça ayırır. Pimli kes seçiliyse kesite pim konur; değilse yapıştırmalık kalır. Halka düz değilse ya da düzlem modeli birden fazla yerden kesiyorsa kesim durur ve halka kırmızı çizilir.',
@@ -79,8 +79,8 @@ function Workflow() {
       </li>
       <li>
         <b>Bölgeyi seç.</b> Smart Fill (F) ile çıkıntıya tıkla, Fırça (B) / Silgi (E) ile düzelt,
-        Yumuşat (S) ile kenarı düzgünleştir. Çift özelliklerde (iki göz) üst şeritteki Ayna'yı aç.
-        Renk satırındaki göz boyayı yalnız görüntüde gizler. Satırdaki ⋯ ya da sağ tık: “Seçili
+        Yumuşat (S) ile kenarı düzgünleştir. Çift özelliklerde (iki göz) sağdaki pencerede Ayna'yı
+        aç. Renk satırındaki göz boyayı yalnız görüntüde gizler. Satırdaki ⋯ ya da sağ tık: “Seçili
         parçada temizle” boyayı siler, “Rengi kaldır” rengi listeden çıkarır. Tek bir yeri silmek
         için Akıllı seç’te Shift+tık, Silgi, "Seçimi temizle" (Delete) ya da Ctrl/Cmd+Z. Sol
         paneldeki Geçmiş'ten istediğin adıma dönebilirsin.

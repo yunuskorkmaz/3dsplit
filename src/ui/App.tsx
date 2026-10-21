@@ -24,7 +24,7 @@ import { HelpDialog } from './HelpDialog';
 import { HistoryPanel } from './HistoryPanel';
 import { ModelPanel } from './ModelTree';
 import { CameraPanel, CutActions, CutPanel, StatusBar } from './Panels';
-import { ToolBar, ToolOptions, ViewCube } from './Toolbar';
+import { ToolBar, ToolPanel, ViewCube } from './Toolbar';
 import { fitView, ViewportHost } from './ViewportHost';
 
 function openModel(): void {
@@ -182,15 +182,13 @@ export function App() {
       <main className="stage">
         <ViewportHost />
         <EmptyStage />
-        <div className="top-stack">
-          <ToolOptions />
-        </div>
         <ViewCube onFit={fitView} />
         <div className="float side-left">
           <ModelPanel />
           <CameraPanel />
         </div>
-        <div className="float side-right">
+        <div className="float side-right tool-window">
+          <ToolPanel />
           <CutPanel />
           <CutActions />
         </div>

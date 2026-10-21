@@ -86,7 +86,7 @@ test('X66: meşgulken İptal görünür', async ({ page }) => {
     // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
     (window as any).app.store.set({ busy: 'Kesiliyor…' });
   });
-  const cancel = page.getByRole('button', { name: 'İptal' });
+  const cancel = page.locator('.msg.busy').getByRole('button', { name: 'İptal' });
   await expect(cancel).toBeVisible();
   await cancel.click();
   await page.keyboard.press('Escape');

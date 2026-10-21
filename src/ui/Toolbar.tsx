@@ -24,6 +24,7 @@ import { useKeymap } from '../state/keymap';
 import { set, type Tool, useStore } from '../state/store';
 import { NumberField, Toggle } from './fields';
 import { Icon, type IconName } from './icons';
+import { Panel } from './Panel';
 import { cameraCssMatrix, fitView, viewToward, watchCamera } from './ViewportHost';
 
 export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: string }[] = [
@@ -473,7 +474,6 @@ export function ToolOptions() {
     tool === 'smooth' ||
     tool === 'bucket' ||
     tool === 'line';
-  const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
   useStore((s) => s.selectedPartId);
   const info = TOOLS.find((t) => t.id === tool);
   const radius = (
@@ -491,14 +491,6 @@ export function ToolOptions() {
   );
   return (
     <div className="tool-options">
-      <span className="tool-name">
-        {info?.label}
-        {slot && (
-          <span className="slot-chip" style={{ background: slot.color }}>
-            {slot.name}
-          </span>
-        )}
-      </span>
       {tool === 'smart' && (
         <>
           <NumberField
@@ -617,7 +609,9 @@ export function ToolOptions() {
         </>
       )}
       {tool === 'pin' && cut.mode !== 'keys' && (
-        <span className="tool-hint">Pimler Keys kesiminde kullanılır; sağ panelde Keys'i seç.</span>
+        <span className="tool-hint">
+          Pimler Pimli kes'te kullanılır; şeritte Pimli kes'i seçin.
+        </span>
       )}
       {tool === 'pin' && cut.mode === 'keys' && !pin && (
         <span className="label">
@@ -759,5 +753,32 @@ export function ToolOptions() {
       )}
       <span className="tool-hint">{info?.hint}</span>
     </div>
+  );
+}
+
+/** X86: sağdaki pencerenin üst bölümü: seçili aracın ayarları alt alta. */
+export function ToolPanel() {
+  const tool = useStore((s) => s.tool);
+  const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
+  const keys = useKeymap((s) => s.map);
+  const info = TOOLS.find((t) => t.id === tool);
+  return (
+    <Panel
+      id="tool"
+      title={
+        <span className="tool-name">
+          <Icon name={tool as IconName} size={16} />
+          {info?.label}
+          <kbd>{keys[`tool.${tool}`]}</kbd>
+          {slot && tool !== 'seam' && tool !== 'pin' && (
+            <span className="slot-chip" style={{ background: slot.color }}>
+              {slot.name}
+            </span>
+          )}
+        </span>
+      }
+    >
+      <ToolOptions />
+    </Panel>
   );
 }

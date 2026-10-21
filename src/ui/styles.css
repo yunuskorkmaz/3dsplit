@@ -75,15 +75,15 @@ select {
   overflow: auto;
 }
 .float.side-left {
-  top: 60px;
+  top: 10px;
   left: 10px;
   width: 290px;
   max-height: calc(100% - 78px);
 }
 .float.side-right {
-  top: 60px;
+  top: 10px;
   right: 10px;
-  width: 248px;
+  width: 280px;
   max-height: calc(100% - 78px);
 }
 .float section {
@@ -130,20 +130,6 @@ select {
   width: auto;
   border-radius: 999px;
   white-space: nowrap;
-}
-.top-stack {
-  position: absolute;
-  z-index: 5;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
-}
-.top-stack > * {
-  pointer-events: auto;
 }
 /* X84: simgeli, gruplu şerit; üst çubuğun altında sabit */
 .ribbon {
@@ -260,8 +246,8 @@ select {
 .viewcube {
   position: absolute;
   z-index: 4;
-  top: 64px;
-  right: 272px;
+  top: 14px;
+  right: 302px;
   width: 148px;
   margin: 0;
   padding: 0;
@@ -667,17 +653,87 @@ section .scrub .scrub-label {
 .toolbar button.active .key {
   color: #dde;
 }
-main .tool-options {
-  min-height: 0;
+/* X86: araç penceresinde ayarlar alt alta */
+.tool-window .tool-options {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.tool-window .tool-options > button,
+.tool-window .tool-options .mirror-group {
+  align-self: flex-start;
+}
+.tool-window .tool-options .mirror-group {
+  flex-wrap: wrap;
+  padding: 6px 0 0;
+  border-left: 0;
+  border-top: 1px solid #33353a;
+  align-self: stretch;
+}
+.tool-window .tool-hint {
+  white-space: normal;
+  color: #8b93a0;
+}
+.tool-name kbd,
+.preview-toggle kbd {
+  font: inherit;
+  font-size: 10px;
+  color: #8b93a0;
+  border: 1px solid #44464d;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.tool-name .icon {
+  color: #8fb8ff;
+}
+.selection-row {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: 6px 12px;
-  padding: 5px 10px;
-  background: rgba(18, 20, 24, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  gap: 6px;
+  padding: 5px 6px;
+  margin-bottom: 6px;
+  background: #2b2d31;
+  border: 1px solid #3a3c42;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.selection-row.empty {
+  color: #8b93a0;
+}
+.selection-row .swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex: none;
+}
+.selection-row .sel-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.selection-row .sel-clear {
+  padding: 0 6px;
+  background: transparent;
+  border-color: transparent;
+  color: #aaa;
+}
+.selection-row .sel-clear:hover {
+  color: #fff;
+}
+.cut-actions {
+  flex-direction: column;
+}
+.cut-actions .row {
+  display: flex;
+  gap: 6px;
+}
+.cut-actions .preview-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .tool-name {
   font-weight: 600;

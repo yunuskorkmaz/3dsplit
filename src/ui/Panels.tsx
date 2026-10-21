@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { PinShape } from '../core/cut';
 import {
   activeIslands,
+  clearActiveSlot,
   clearPins,
   isSlowPreview,
   makeToleranceCoupon,
@@ -10,7 +11,7 @@ import {
   togglePreview,
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
-import { type CutSettings, dismiss, set, setCameraPrefs, useStore } from '../state/store';
+import { type CutSettings, dismiss, get, set, setCameraPrefs, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
 import { NumberField } from './fields';
 import { Group, Panel } from './Panel';
@@ -81,26 +82,80 @@ const TOLERANCE_PRESETS = [
 ];
 
 /** Sağ panelin altına sabit: önizleme ve kesim düğmeleri. */
+/** X86: pencerenin altı: Önizleme kutusu (Space), İptal ve Kes. İptal boyayı silmez. */
 export function CutActions() {
   const previewOn = useStore((s) => s.previewActive);
   const activeSlot = useStore((s) => s.activeSlot);
   const hasParts = useStore((s) => s.parts.length > 0);
+  const tool = useStore((s) => s.tool);
   const keys = useKeymap((s) => s.map);
   const seamReady = useStore((s) => s.tool === 'seam' && !!s.line.closed && !s.line.bad);
   const disabled = !hasParts || (!seamReady && activeSlot === 0);
   return (
     <div className="cut-actions">
+      <label className="field preview-toggle" title={`Kesimi uygulamadan göster (${keys.preview})`}>
+        <input
+          type="checkbox"
+          disabled={disabled}
+          checked={previewOn}
+          onChange={() => togglePreview()}
+        />
+        <span>Önizleme</span>
+        <kbd>{keys.preview}</kbd>
+      </label>
+      <div className="row">
+        <button
+          type="button"
+          disabled={!previewOn && tool === 'smart'}
+          onClick={() => {
+            if (get().previewActive) togglePreview();
+            set({ tool: 'smart' });
+          }}
+          title="Önizlemeyi kapatır ve Akıllı seç'e döner; boya kalır"
+        >
+          İptal
+        </button>
+        <button type="button" disabled={disabled} className="primary" onClick={runCut}>
+          Kes
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** X86: kesilecek seçim: renk, parça, üçgen sayısı; × o boyayı siler (Ctrl+Z geri getirir). */
+function SelectionRow() {
+  const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
+  const part = useStore((s) => s.parts.find((p) => p.id === s.selectedPartId));
+  const paintVersion = useStore((s) => s.paintVersion);
+  const count = useMemo(() => {
+    void paintVersion;
+    if (!part || !slot || slot.id === 0) return 0;
+    let n = 0;
+    for (const l of part.mesh.labels) if (l === slot.id) n++;
+    return n;
+  }, [part, slot, paintVersion]);
+  if (!part) return null;
+  if (!slot || slot.id === 0 || count === 0)
+    return (
+      <div className="selection-row empty">
+        Seçim yok: önce bir bölge boyayın{slot && slot.id !== 0 ? ` (${slot.name})` : ''}.
+      </div>
+    );
+  return (
+    <div className="selection-row" title="Kesilecek bölge">
+      <span className="swatch" style={{ background: slot.color }} />
+      <span className="sel-text">
+        <b>{slot.name}</b> · {part.name} · {count.toLocaleString('tr-TR')} üçgen
+      </span>
       <button
         type="button"
-        disabled={disabled}
-        className={previewOn ? 'active' : ''}
-        onClick={togglePreview}
-        title={`Kesimi uygulamadan göster (${keys.preview})`}
+        className="sel-clear"
+        aria-label="Seçimi temizle"
+        title="Bu boyayı siler (Ctrl+Z geri getirir)"
+        onClick={clearActiveSlot}
       >
-        Önizleme
-      </button>
-      <button type="button" disabled={disabled} className="primary" onClick={runCut}>
-        Kes
+        ×
       </button>
     </div>
   );
@@ -155,6 +210,7 @@ export function CutPanel() {
       title={`${modeTitle} — ${tool === 'seam' ? 'dikiş' : activeSlot === 0 ? 'renk seçin' : slotName}`}
     >
       <div id="kesim">
+        {tool !== 'seam' && <SelectionRow />}
         <label
           className="field"
           title="Kesimden önce boyanın tırtıklı sınırını üçgenlerin içinden geçirir. Boyama değişmez; kapatınca kenar üçgen kenarında kalır"

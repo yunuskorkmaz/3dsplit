@@ -184,6 +184,13 @@ Olacak: sağda tek pencere, başlığı aktif araç ya da kesim modu, simgesiyle
 - Şeritte Tapa / Pimli kes / Yapıştır'a basınca pencere kesim bölümüne kayar; boya yoksa "Önce bir bölge boyayın" yazar ve Kes kapalıdır.
 - Pencere başlığından katlanabilir; × yok (her zaman bir araç seçili).
 
+Uygulamada:
+
+- Pencerede mod düğmeleri yok: mod şeritten seçilir, başlıkta yazar ("Tapa — Renk 1"). Aynı düğme iki yerde olunca hangisinin seçili olduğu karışıyordu.
+- Önizleme kutusu, İnce ayar'ın altında değil pencerenin altındaki sabit bölümde, İptal / Kes'in üstünde: uzun ayar listesinde de görünür kalır.
+- Kes düğmesi yeşil kaldı (bugünkü renk).
+- Şerit altındaki ayar satırı kalktı; paneller üstten 10 px başlar. Sağ pencere 280 px.
+
 Kabul: e2e: Akıllı seç ayarları pencerede; boya sonrası seçim satırı ve Kes görünür; × boyayı siler, Ctrl+Z geri getirir; İptal önizlemeyi kapatır, boya kalır.
 
 ## X87 Gezinme çubuğu

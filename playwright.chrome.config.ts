@@ -7,6 +7,7 @@ export default defineConfig({
     'views.spec.ts',
     'ribbon.spec.ts',
     'tree.spec.ts',
+    'tool-window.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

@@ -24,6 +24,8 @@ export interface Part {
   /** Parçanın tek renkle gösterileceği slot (kesimden çıkan parçalar için). */
   colorSlot: number;
   manifold: boolean;
+  /** X98: parçayı üreten işlem: "Kes 2" ve ayrıntısı ("Tapa · Seçim 1"). Açılan modelde yok. */
+  origin?: { feature: string; detail: string };
 }
 
 export interface Slot {

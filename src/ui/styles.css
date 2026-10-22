@@ -1644,3 +1644,48 @@ ul.slots li.hidden-slot .name {
 .notice-card p {
   margin: 0 0 8px;
 }
+
+/* X98: gövde rengi, kökeni, işlemler */
+ul.parts li .body-swatch {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #0006;
+}
+.part-origin {
+  padding: 0 0 2px 50px;
+  color: #7d8592;
+  font-size: 11px;
+}
+ol.features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+ol.features li button {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  padding: 3px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  text-align: left;
+  font-size: 12px;
+}
+ol.features li button:hover {
+  background: #ffffff0a;
+  border-color: #34373e;
+}
+ol.features .ftitle {
+  font-weight: 600;
+}
+ol.features .fdetail {
+  color: #8b93a0;
+}
+ol.features .fbodies {
+  flex-basis: 100%;
+  color: #b9bec7;
+}

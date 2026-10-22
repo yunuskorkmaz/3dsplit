@@ -53,7 +53,7 @@ test('X96: sadeleştirme, öneri kartı, gizli kaynak GPU’da tutulmaz', async 
   const nose = await screenOf(page, [0, -16.9, 62]);
   await page.mouse.click(nose.x, nose.y);
   await page.locator('.cut-actions').getByRole('button', { name: 'Kes', exact: true }).click();
-  await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
   const inScene = () =>
     page.evaluate(() => {
       // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası

@@ -305,6 +305,26 @@ useStore.subscribe((s, prev) => {
   schedulePreview();
 });
 
+/** X98: sıradaki "Gövde N" ve "Kes K" numaraları (gizli önceki haller dahil). */
+function nextNumbers(parts: Part[]): { body: number; cut: number } {
+  let body = 0;
+  let cut = 0;
+  for (const p of parts) {
+    const b = /^Gövde (\d+)$/.exec(p.name);
+    if (b) body = Math.max(body, Number(b[1]));
+    const c = p.origin && /^Kes (\d+)$/.exec(p.origin.feature);
+    if (c) cut = Math.max(cut, Number(c[1]));
+  }
+  return { body: body + 1, cut: cut + 1 };
+}
+
+/** X98: kesilen seçim tüketilir: o setin boyası yeni gövdelerden silinir, renk gövdeye geçer. */
+function consumeSelection(mesh: LabeledMesh, slot: number): LabeledMesh {
+  const labels = mesh.labels.slice();
+  for (let t = 0; t < labels.length; t++) if (labels[t] === slot) labels[t] = BASE_SLOT;
+  return { ...mesh, labels };
+}
+
 export async function runCut(): Promise<void> {
   const seam = seamReady();
   if (get().tool === 'seam') {
@@ -324,24 +344,30 @@ export async function runCut(): Promise<void> {
     set({ errorLoops: null });
     for (const w of r.warnings) notify('warn', w);
     const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Slot ${opts.slot}`;
+    const modeName =
+      opts.mode === 'socket' ? 'Tapa' : opts.mode === 'keys' ? 'Pimli kes' : 'Yapıştır';
+    const n = nextNumbers(get().parts);
+    const origin = { feature: `Kes ${n.cut}`, detail: `${modeName} · ${slotName}` };
     const newParts: Part[] = [
       {
         id: newPartId(),
-        name: `${part.name} gövde`,
-        mesh: r.body,
+        name: part.name,
+        mesh: consumeSelection(r.body, opts.slot),
         visible: true,
         badge: 'new',
         colorSlot: part.colorSlot,
         manifold: true,
+        origin,
       },
       ...r.parts.map((mesh: LabeledMesh, i: number) => ({
         id: newPartId(),
-        name: `${part.name} ${slotName}${r.parts.length > 1 ? ` ${i + 1}` : ''}`,
-        mesh,
+        name: `Gövde ${n.body + i}`,
+        mesh: consumeSelection(mesh, opts.slot),
         visible: true,
         badge: 'new' as const,
         colorSlot: opts.slot,
         manifold: true,
+        origin,
       })),
     ];
     const before = get().parts;
@@ -361,12 +387,16 @@ export async function runCut(): Promise<void> {
       directionGizmo: false,
       cut: { ...s.cut, direction: null, islandDepths: {}, ringProfile: [0, 0, 0, 0, 0, 0, 0, 0] },
     }));
+    const made = newParts.slice(1).map((p) => p.name);
     pushHistory(
       { kind: 'parts', before, after },
-      `Kes (${opts.mode === 'socket' ? 'Tapa' : opts.mode === 'keys' ? 'Pimli kes' : 'Yapıştır'})`,
+      `${origin.feature} · ${origin.detail} → ${made.join(', ')}`,
     );
     set({ previewActive: false, preview: null });
-    notify('info', `Kesildi: ${newParts.length} yeni parça. Kaynak parça gizlendi (sarı rozet).`);
+    notify(
+      'info',
+      `${origin.feature}: ${made.join(', ')} ayrıldı (${origin.detail}). Kesilmeden önceki hal Önceki haller'de gizli.`,
+    );
   });
 }
 
@@ -381,24 +411,28 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
     }
     set({ errorLoops: null });
     for (const w of r.warnings) notify('warn', w);
+    const n = nextNumbers(get().parts);
+    const origin = { feature: `Kes ${n.cut}`, detail: 'Dikiş' };
     const newParts: Part[] = [
       {
         id: newPartId(),
-        name: `${part.name} gövde`,
+        name: part.name,
         mesh: r.body,
         visible: true,
         badge: 'new',
         colorSlot: part.colorSlot,
         manifold: true,
+        origin,
       },
-      ...r.parts.map((mesh: LabeledMesh) => ({
+      ...r.parts.map((mesh: LabeledMesh, i: number) => ({
         id: newPartId(),
-        name: `${part.name} parça`,
+        name: `Gövde ${n.body + i}`,
         mesh,
         visible: true,
         badge: 'new' as const,
         colorSlot: part.colorSlot,
         manifold: true,
+        origin,
       })),
     ];
     const before = get().parts;
@@ -418,13 +452,12 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
       cut: { ...s.cut, direction: null, islandDepths: {}, ringProfile: [0, 0, 0, 0, 0, 0, 0, 0] },
     }));
     lineCancel();
-    pushHistory({ kind: 'parts', before, after }, 'Kes (Dikiş)');
+    const made = newParts.slice(1).map((p) => p.name);
+    pushHistory({ kind: 'parts', before, after }, `${origin.feature} · Dikiş → ${made.join(', ')}`);
     set({ previewActive: false, preview: null });
     notify(
       'info',
-      opts.mode === 'keys'
-        ? 'Dikiş kesildi, kesite pim kondu. Kaynak parça gizlendi.'
-        : 'Dikiş kesildi, yapıştırmalık iki parça. Kaynak parça gizlendi.',
+      `${origin.feature}: ${made.join(', ')} ayrıldı (dikiş${opts.mode === 'keys' ? ', kesite pim kondu' : ', yapıştırmalık'}). Kesilmeden önceki hal Önceki haller'de gizli.`,
     );
   });
 }

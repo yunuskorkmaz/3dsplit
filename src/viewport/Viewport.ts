@@ -268,7 +268,7 @@ export class Viewport {
   }
 
   /** Parça listesini sahneyle eşitler. Mesh değişmişse geometri yeniden kurulur. */
-  sync(views: PartView[], colors: (label: number) => THREE.Color): void {
+  sync(views: PartView[], colorsFor: (partId: string) => (label: number) => THREE.Color): void {
     const ids = new Set(views.map((v) => v.id));
     for (const [id, obj] of this.parts) {
       if (!ids.has(id)) {
@@ -306,7 +306,7 @@ export class Viewport {
       }
       if (!obj) continue;
       obj.mesh.visible = v.visible;
-      this.recolor(v.id, colors);
+      this.recolor(v.id, colorsFor(v.id));
     }
     this.selectedId = views.find((v) => v.selected)?.id ?? null;
     this.applyExplode();

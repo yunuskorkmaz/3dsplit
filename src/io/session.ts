@@ -20,6 +20,8 @@ export interface SessionPart {
   badge: 'source' | 'new' | null;
   colorSlot: number;
   manifold: boolean;
+  /** X98: parçayı üreten işlem. */
+  origin?: { feature: string; detail: string };
   mesh: LabeledMesh;
 }
 

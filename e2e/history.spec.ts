@@ -30,7 +30,7 @@ test('X88: geçmiş şeridi: simgeli adımlar, tıklanan adıma gidilir', async 
   await page.mouse.click(nose.x, nose.y);
   await page.mouse.click(nose.x + 3, nose.y);
   await page.getByRole('button', { name: 'Kes', exact: true }).click();
-  await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
 
   const steps = bar.locator('ol.history li').filter({ hasNot: page.getByLabel('Başlangıç') });
   const n = (await state(page)).undoStack.length;
@@ -46,7 +46,9 @@ test('X88: geçmiş şeridi: simgeli adımlar, tıklanan adıma gidilir', async 
     .join('')}`;
   expect(hex).toBe(red.toLowerCase());
   await expect(steps.last()).toHaveClass(/current/);
-  await expect(steps.last().getByRole('button')).toHaveAccessibleName(/Kes \(/);
+  await expect(steps.last().getByRole('button')).toHaveAccessibleName(
+    /Kes \d+ · Tapa · Renk 1 → Gövde 1/,
+  );
 
   // ilk adıma tık: sonrakiler soluk
   await steps.first().getByRole('button').click();

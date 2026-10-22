@@ -43,6 +43,18 @@ function slotColor(label: number): THREE.Color {
   return color;
 }
 
+/**
+ * X98: parçanın renk işlevi. Seçimsiz (taban) üçgenler gövdenin rengiyle çizilir:
+ * kesimden çıkan gövde, kesilen seçim setinin rengini taşır.
+ */
+function colorsFor(partId: string): (label: number) => THREE.Color {
+  const part = get().parts.find((p) => p.id === partId);
+  const base = part?.colorSlot ?? 0;
+  if (!base) return slotColor;
+  const bodyColor = new THREE.Color(get().slots.find((s) => s.id === base)?.color ?? '#b0b0b0');
+  return (label) => (label === 0 ? bodyColor : slotColor(label));
+}
+
 let activeViewport: Viewport | null = null;
 
 /**
@@ -288,7 +300,7 @@ export function ViewportHost() {
       onContextRestored() {
         notify('info', 'Grafik bağlamı geri geldi, model yeniden çizildi.');
         const st = get();
-        vp.sync(partViews(st.parts, st.selectedPartId), slotColor);
+        vp.sync(partViews(st.parts, st.selectedPartId), colorsFor);
       },
       onBrushResize(deltaY) {
         set((s) => ({
@@ -301,8 +313,8 @@ export function ViewportHost() {
     });
     vpRef.current = vp;
     activeViewport = vp;
-    setLabelsChangedHook((partId, tris) => vp.recolor(partId, slotColor, tris));
-    setGeometryChangedHook((partId, tris) => vp.updateTriangles(partId, tris, slotColor));
+    setLabelsChangedHook((partId, tris) => vp.recolor(partId, colorsFor(partId), tris));
+    setGeometryChangedHook((partId, tris) => vp.updateTriangles(partId, tris, colorsFor(partId)));
     (window as unknown as { viewport: Viewport }).viewport = vp;
     return () => {
       setLabelsChangedHook(null);
@@ -314,7 +326,7 @@ export function ViewportHost() {
   }, []);
 
   useEffect(() => {
-    vpRef.current?.sync(partViews(parts, selectedPartId), slotColor);
+    vpRef.current?.sync(partViews(parts, selectedPartId), colorsFor);
   }, [parts, selectedPartId, slots]);
 
   // X80: boş sahneye açılan dosyanın bütün parçaları gelince görünüm yeniden sığdırılır
@@ -349,7 +361,7 @@ export function ViewportHost() {
   useEffect(() => {
     const vp = vpRef.current;
     if (!vp) return;
-    for (const p of get().parts) vp.recolor(p.id, slotColor);
+    for (const p of get().parts) vp.recolor(p.id, colorsFor(p.id));
     const slot = get().slots.find((s) => s.id === activeSlot);
     vp.showSlotFocus(selectedPartId, activeSlot, slot?.color ?? '#ffffff', slot?.name ?? '');
   }, [activeSlot, selectedPartId, paintVersion, parts, dimOthers, hiddenSlots]);

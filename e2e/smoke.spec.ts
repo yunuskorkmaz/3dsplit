@@ -53,7 +53,7 @@ test('yükle → Smart Fill → Socket kes → 3MF', async ({ page }) => {
     )
     .toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Kes', exact: true }).click();
-  await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('ul.parts li')).toHaveCount(3);
   await expect(page.locator('.badge.source')).toHaveCount(1);
   // yalnız yeni parçayı göster, sonra hepsini geri getir

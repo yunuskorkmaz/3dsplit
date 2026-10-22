@@ -26,6 +26,7 @@ function snapshot(s: AppState): SessionData {
       badge: p.badge,
       colorSlot: p.colorSlot,
       manifold: p.manifold,
+      origin: p.origin,
       mesh: p.mesh,
     })),
     slots: s.slots,

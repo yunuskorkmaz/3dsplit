@@ -294,7 +294,9 @@ Kabul: e2e: kes → geçmiş adı "Kes 1 · Tapa · Seçim 1 → …", kırmız�
 - Ağaçta yeni klasör **İşlemler**: Aç, Kes 1, Onar… sırayla; işleme tıklayınca ondan çıkan gövdeler seçilir ve görünür olur. Kaynaklar klasörü "Önceki haller" olur.
 - Gövdeye yeniden ad verilebilir (çift tık). 3MF'te parça adı gövde adıdır.
 
-Kabul: e2e: figure burnu kes → "Gövde 2" (Seçim 1 rengi, boyası yok) ve "Gövde 1" (kalan); İşlemler'de "Kes 1"; tıklayınca iki gövde seçilir.
+Uygulamada: kalan gövde adını korur (Fusion'da Split Body gibi; "testa" kesilince "testa" kalır), ayrılan parça "Gövde N" olur (N 1'den). X97'deki "kesimden sonra hata yok" bununla geldi: ayrılan gövdede seçim kalmadığı için önizleme açılmıyor. Sıra X98 → X97 oldu. İşlemler'e tıklayınca gizli gövde gösterilir ve son ayrılan gövde seçilir.
+
+Kabul: e2e: figure burnu kes → "Gövde 1" (Seçim 1 rengi, boyası yok) ve "figure" (kalan); İşlemler'de "Kes 1"; tıklayınca Gövde 1 seçilir.
 
 ## X99 Seçim setleri
 

@@ -121,7 +121,7 @@ for (const { file, target } of MODELS) {
     await page.getByRole('button', { name: 'Otomatiğe dön', exact: true }).click();
     expect((await state(page)).pins.length).toBe(0);
     await page.getByRole('button', { name: 'Kes', exact: true }).click();
-    await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 180_000 });
+    await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 180_000 });
     await page.screenshot({ path: `test-results/keys-flow-${slug}-cut.png` });
     await expect(page.locator('.msg', { hasText: 'taşıyor' })).toHaveCount(0);
     const after = await state(page);

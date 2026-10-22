@@ -35,7 +35,7 @@ test('X83: örnek model ve adım çubuğu: Aç → Seç → Kes → Aktar', asyn
   await expect(current).toHaveText('Kes');
 
   await page.getByRole('button', { name: 'Kes', exact: true }).click();
-  await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
   await expect(current).toHaveText('Aktar');
   await page.screenshot({ path: 'test-results/onboarding-export.png' });
   // Aktar adımı Dışa aktar menüsünü açar

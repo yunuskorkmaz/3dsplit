@@ -19,10 +19,12 @@ function historyIcon(e: HistoryEntry): IconName {
     if (label.startsWith('Çizgi')) return 'line';
     return 'brush';
   }
-  if (label.startsWith('Kes (Dikiş')) return 'seam';
-  if (label.startsWith('Kes (Tapa')) return 'socket';
-  if (label.startsWith('Kes (Pimli')) return 'keys';
-  if (label.startsWith('Kes')) return 'fast';
+  if (label.startsWith('Kes ')) {
+    if (label.includes('· Dikiş')) return 'seam';
+    if (label.includes('· Tapa')) return 'socket';
+    if (label.includes('· Pimli')) return 'keys';
+    return 'fast';
+  }
   if (label.startsWith('Aç')) return 'open';
   if (label.startsWith('İncelt')) return 'refine';
   if (label.includes('onar')) return 'repair';

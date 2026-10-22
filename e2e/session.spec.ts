@@ -40,7 +40,7 @@ test('X95: yenileyince kaldığın yerden devam', async ({ page }) => {
   const nose = await screenOf(page, [0, -16.9, 62]);
   await page.mouse.click(nose.x, nose.y);
   await page.locator('.cut-actions').getByRole('button', { name: 'Kes', exact: true }).click();
-  await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
   // ikinci boya: kesimden sonra da yazılsın
   await page.keyboard.press('2');
   await page.mouse.click(nose.x + 40, nose.y + 60);

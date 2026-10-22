@@ -197,10 +197,19 @@ function PartRow(props: {
         >
           {p.visible ? '👁' : '–'}
         </button>
+        <span
+          className="body-swatch"
+          style={{ background: slots.find((s) => s.id === p.colorSlot)?.color ?? '#b0b0b0' }}
+          title={
+            p.colorSlot
+              ? `Gövde rengi: ${slots.find((s) => s.id === p.colorSlot)?.name ?? ''} (3MF'te bu filament)`
+              : 'Gövde rengi: taban'
+          }
+        />
         <input
           className="name"
           value={p.name}
-          title={`${p.name} · ${p.mesh.labels.length.toLocaleString('tr-TR')} üçgen`}
+          title={`${p.name} · ${p.mesh.labels.length.toLocaleString('tr-TR')} üçgen${p.origin ? ` · ${p.origin.feature}: ${p.origin.detail}` : ''}`}
           onChange={(e) => renamePart(p.id, e.target.value)}
         />
         <span className="size" title={partSizeTitle(props.size)}>
@@ -211,7 +220,7 @@ function PartRow(props: {
             className="badge source"
             title="Kesimden önceki hali; gizli tutulur, dışa aktarılmaz"
           >
-            kaynak
+            önceki hal
           </span>
         )}
         {p.badge === 'new' && (
@@ -237,6 +246,11 @@ function PartRow(props: {
           ⋯
         </button>
       </div>
+      {p.origin && p.badge !== 'source' && (
+        <div className="part-origin">
+          {p.origin.feature}'den · {p.origin.detail}
+        </div>
+      )}
       {expanded && painted.length > 0 && (
         <div className="part-colors">
           {painted.map((s) => (
@@ -330,6 +344,32 @@ function SlotRows({ openMenu }: { openMenu: (e: React.MouseEvent, id: number) =>
 }
 
 /**
+ * X98: İşlemler listesi parçalardan çıkarılır: açılan her model bir "Aç" satırı, her kesim
+ * ("Kes K") ondan çıkan gövdelerle. Gövde sonraki kesimde önceki hal olunca listede kalır.
+ */
+function featuresOf(
+  parts: Part[],
+): { key: string; title: string; detail: string; bodies: Part[] }[] {
+  const out: { key: string; title: string; detail: string; bodies: Part[] }[] = [];
+  const byFeature = new Map<string, (typeof out)[number]>();
+  for (const p of parts) {
+    if (!p.origin) {
+      out.push({ key: `open-${p.id}`, title: 'Aç', detail: '', bodies: [p] });
+      continue;
+    }
+    let f = byFeature.get(p.origin.feature);
+    if (!f) {
+      f = { key: p.origin.feature, title: p.origin.feature, detail: p.origin.detail, bodies: [] };
+      byFeature.set(p.origin.feature, f);
+      out.push(f);
+    }
+    f.bodies.push(p);
+  }
+  const num = (f: (typeof out)[number]) => (f.title === 'Aç' ? 0 : Number(f.title.slice(4)));
+  return out.sort((a, b) => num(a) - num(b));
+}
+
+/**
  * X85: soldaki Model ağacı. Gövdeler (her birinin altında boyalı renkleri), Renkler ve
  * Kaynaklar (kesimden önceki gizli parçalar) klasörleri; sağ tık menüsü.
  */
@@ -346,6 +386,7 @@ export function ModelPanel() {
   const extent = useMemo(() => modelExtent(parts), [parts]);
   const warning = parts.length ? sizeWarning(extent) : null;
   const counts = usePaintCounts(parts);
+  const features = useMemo(() => featuresOf(parts), [parts]);
   const hidden = parts.filter(
     (p) => !p.visible && (p.badge !== 'source' || parts.every((q) => q.badge === 'source')),
   ).length;
@@ -468,8 +509,29 @@ export function ModelPanel() {
               <span>Seçili rengi öne çıkar</span>
             </label>
           </Folder>
+          <Folder id="features" title="İşlemler" count={features.length} defaultOpen>
+            <ol className="features">
+              {features.map((f) => (
+                <li key={f.key}>
+                  <button
+                    type="button"
+                    title={`${f.title}${f.detail ? ` · ${f.detail}` : ''}: ${f.bodies.map((b) => b.name).join(', ')} — tıklayınca gövdeler seçilir`}
+                    onClick={() => {
+                      for (const b of f.bodies) if (!b.visible) toggleVisible(b.id);
+                      const pick = f.bodies[f.bodies.length - 1];
+                      if (pick) selectPart(pick.id);
+                    }}
+                  >
+                    <span className="ftitle">{f.title}</span>
+                    {f.detail && <span className="fdetail">{f.detail}</span>}
+                    <span className="fbodies">→ {f.bodies.map((b) => b.name).join(', ')}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </Folder>
           {sources.length > 0 && (
-            <Folder id="sources" title="Kaynaklar" count={sources.length} defaultOpen={false}>
+            <Folder id="sources" title="Önceki haller" count={sources.length} defaultOpen={false}>
               <p className="hint">Kesimden önceki haller. Gizli tutulur, çıktıya girmez.</p>
               <ul className="parts sources">
                 {sources.map((p) => (

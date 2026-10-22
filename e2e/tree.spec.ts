@@ -57,15 +57,48 @@ test('X85: Model ağacı: gövde altında boyalı renkler, Renkler ve Kaynaklar'
   await page.getByRole('menuitem', { name: 'Sığdır' }).click();
   await expect(menu).toHaveCount(0);
 
-  // kesimden sonra eski parça Kaynaklar'da, klasör kapalı
+  // kesimden sonra eski parça Önceki haller'de, klasör kapalı
   await page.getByRole('button', { name: 'Kes', exact: true }).click();
-  await expect(page.locator('.msg', { hasText: 'Kesildi' })).toBeVisible({ timeout: 60_000 });
-  const sources = page.locator('.tree-folder', { hasText: 'Kaynaklar' });
+  await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
+  const sources = page.locator('.tree-folder', { hasText: 'Önceki haller' });
   await expect(sources.locator('.count')).toHaveText('1');
   await expect(sources.locator('ul.parts.sources li')).toBeHidden();
   await expect(page.locator('.panel-count')).toHaveText('2 gövde');
   await sources.locator('.folder-toggle').click();
   await expect(sources.locator('ul.parts.sources li')).toBeVisible();
+
+  // X98: burun yeni gövde: seçim setinin rengi gövdede, boyası yok; İşlemler'de Kes 1
+  const bodies = await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    const s = (window as any).app.store.get();
+    return (
+      s.parts
+        // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+        .filter((p: any) => p.badge !== 'source')
+        // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+        .map((p: any) => ({
+          name: p.name,
+          colorSlot: p.colorSlot,
+          painted: p.mesh.labels.filter((l: number) => l !== 0).length,
+          origin: p.origin?.feature,
+        }))
+    );
+  });
+  expect(bodies).toEqual([
+    { name: 'figure', colorSlot: 0, painted: 0, origin: 'Kes 1' },
+    { name: 'Gövde 1', colorSlot: 1, painted: 0, origin: 'Kes 1' },
+  ]);
+  await expect(page.locator('.color-row')).toHaveCount(0);
+  await expect(page.locator('.part-origin').first()).toContainText("Kes 1'den · Tapa · Renk 1");
+  const feature = page.locator('ol.features li', { hasText: 'Kes 1' });
+  await expect(feature).toContainText('→ figure, Gövde 1');
+  await page.locator('ul.parts li').first().click();
+  await feature.getByRole('button').click();
+  const sel = (await state(page)).selectedPartId;
+  const selName = (await state(page)).parts.find((p: { id: string }) => p.id === sel).name;
+  expect(selName).toBe('Gövde 1');
+  // kesimden sonra önizleme hatası yok
+  await expect(page.locator('.msg.error')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/tree.png' });
   expect(errors).toEqual([]);
 });

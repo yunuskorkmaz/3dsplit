@@ -242,3 +242,68 @@ Olacak:
 - O an çalışmayan komut soluk ve nedeni yanında ("parça yok").
 
 Kabul: e2e: Ctrl+K → "pimli" → Enter → kesim modu keys.
+
+# Sprint 10: kararlılık, büyük model, anlaşılır işlem, gövde ve seçim seti
+
+22 Ekim 2026. Kullanıcı isteği: tarayıcı yenilenince kaldığı yerden devam; büyük modellerde çalışma; ne yaptığını anlayabilme; Fusion 360 / SolidCraft gibi ayrılan parçanın yeni gövde, renkli seçimlerin seçim seti olması; kesim yüzeyinin daha pürüzsüz olması. Kullanıcı kararları önceki turlarda bana bıraktı; kararlar aşağıda gerekçesiyle.
+
+Bugün görülenler (testa kulağı, Tapa ve Pimli kes, Chrome):
+
+- Kesimden sonra yeni parça seçimin etiketini taşıyor; canlı önizleme hemen o parçada açılıp kırmızı "Bölge parçanın tamamını kaplıyor" hatası veriyor.
+- Pimli kes yüzü düz ve temiz. Tapa yuvasının duvarında ince gölge çizgileri ve kenarda hafif dalga var: kapak merkezden yelpazeyle örülüyor, ince uzun üçgenler gölgede çizgi bırakıyor.
+- Yenilemede her şey gidiyor; yalnız elle kaydedilen `.3dsplit` var.
+
+Sıra: X95, X96, X97, X98, X99, X100.
+
+## X95 Oturum kurtarma
+
+- Her değişiklikten (geçmişe giren her adım, renk/ad değişikliği) 1,5 s sonra oturum tarayıcının IndexedDB'sine yazılır: parçalar (mesh + etiket), seçim setleri, seçili parça, aktif set, kesim ayarları. Geri alma geçmişi yazılmaz (büyük); kurtarılan oturum tek "Kurtarıldı" adımıyla başlar.
+- Yazma Worker'da değil ana thread'de ama tipli diziler kopyalanmadan (structured clone) verilir; yazma sürerken yeni değişiklik gelirse bir sonraki tura kalır.
+- Sayfa açılınca kayıtlı oturum varsa boş ekranda kart: "**testa** — 2 gövde, 14:32'de kaydedildi. [Devam et] [Yok say]". Yok say kaydı siler. Model açık değilken kart görünür; dosya açılırsa kart kalkar, eski kayıt yenisiyle değişir.
+- Üst çubukta kayıt durumu: "Kaydedildi 14:32" / "Kaydediliyor…". Yazma hatası (kota) uyarı verir, uygulama çalışmaya devam eder.
+
+Kabul: e2e: figure aç, boya, kes → sayfayı yenile → kart → Devam et → 2 gövde ve boya aynı.
+
+## X96 Büyük model
+
+Önce ölçülür, sonra en yavaş iki adım düzeltilir. Ölçüm modeli: BLUEY+SENTADA (1,47M üçgen) ve Bluey_Color.3mf (500k).
+
+- Her ağır adım (aç, Akıllı seç, önizleme, kes, dışa aktar) için süre ve bellek tabloya yazılır (`docs/ROADMAP.md` günlüğü).
+- 1M üçgeni aşan modelde açılışta seçenek: "Bu model 1,47M üçgen. Önerilen: 400k'ya sadeleştir (ayrıntı korunur, işlemler hızlanır). [Sadeleştir] [Olduğu gibi aç]". Sadeleştirme manifold `simplify` ile, sapma ortalama kenarın yarısı kadar.
+- Worker'daki 120 s sınırı büyük modelde üçgen sayısıyla büyür (kesim takılmasın).
+
+Kabul: BLUEY+SENTADA aç → sadeleştir → Akıllı seç → Pimli kes → 3MF; her adımın süresi günlükte.
+
+## X97 Ne olduğu görünür
+
+- **Meşgul kartı:** ağır işte adım adım ilerleme: "Kesiliyor · 2/4 tapa hacmi · 6 s · [İptal]". Worker aşama adlarını gönderir (kenar düzeltme, hacim, boolean, parçalar).
+- **İşlem adları:** geçmiş adımları ne yapıldığını ve sonucunu söyler: "Kes 1 · Tapa · Seçim 1 → Gövde 2, Gövde 3", "Akıllı seç · Seçim 1 · 1.240 üçgen". Şeritte simgenin üstüne gelince bu ad.
+- **Kesimden sonra hata yok:** kesilen parçanın seçimi gövdeye dönüşür (X98), önizleme o parçada açılmaz.
+- **Durum satırı:** araç penceresinin başlığının altında tek satır: "Akıllı seç → Seçim 1 · gövde: testa · bir çıkıntıya tıkla".
+
+Kabul: e2e: kes → geçmiş adı "Kes 1 · Tapa · Seçim 1 → …", kırmızı önizleme hatası yok; büyük kesimde meşgul kartı aşama gösterir.
+
+## X98 Gövdeler (Fusion gibi)
+
+- Kesimden çıkan her parça yeni gövdedir: adı "Gövde N" (N sırayla), kesilen seçim setinin rengini gövde rengi olarak alır, üstündeki seçim boyası temizlenir (seçim kesilince tüketilmiş olur). Kalan gövde de yeni ad alır, rengi değişmez.
+- Ağaçta gövde satırının altında küçük yazı: "Kes 1'den". Gövdenin rengi satırın başında kare.
+- Ağaçta yeni klasör **İşlemler**: Aç, Kes 1, Onar… sırayla; işleme tıklayınca ondan çıkan gövdeler seçilir ve görünür olur. Kaynaklar klasörü "Önceki haller" olur.
+- Gövdeye yeniden ad verilebilir (çift tık). 3MF'te parça adı gövde adıdır.
+
+Kabul: e2e: figure burnu kes → "Gövde 2" (Seçim 1 rengi, boyası yok) ve "Gövde 1" (kalan); İşlemler'de "Kes 1"; tıklayınca iki gövde seçilir.
+
+## X99 Seçim setleri
+
+- "Renkler" klasörü **Seçim setleri** olur. Her set: renk, ad ("Seçim 1"), kısayol, kaç gövdede kaç üçgen. Taban ayrı satır: "Seçimsiz (gövde rengi)".
+- Boyamak aktif sete eklemektir; Shift ile setten çıkarmak. Setin ⋯ menüsü: Yeniden adlandır, Seçili gövdede temizle, Bütün gövdelerde temizle, Kaldır, Bu seti kes.
+- Arayüz metinlerinde "renk/slot" yerine "seçim seti" (araç penceresi, seçim satırı, yardım, komut arama). 3MF'te set rengi filament rengidir; bu, set satırının ipucunda yazar.
+
+Kabul: e2e: iki set boya → set satırlarında gövde/üçgen sayısı; "Bu seti kes" kesimi başlatır; metinlerde "Renk 1" kalmaz (yeni set adı "Seçim 1").
+
+## X100 Pürüzsüz kesim yüzeyi
+
+- Kapak yelpaze yerine düzgün üçgenlenir: sınır eşit aralıkla örneklenir, içine ızgara noktaları konur, kısıtlı Delaunay ile örülür. Gölgede çizgi kalmaz, tapa ve yuva duvarı aynı sıklıkta.
+- "Kenarı düzelt" üç düzeyli olur: Hafif / Orta (varsayılan, bugünkü) / Güçlü. Güçlüde sınır eğrisi daha geniş Gauss ile yumuşatılır; alan dengesi korunur.
+- Yumuşat aracında "Tüm sınırı yumuşat" aynı düzeyi kullanır.
+
+Kabul: test/: kapak üçgenlerinin en küçük açısı ≥ 20°; e2e: testa kulağı Tapa yuvası ekran görüntüsü günlükte (önce/sonra).

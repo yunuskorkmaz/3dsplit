@@ -85,6 +85,19 @@ Kullanıcı "sırada ne varsa yap" dedi; Sprint 9 raporunda açık bırakılan i
 | X94 | Açılışta temel onarım yetmezse önce yerel onarım (hatalı kenar çevresini sil, deliği kapat); voxel yalnız o da olmazsa | Birkaç yüz hatalı kenar yüzünden bütün model voxel ile yeniden kuruluyor, gözler gidiyor (BLUEY+SENTADA 1,47M → 11k üçgen) | [x] |
 | X93 | X92'nin komşu karşılaştırması yalnız 70°'den keskin kıvrımda | Uygulamanın yeniden kurduğu (voxel) Bluey'de 200 tıklamanın 62'si küçüldü; başa tıklayınca yalnız tepe seçiliyordu | [x] |
 
+## Sprint 11 — kararlılık, büyük model, gövde ve seçim seti
+
+Ekran davranışları: [docs/ux-plan.md](ux-plan.md) (Sprint 10 başlığı). Sıra: X95–X100.
+
+| ID | İş | Neden | Durum |
+| --- | --- | --- | --- |
+| X95 | Oturum IndexedDB'ye kendiliğinden yazılır; açılışta "Devam et" | Yenileyince bütün iş gidiyor | [ ] |
+| X96 | Büyük model: ölç, en yavaş iki adımı düzelt, 1M üstünde sadeleştirme önerisi | 1,47M üçgende kesim ve önizleme dakikalar sürüyor | [ ] |
+| X97 | İşlem görünürlüğü: aşamalı meşgul kartı, sonuçlu işlem adları, kesim sonrası hata yok, durum satırı | Kullanıcı ne yapıldığını anlamıyor | [ ] |
+| X98 | Kesimden çıkan parça "Gövde N", seçim boyası gövde rengine dönüşür; ağaçta İşlemler | Fusion gibi gövde | [ ] |
+| X99 | Renkler → Seçim setleri; set başına gövde/üçgen sayısı, set menüsü | Seçimler adlı set gibi okunmuyor | [ ] |
+| X100 | Kapak düzgün üçgenlenir; Kenarı düzelt Hafif/Orta/Güçlü | Tapa yuvasında gölge çizgileri ve dalga | [ ] |
+
 ## Ana akış
 
 Her iş bu akışı iyileştirdiği ölçüde önceliklidir:

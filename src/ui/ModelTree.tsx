@@ -9,6 +9,7 @@ import {
   modelExtent,
   removeSlot,
   renamePart,
+  runCut,
   selectPart,
   showAllParts,
   soloPart,
@@ -177,7 +178,7 @@ function PartRow(props: {
           type="button"
           className="twisty"
           disabled={!painted.length}
-          aria-label={expanded ? 'Renkleri gizle' : 'Renkleri göster'}
+          aria-label={expanded ? 'Seçimleri gizle' : 'Seçimleri göster'}
           onClick={(e) => {
             e.stopPropagation();
             setExpanded(!expanded);
@@ -276,7 +277,14 @@ function PartRow(props: {
   );
 }
 
-function SlotRows({ openMenu }: { openMenu: (e: React.MouseEvent, id: number) => void }) {
+function SlotRows({
+  openMenu,
+  usage,
+}: {
+  openMenu: (e: React.MouseEvent, id: number) => void;
+  /** set başına kaç gövdede kaç üçgen */
+  usage: Map<number, { bodies: number; tris: number }>;
+}) {
   const slots = useStore((s) => s.slots);
   const active = useStore((s) => s.activeSlot);
   const hiddenSlots = useStore((s) => s.hiddenSlots);
@@ -300,8 +308,21 @@ function SlotRows({ openMenu }: { openMenu: (e: React.MouseEvent, id: number) =>
             <input
               className="name"
               value={s.name}
+              data-slot={s.id}
+              title={
+                s.id === 0
+                  ? 'Seçimsiz yüzey: gövdenin kendi rengi'
+                  : `${s.name}: boyamak bu sete ekler. 3MF'te bu renk bir filamenttir`
+              }
               onChange={(e) => updateSlot(s.id, { name: e.target.value })}
             />
+            {s.id !== 0 && (
+              <span className="set-usage" title="Bu setin boyalı olduğu gövde ve üçgen sayısı">
+                {usage.get(s.id)
+                  ? `${usage.get(s.id)?.bodies} gövde · ${usage.get(s.id)?.tris.toLocaleString('tr-TR')}`
+                  : 'boş'}
+              </span>
+            )}
             <span className="key" title={s.id <= 9 ? `Kısayol: ${s.id}` : undefined}>
               {s.id <= 9 ? s.id : ''}
             </span>
@@ -325,7 +346,7 @@ function SlotRows({ openMenu }: { openMenu: (e: React.MouseEvent, id: number) =>
                 <button
                   type="button"
                   className="more"
-                  title="Renk menüsü (sağ tık): temizle, kaldır"
+                  title="Set menüsü (sağ tık): yeniden adlandır, temizle, kes, kaldır"
                   aria-label={`${s.name} menüsü`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -411,14 +432,44 @@ export function ModelPanel() {
   const slotMenu = (e: React.MouseEvent, id: number) => {
     set({ activeSlot: id });
     const painted = (counts.get(get().selectedPartId ?? '')?.get(id) ?? 0) > 0;
+    // kesilecek gövde: seçili gövdede bu set varsa o, yoksa setin olduğu ilk gövde
+    const target = painted
+      ? get().selectedPartId
+      : (bodies.find((b) => (counts.get(b.id)?.get(id) ?? 0) > 0)?.id ?? null);
     setMenu({
       ...at(e),
       items: [
+        {
+          label: 'Yeniden adlandır',
+          onClick: () =>
+            document
+              .querySelector<HTMLInputElement>(`ul.slots input.name[data-slot="${id}"]`)
+              ?.select(),
+        },
         { label: 'Seçili parçada temizle', disabled: !painted, onClick: () => clearSlotPaint(id) },
-        { label: 'Rengi kaldır', disabled: id === 0, onClick: () => removeSlot(id) },
+        {
+          label: 'Bu seti kes',
+          disabled: id === 0 || !target,
+          onClick: () => {
+            if (!target) return;
+            selectPart(target);
+            set({ activeSlot: id });
+            runCut();
+          },
+        },
+        { label: 'Seti kaldır', disabled: id === 0, onClick: () => removeSlot(id) },
       ],
     });
   };
+  const usage = useMemo(() => {
+    const u = new Map<number, { bodies: number; tris: number }>();
+    for (const m of counts.values())
+      for (const [slot, n] of m) {
+        const cur = u.get(slot) ?? { bodies: 0, tris: 0 };
+        u.set(slot, { bodies: cur.bodies + 1, tris: cur.tris + n });
+      }
+    return u;
+  }, [counts]);
 
   return (
     <Panel
@@ -486,27 +537,27 @@ export function ModelPanel() {
               />
             )}
           </Folder>
-          <Folder id="slots" title="Renkler" defaultOpen>
-            <SlotRows openMenu={slotMenu} />
+          <Folder id="slots" title="Seçim setleri" defaultOpen>
+            <SlotRows openMenu={slotMenu} usage={usage} />
             <div className="row">
-              <button type="button" onClick={addSlot}>
-                + Renk
+              <button type="button" onClick={addSlot} title="Yeni seçim seti; boyamak ona ekler">
+                + Seçim seti
               </button>
               <button
                 type="button"
                 onClick={clearActiveSlot}
-                title={`Seçili parçada aktif rengin tüm boyasını siler (${keys['slot.clear']}). Tek bir yeri silmek için: Akıllı seç'te Shift+tık, Silgi (E) veya Ctrl/Cmd+Z`}
+                title={`Seçili gövdede aktif setin tüm boyasını siler (${keys['slot.clear']}). Tek bir yeri silmek için: Akıllı seç'te Shift+tık, Silgi (E) veya Ctrl/Cmd+Z`}
               >
                 Seçimi temizle
               </button>
             </div>
-            <label className="field" title="Seçili renk dışındaki boyaları soldurur">
+            <label className="field" title="Aktif set dışındaki setleri soldurur">
               <input
                 type="checkbox"
                 checked={dimOthers}
                 onChange={(e) => set({ dimOthers: e.target.checked })}
               />
-              <span>Seçili rengi öne çıkar</span>
+              <span>Aktif seti öne çıkar</span>
             </label>
           </Folder>
           <Folder id="features" title="İşlemler" count={features.length} defaultOpen>

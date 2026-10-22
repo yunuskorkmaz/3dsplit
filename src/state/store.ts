@@ -227,7 +227,7 @@ export const useStore = create<AppState>(() => ({
   selectedPartId: null,
   slots: DEFAULT_COLORS.slice(0, 4).map((color, id) => ({
     id,
-    name: id === 0 ? 'Taban' : `Renk ${id}`,
+    name: id === 0 ? 'Taban' : `Seçim ${id}`,
     color,
   })),
   activeSlot: 1,
@@ -379,6 +379,6 @@ export function historyLabel(e: HistoryEntry): string {
   if (e.kind === 'geometry') return 'Yumuşatma';
   if (e.kind === 'split') return 'Üçgen bölme';
   if (e.kind === 'pins') return 'Pim';
-  if (e.kind === 'removeSlot') return 'Rengi kaldır';
+  if (e.kind === 'removeSlot') return 'Seti kaldır';
   return 'Parça değişikliği';
 }

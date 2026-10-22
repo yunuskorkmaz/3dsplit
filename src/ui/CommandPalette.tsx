@@ -71,7 +71,7 @@ const noPaint = (s: State) =>
     : !s.parts.length
       ? 'parça yok'
       : s.activeSlot === 0
-        ? 'renk seçilmedi'
+        ? 'seçim seti seçilmedi'
         : activePaintCount() === 0
           ? 'boyalı bölge yok'
           : null;
@@ -140,7 +140,7 @@ function useItems(): Item[] {
         blocked: noParts,
         run: autoSuggestFeatures,
       },
-      { id: 'slot.add', label: 'Renk ekle', words: '+ renk slot', run: addSlot },
+      { id: 'slot.add', label: 'Seçim seti ekle', words: '+ renk slot set yeni', run: addSlot },
       {
         id: 'slot.clear',
         label: 'Seçimi temizle',

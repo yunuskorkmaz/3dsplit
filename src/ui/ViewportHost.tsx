@@ -29,7 +29,7 @@ const DIMMED = new THREE.Color('#2a2a2a');
 const DOUBLE_CLICK_MS = 400;
 
 /**
- * Bütün renkler tam görünür (X77). "Seçili rengi öne çıkar" açıksa aktif slot dışındaki
+ * Bütün renkler tam görünür (X77). "Aktif seti öne çıkar" açıksa aktif slot dışındaki
  * boyalar solar; taban seçiliyken yine hepsi görünür.
  */
 function slotColor(label: number): THREE.Color {

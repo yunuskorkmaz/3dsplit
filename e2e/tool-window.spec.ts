@@ -47,7 +47,7 @@ test('X86: araç penceresi: ayarlar, seçim satırı, Önizleme kutusu, İptal /
   const nose = await screenOf(page, [0, -16.9, 62]);
   await page.mouse.click(nose.x, nose.y);
   const row = win.locator('.selection-row:not(.empty)');
-  await expect(row).toContainText('Renk 1');
+  await expect(row).toContainText('Seçim 1');
   await expect(row).toContainText('figure');
   const n = await painted(page);
   expect(n).toBeGreaterThan(0);

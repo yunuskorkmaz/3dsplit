@@ -304,6 +304,8 @@ Kabul: e2e: figure burnu kes → "Gövde 1" (Seçim 1 rengi, boyası yok) ve "fi
 - Boyamak aktif sete eklemektir; Shift ile setten çıkarmak. Setin ⋯ menüsü: Yeniden adlandır, Seçili gövdede temizle, Bütün gövdelerde temizle, Kaldır, Bu seti kes.
 - Arayüz metinlerinde "renk/slot" yerine "seçim seti" (araç penceresi, seçim satırı, yardım, komut arama). 3MF'te set rengi filament rengidir; bu, set satırının ipucunda yazar.
 
+Uygulamada: "Bütün gövdelerde temizle" eklenmedi ("Seti kaldır" bütün gövdelerden siler, Ctrl+Z geri getirir). Taban satırı adını korur, ipucunda "seçimsiz yüzey" yazar. Kullanım sayısı satırda "1 gövde · 1.240" ya da "boş". 3MF'ten gelen setlerin adı "Filament N" kalır.
+
 Kabul: e2e: iki set boya → set satırlarında gövde/üçgen sayısı; "Bu seti kes" kesimi başlatır; metinlerde "Renk 1" kalmaz (yeni set adı "Seçim 1").
 
 ## X100 Pürüzsüz kesim yüzeyi

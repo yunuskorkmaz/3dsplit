@@ -1689,3 +1689,11 @@ ol.features .fbodies {
   flex-basis: 100%;
   color: #b9bec7;
 }
+
+/* X99: seçim seti kullanım sayısı */
+ul.slots li .set-usage {
+  flex: none;
+  color: #7d8592;
+  font-size: 10.5px;
+  white-space: nowrap;
+}

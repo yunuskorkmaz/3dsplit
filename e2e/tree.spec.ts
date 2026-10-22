@@ -22,14 +22,14 @@ test('X85: Model ağacı: gövde altında boyalı renkler, Renkler ve Kaynaklar'
   await expect(page.locator('.panel-count')).toHaveText('1 gövde');
   await expect(page.locator('.color-row')).toHaveCount(0);
 
-  // fırçayla burun: figure altında "Renk 1"
+  // fırçayla burun: figure altında "Seçim 1"
   await page.keyboard.press('1');
   await page.locator('.ribbon').getByRole('button', { name: 'Fırça', exact: true }).click();
   const nose = await screenOf(page, [0, -16.9, 62]);
   await page.mouse.click(nose.x, nose.y);
   const row = page.locator('ul.parts li .color-row');
   await expect(row).toHaveCount(1);
-  await expect(row.locator('.cname')).toHaveText('Renk 1');
+  await expect(row.locator('.cname')).toHaveText('Seçim 1');
   expect(Number((await row.locator('.tris').textContent())?.replace(/\./g, ''))).toBeGreaterThan(0);
 
   // renk satırına tık aktif rengi değiştirir
@@ -89,7 +89,7 @@ test('X85: Model ağacı: gövde altında boyalı renkler, Renkler ve Kaynaklar'
     { name: 'Gövde 1', colorSlot: 1, painted: 0, origin: 'Kes 1' },
   ]);
   await expect(page.locator('.color-row')).toHaveCount(0);
-  await expect(page.locator('.part-origin').first()).toContainText("Kes 1'den · Tapa · Renk 1");
+  await expect(page.locator('.part-origin').first()).toContainText("Kes 1'den · Tapa · Seçim 1");
   const feature = page.locator('ol.features li', { hasText: 'Kes 1' });
   await expect(feature).toContainText('→ figure, Gövde 1');
   await page.locator('ul.parts li').first().click();
@@ -100,5 +100,34 @@ test('X85: Model ağacı: gövde altında boyalı renkler, Renkler ve Kaynaklar'
   // kesimden sonra önizleme hatası yok
   await expect(page.locator('.msg.error')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/tree.png' });
+  expect(errors).toEqual([]);
+});
+
+test('X99: seçim setleri: kullanım sayısı, Bu seti kes', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles('samples/figure.stl');
+  await expect(page.locator('ul.parts li')).toHaveCount(1, { timeout: 30_000 });
+  const sets = page.locator('.tree-folder', { hasText: 'Seçim setleri' });
+  await expect(sets.locator('ul.slots input.name').nth(1)).toHaveValue('Seçim 1');
+  await expect(sets.locator('ul.slots li').nth(1).locator('.set-usage')).toHaveText('boş');
+
+  await page.keyboard.press('1');
+  await page.locator('.ribbon').getByRole('button', { name: 'Fırça', exact: true }).click();
+  const nose = await screenOf(page, [0, -16.9, 62]);
+  await page.mouse.click(nose.x, nose.y);
+  await expect(sets.locator('ul.slots li').nth(1).locator('.set-usage')).toContainText(
+    '1 gövde · ',
+  );
+
+  // menüden kes: set gövdeye dönüşür
+  await sets.locator('ul.slots li').nth(1).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Bu seti kes' }).click();
+  await expect(page.locator('.msg', { hasText: /Kes 1: Gövde 1 ayrıldı/ })).toBeVisible({
+    timeout: 60_000,
+  });
+  await expect(sets.locator('ul.slots li').nth(1).locator('.set-usage')).toHaveText('boş');
+  await page.screenshot({ path: 'test-results/sets.png' });
   expect(errors).toEqual([]);
 });

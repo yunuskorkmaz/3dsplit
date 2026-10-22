@@ -47,7 +47,7 @@ test('X88: geçmiş şeridi: simgeli adımlar, tıklanan adıma gidilir', async 
   expect(hex).toBe(red.toLowerCase());
   await expect(steps.last()).toHaveClass(/current/);
   await expect(steps.last().getByRole('button')).toHaveAccessibleName(
-    /Kes \d+ · Tapa · Renk 1 → Gövde 1/,
+    /Kes \d+ · Tapa · Seçim 1 → Gövde 1/,
   );
 
   // ilk adıma tık: sonrakiler soluk

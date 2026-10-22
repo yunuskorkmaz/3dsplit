@@ -76,8 +76,8 @@ test('X77: renkler tam görünür, seçili renk öne çıkarılabilir', async ({
   expect(armOther[2]).toBeGreaterThan(150);
   await page.screenshot({ path: 'test-results/chrome-slot.png' });
 
-  // "Seçili rengi öne çıkar": diğer renkler solar, kapatınca geri gelir
-  const dim = page.getByLabel('Seçili rengi öne çıkar');
+  // "Aktif seti öne çıkar": diğer renkler solar, kapatınca geri gelir
+  const dim = page.getByLabel('Aktif seti öne çıkar');
   await dim.check();
   const armDim = await colorAt(page, arm);
   expect(armDim[1]).toBeLessThan(40);
@@ -94,7 +94,7 @@ test('X77: renkler tam görünür, seçili renk öne çıkarılabilir', async ({
   await page.getByRole('menuitem', { name: 'Seçili parçada temizle' }).click();
   await expect(page.locator('ul.slots input.name')).toHaveCount(4);
   await page.locator('ul.slots li').nth(2).click({ button: 'right' });
-  await page.getByRole('menuitem', { name: 'Rengi kaldır' }).click();
+  await page.getByRole('menuitem', { name: 'Seti kaldır' }).click();
   await expect(page.locator('ul.slots input.name')).toHaveCount(3);
   const armGone = await colorAt(page, arm);
   expect(Math.abs(armGone[0] - armGone[1])).toBeLessThan(20);

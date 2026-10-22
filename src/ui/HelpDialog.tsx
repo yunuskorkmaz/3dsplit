@@ -74,22 +74,23 @@ function Workflow() {
         “Devam et” kaldığın yere döner.
       </li>
       <li>
-        <b>Renk seç.</b> Soldaki Model ağacında Renkler'de her satır bir renktir. 1–9 tuşları rengi
-        değiştirir. Taban (0) gövdedir. Gövdeler'de her parçanın altında o parçadaki boyalı renkler
-        üçgen sayısıyla durur; birine tıklamak parçayı ve rengi seçer.
+        <b>Seçim seti seç.</b> Soldaki Model ağacında Seçim setleri'nde her satır renkli bir settir;
+        boyamak aktif sete ekler, satırda kaç gövdede kaç üçgen olduğu yazar. 1–9 tuşları seti
+        değiştirir. Taban (0) seçimsiz yüzeydir. Gövdeler'de her gövdenin altında o gövdedeki setler
+        durur; birine tıklamak gövdeyi ve seti seçer.
       </li>
       <li>
         <b>Bölgeyi seç.</b> Smart Fill (F) ile çıkıntıya tıkla, Fırça (B) / Silgi (E) ile düzelt,
         Yumuşat (S) ile kenarı düzgünleştir. Çift özelliklerde (iki göz) sağdaki pencerede Ayna'yı
-        aç. Renk satırındaki göz boyayı yalnız görüntüde gizler. Satırdaki ⋯ ya da sağ tık: “Seçili
-        parçada temizle” boyayı siler, “Rengi kaldır” rengi listeden çıkarır. Tek bir yeri silmek
-        için Akıllı seç’te Shift+tık, Silgi, "Seçimi temizle" (Delete) ya da Ctrl/Cmd+Z. Alttaki
-        Geçmiş şeridinde bir adıma tıklayıp o ana dönebilirsin.
+        aç. Set satırındaki göz boyayı yalnız görüntüde gizler. Satırdaki ⋯ ya da sağ tık: yeniden
+        adlandır, “Seçili parçada temizle”, “Bu seti kes”, “Seti kaldır”. Tek bir yeri silmek için
+        Akıllı seç’te Shift+tık, Silgi, "Seçimi temizle" (Delete) ya da Ctrl/Cmd+Z. Alttaki Geçmiş
+        şeridinde bir adıma tıklayıp o ana dönebilirsin.
       </li>
       <li>
         <b>Kesim modunu seç.</b> Üst şeritte Tapa: ince bölgeler (göz, kaş). Pimli kes: kalın
-        bölgeler (kol, kafa). Yapıştır: pimsiz düz kesim. Seçili rengin çevresi ve adı modelin
-        üstünde durur.
+        bölgeler (kol, kafa). Yapıştır: pimsiz düz kesim. Aktif setin çevresi ve adı modelin üstünde
+        durur.
       </li>
       <li>
         <b>Toleransı ayarla.</b> Pim ile delik, tapa ile yuva arasında bırakılan boşluktur. FDM için
@@ -100,8 +101,8 @@ function Workflow() {
         <b>Önizle (Space), sonra Kes.</b> Önizleme açıkken ayar değiştirip pim ekleyip
         sürükleyebilirsin; önizleme kapanmaz, kendini yeniler. Pimin gövdeye ne kadar gireceği
         “Gövdede pay” ile (pim aracında tek pim için de) ayarlanır. Kırmızı alanlar incelen
-        duvardır. Kesimden sonra yeni parça listede “yeni” olarak çıkar; sonraki bölge için rengi
-        değiştirip devam et.
+        duvardır. Kesilen set yeni bir gövde olur (“Gövde N”, setin renginde); İşlemler'de “Kes K”
+        olarak durur. Sonraki bölge için seti değiştirip devam et.
       </li>
       <li>
         <b>İncele.</b> Parça listesinde göz simgesi gizler/gösterir, Alt+tık (veya Shift+H) yalnız o

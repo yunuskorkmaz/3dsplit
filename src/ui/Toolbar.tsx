@@ -183,7 +183,7 @@ export function ToolBar() {
       icon: 'suggest',
       label: 'Çıkıntılar',
       title:
-        'Göz, burun, kaş, kulak gibi çıkıntıları bulup her birini yeni renge boyar (tek Ctrl+Z ile geri alınır)',
+        'Göz, burun, kaş, kulak gibi çıkıntıları bulup her birini yeni seçim setine boyar (tek Ctrl+Z ile geri alınır)',
       disabled: !hasParts,
       onClick: autoSuggestFeatures,
     },

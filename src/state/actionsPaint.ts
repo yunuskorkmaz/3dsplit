@@ -431,7 +431,7 @@ export function activeIslands(): IslandInfo[] {
 export function addSlot(): void {
   const slots = get().slots;
   const id = Math.max(...slots.map((s) => s.id)) + 1;
-  set({ slots: [...slots, { id, name: `Renk ${id}`, color: nextSlotColor(id) }], activeSlot: id });
+  set({ slots: [...slots, { id, name: `Seçim ${id}`, color: nextSlotColor(id) }], activeSlot: id });
 }
 
 export function updateSlot(id: number, patch: { name?: string; color?: string }): void {
@@ -480,7 +480,7 @@ export function removeSlot(id: number): void {
       paints,
       colorBefore,
     },
-    `Rengi kaldır: ${slot.name}`,
+    `Seti kaldır: ${slot.name}`,
   );
   set((s) => ({
     slots: afterSlots,

@@ -12,6 +12,7 @@ export default defineConfig({
     'history.spec.ts',
     'value-tags.spec.ts',
     'palette.spec.ts',
+    'session.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

@@ -69,4 +69,5 @@ export {
   removePin,
   updatePin,
 } from './actionsPins';
+export { discardSession, restoreSession, startSessionAutosave } from './actionsSession';
 export { beginSmoothStroke, endSmoothStroke, smoothAt } from './actionsSmooth';

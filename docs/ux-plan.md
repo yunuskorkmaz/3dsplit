@@ -262,6 +262,8 @@ Sıra: X95, X96, X97, X98, X99, X100.
 - Sayfa açılınca kayıtlı oturum varsa boş ekranda kart: "**testa** — 2 gövde, 14:32'de kaydedildi. [Devam et] [Yok say]". Yok say kaydı siler. Model açık değilken kart görünür; dosya açılırsa kart kalkar, eski kayıt yenisiyle değişir.
 - Üst çubukta kayıt durumu: "Kaydedildi 14:32" / "Kaydediliyor…". Yazma hatası (kota) uyarı verir, uygulama çalışmaya devam eder.
 
+Uygulamada: kurtarılan oturumun geçmişi boş başlar ("Kurtarıldı" adımı eklenmedi; geri alınacak bir şey yok). Pimler ve kesim ayarları da saklanır.
+
 Kabul: e2e: figure aç, boya, kes → sayfayı yenile → kart → Devam et → 2 gövde ve boya aynı.
 
 ## X96 Büyük model

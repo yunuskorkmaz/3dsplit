@@ -9,6 +9,7 @@ import type {
 } from '../core/cut';
 import type { SplitDiff } from '../core/smooth';
 import type { LabeledMesh, Vec3 } from '../core/types';
+import type { SessionMeta } from '../io/session';
 
 export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin' | 'line' | 'seam';
 /** source: kesilmiş eski parça (sarı rozet), new: kesimden yeni çıkan parça (mavi rozet). */
@@ -185,6 +186,8 @@ export interface AppState {
   explode: number;
   /** X26: yardım penceresi açık mı. */
   helpOpen: boolean;
+  /** X95: oturum kaydı durumu (üst çubukta) ve açılışta önerilen kayıtlı oturum. */
+  session: { saving: boolean; savedAt: number | null; offer: SessionMeta | null };
   /** X90: komut arama açık. */
   paletteOpen: boolean;
   /**
@@ -272,6 +275,7 @@ export const useStore = create<AppState>(() => ({
   line: { partId: null, anchors: [], path: [] },
   explode: 0,
   helpOpen: false,
+  session: { saving: false, savedAt: null, offer: null },
   paletteOpen: false,
   directionGizmo: false,
   preview: null,

@@ -21,6 +21,22 @@ function closeMenu(e: React.MouseEvent) {
   (e.currentTarget.closest('details') as HTMLDetailsElement | null)?.removeAttribute('open');
 }
 
+/** X95: oturumun tarayıcıya en son ne zaman yazıldığı. */
+function SessionStatus() {
+  const { saving, savedAt } = useStore((s) => s.session);
+  if (!saving && !savedAt) return null;
+  return (
+    <span
+      className="session-status"
+      title="Oturum tarayıcıda kendiliğinden saklanır; sayfa yenilenince kaldığın yerden devam edilir"
+    >
+      {saving
+        ? 'Kaydediliyor…'
+        : `Kaydedildi ${new Date(savedAt ?? 0).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`}
+    </span>
+  );
+}
+
 /** X29: üst çubuk — dosya, geri al/yinele, görünüm, yardım. */
 export function Header() {
   const input = useRef<HTMLInputElement>(null);
@@ -113,6 +129,7 @@ export function Header() {
       <span className="spacer" />
       <StepBar />
       <span className="spacer" />
+      <SessionStatus />
       <button
         type="button"
         className="search-btn"

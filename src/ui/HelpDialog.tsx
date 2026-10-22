@@ -70,7 +70,8 @@ function Workflow() {
       <li>
         <b>Yükle.</b> STL, OBJ, 3MF veya .3dsplit dosyasını pencereye sürükle. Açık (su geçirmez
         olmayan) mesh otomatik onarılır; olmazsa parçada kırmızı “bozuk” yazar, şeritte Mesh ›
-        Onar’ı dene.
+        Onar’ı dene. Çalışma tarayıcıda kendiliğinden saklanır: sayfa yenilenince boş ekrandaki
+        “Devam et” kaldığın yere döner.
       </li>
       <li>
         <b>Renk seç.</b> Soldaki Model ağacında Renkler'de her satır bir renktir. 1–9 tuşları rengi

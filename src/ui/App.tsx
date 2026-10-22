@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import {
   clearActiveSlot,
+  discardSession,
   hideSelectedPart,
   importFiles,
   lineCancel,
@@ -9,9 +10,11 @@ import {
   openSample,
   redo,
   removePin,
+  restoreSession,
   scheduleSuggestion,
   showAllParts,
   soloPart,
+  startSessionAutosave,
   toggleExplode,
   togglePreview,
   undo,
@@ -34,11 +37,45 @@ function openModel(): void {
   document.getElementById('open-model')?.click();
 }
 
+function SessionOffer() {
+  const offer = useStore((s) => s.session.offer);
+  if (!offer) return null;
+  const time = new Date(offer.savedAt).toLocaleString('tr-TR', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return (
+    <section className="session-offer" aria-label="Kaldığın yer">
+      <p>
+        Kaldığın yer: <b>{offer.name}</b> · {offer.bodies} gövde · {time}
+      </p>
+      <div className="row">
+        <button
+          type="button"
+          className="primary"
+          onClick={async () => {
+            await restoreSession();
+            requestAnimationFrame(() => fitView());
+          }}
+        >
+          Devam et
+        </button>
+        <button type="button" onClick={discardSession}>
+          Yok say
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function EmptyStage() {
   const parts = useStore((s) => s.parts);
   if (parts.length) return null;
   return (
     <div className="empty-stage">
+      <SessionOffer />
       <p>Modeli aç, bölgeyi seç, kes, slicer'a aktar.</p>
       <div className="row">
         <button type="button" onClick={openModel}>
@@ -181,6 +218,7 @@ function useSuggestion() {
 
 export function App() {
   useShortcuts();
+  useEffect(() => startSessionAutosave(), []);
   useSuggestion();
   return (
     <div

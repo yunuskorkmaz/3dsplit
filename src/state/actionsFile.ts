@@ -42,6 +42,44 @@ export async function openSample(): Promise<void> {
   });
 }
 
+/** X96: bu kadar üçgenin üstünde sadeleştirme önerilir; hedef `SIMPLIFY_TARGET`. */
+export const SIMPLIFY_ABOVE = 1_000_000;
+export const SIMPLIFY_TARGET = 400_000;
+
+/**
+ * X96: parçaları toplam `target` üçgene sadeleştirir (her parça kendi payı kadar).
+ * Tek geçmiş adımı; boya korunur.
+ */
+export async function simplifyParts(ids: string[], target = SIMPLIFY_TARGET): Promise<void> {
+  set({ simplifyOffer: null });
+  const parts = get().parts.filter((p) => ids.includes(p.id));
+  const total = parts.reduce((n, p) => n + p.mesh.labels.length, 0);
+  if (!total) return;
+  await busy('Sadeleştiriliyor…', async () => {
+    const before = get().parts;
+    const next = new Map<string, Part>();
+    let tol = 0;
+    for (const p of parts) {
+      const share = Math.max(1000, Math.round((target * p.mesh.labels.length) / total));
+      if (p.mesh.labels.length <= share) continue;
+      const r = await geometry.simplify(p.mesh, share);
+      tol = Math.max(tol, r.tolerance);
+      next.set(p.id, { ...p, mesh: r.mesh });
+    }
+    if (!next.size) return;
+    const after = before.map((p) => next.get(p.id) ?? p);
+    set({ parts: after, preview: null, previewActive: false, pins: [], selectedPin: -1 });
+    pushHistory({ kind: 'parts', before, after }, 'Sadeleştir');
+    const now = after
+      .filter((p) => ids.includes(p.id))
+      .reduce((n, p) => n + p.mesh.labels.length, 0);
+    notify(
+      'info',
+      `Sadeleştirildi: ${total.toLocaleString('tr-TR')} → ${now.toLocaleString('tr-TR')} üçgen; yüzey en çok ${tol.toFixed(2)} mm oynadı. Ctrl+Z geri alır.`,
+    );
+  });
+}
+
 /** İçe aktarılan nesneleri onarıp parça olarak ekler. */
 async function addObjects(objects: ImportedObject[]): Promise<void> {
   const added: Part[] = [];
@@ -93,6 +131,10 @@ async function addObjects(objects: ImportedObject[]): Promise<void> {
   // X80: çok parçalı dosyada son yüklenen değil, en büyük (hacim) parça seçili
   const big = added[largestPart(added.map((p) => p.mesh))];
   if (big) set({ selectedPartId: big.id });
+  // X96: çok büyük modelde sadeleştirme önerilir
+  const triangles = added.reduce((n, p) => n + p.mesh.labels.length, 0);
+  if (triangles > SIMPLIFY_ABOVE)
+    set({ simplifyOffer: { partIds: added.map((p) => p.id), triangles } });
 }
 
 /** X80: parça adında model dosyası uzantısı gösterilmez. */

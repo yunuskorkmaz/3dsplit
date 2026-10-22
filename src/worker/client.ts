@@ -50,6 +50,7 @@ export function cancelGeometry(): void {
  * worker'ı kapatır; geç gelen sonuç uygulanmaz.
  */
 export function limitCall<T>(work: Promise<T>, ms = GEOMETRY_TIMEOUT_MS): Promise<T> {
+  const seconds = Math.round(ms / 1000);
   const gen = generation;
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -66,7 +67,7 @@ export function limitCall<T>(work: Promise<T>, ms = GEOMETRY_TIMEOUT_MS): Promis
         finish(() => undefined);
         return;
       }
-      abortAll('İşlem 120 saniyede bitmedi. Model değişmedi.');
+      abortAll(`İşlem ${seconds} saniyede bitmedi. Model değişmedi.`);
     }, ms);
     waiters.add(onCancel);
     work.then(
@@ -80,21 +81,36 @@ export function limitCall<T>(work: Promise<T>, ms = GEOMETRY_TIMEOUT_MS): Promis
   });
 }
 
-function call<T>(run: (api: Comlink.Remote<GeometryApi>) => Promise<T>): Promise<T> {
-  return limitCall(run(spawn()));
+/**
+ * X96: süre sınırı model büyüklüğüyle büyür: 1,47M üçgende Tapa kesimi tek başına
+ * ~40 s, paralel işlerle 120 s'yi aşabiliyor. Milyon üçgen başına 4 dk, en az 2 dk.
+ */
+export function limitFor(triangles: number): number {
+  return Math.max(GEOMETRY_TIMEOUT_MS, Math.ceil((triangles / 1e6) * 240_000));
 }
+
+function call<T>(run: (api: Comlink.Remote<GeometryApi>) => Promise<T>, triangles = 0): Promise<T> {
+  return limitCall(run(spawn()), limitFor(triangles));
+}
+
+const trisOf = (mesh: { indices: Uint32Array }) => mesh.indices.length / 3;
 
 /** Her uzun çağrı iptal ve zaman aşımı taşır. Worker ilk çağrıda kurulur. */
 export const geometry: GeometryApi = {
-  prepare: (positions, indices, labels) => call((api) => api.prepare(positions, indices, labels)),
-  cut: (mesh, opts, geomKey) => call(async (api) => api.cut(mesh, opts, geomKey)),
-  preview: (mesh, opts, geomKey) => call((api) => api.preview(mesh, opts, geomKey)),
-  pinLayout: (mesh, opts) => call((api) => api.pinLayout(mesh, opts)),
-  suggest: (mesh, slot) => call((api) => api.suggest(mesh, slot)),
-  voxel: (mesh, resolution) => call((api) => api.voxel(mesh, resolution)),
-  refine: (mesh, edgeLength) => call((api) => api.refine(mesh, edgeLength)),
+  prepare: (positions, indices, labels) =>
+    call(
+      (api) => api.prepare(positions, indices, labels),
+      indices ? indices.length / 3 : positions.length / 9,
+    ),
+  cut: (mesh, opts, geomKey) => call(async (api) => api.cut(mesh, opts, geomKey), trisOf(mesh)),
+  preview: (mesh, opts, geomKey) => call((api) => api.preview(mesh, opts, geomKey), trisOf(mesh)),
+  pinLayout: (mesh, opts) => call((api) => api.pinLayout(mesh, opts), trisOf(mesh)),
+  suggest: (mesh, slot) => call((api) => api.suggest(mesh, slot), trisOf(mesh)),
+  voxel: (mesh, resolution) => call((api) => api.voxel(mesh, resolution), trisOf(mesh)),
+  refine: (mesh, edgeLength) => call((api) => api.refine(mesh, edgeLength), trisOf(mesh)),
   coupon: (pin, clearances, depthClearance) =>
     call((api) => api.coupon(pin, clearances, depthClearance)),
-  split: (mesh) => call((api) => api.split(mesh)),
+  split: (mesh) => call((api) => api.split(mesh), trisOf(mesh)),
+  simplify: (mesh, target) => call((api) => api.simplify(mesh, target), trisOf(mesh)),
   sample: () => call((api) => api.sample()),
 };

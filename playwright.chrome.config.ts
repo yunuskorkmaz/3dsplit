@@ -13,6 +13,7 @@ export default defineConfig({
     'value-tags.spec.ts',
     'palette.spec.ts',
     'session.spec.ts',
+    'big-model.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

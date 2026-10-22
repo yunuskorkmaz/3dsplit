@@ -13,7 +13,9 @@ import {
   redo,
   refineSelected,
   runCut,
+  SIMPLIFY_TARGET,
   saveProject,
+  simplifyParts,
   splitSelected,
   toggleExplode,
   togglePreview,
@@ -171,6 +173,22 @@ function useItems(): Item[] {
         icon: 'refine',
         blocked: noSelection,
         run: () => refineSelected(),
+      },
+      {
+        id: 'simplify',
+        label: 'Sadeleştir',
+        words: 'mesh üçgen azalt büyük model decimate',
+        icon: 'refine',
+        blocked: noSelection,
+        run: () => {
+          const s = get();
+          const part = s.parts.find((p) => p.id === s.selectedPartId);
+          if (part)
+            simplifyParts(
+              [part.id],
+              Math.min(SIMPLIFY_TARGET, Math.round(part.mesh.labels.length / 2)),
+            );
+        },
       },
       {
         id: 'explode',

@@ -1625,3 +1625,22 @@ ul.slots li.hidden-slot .name {
   font-size: 11px;
   margin-right: 10px;
 }
+
+/* X96: sahne üstünde öneri kartı */
+.notice-card {
+  position: absolute;
+  z-index: 6;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 640px));
+  min-width: 320px;
+  padding: 12px 14px;
+  background: #1d2433;
+  border: 1px solid #2f6fd6;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+.notice-card p {
+  margin: 0 0 8px;
+}

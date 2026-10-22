@@ -11,8 +11,10 @@ import {
   redo,
   removePin,
   restoreSession,
+  SIMPLIFY_TARGET,
   scheduleSuggestion,
   showAllParts,
+  simplifyParts,
   soloPart,
   startSessionAutosave,
   toggleExplode,
@@ -64,6 +66,37 @@ function SessionOffer() {
         </button>
         <button type="button" onClick={discardSession}>
           Yok say
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** X96: çok büyük model açılınca sadeleştirme önerisi. */
+function SimplifyOffer() {
+  const offer = useStore((s) => s.simplifyOffer);
+  if (!offer) return null;
+  const fmt = (n: number) =>
+    n >= 1e6
+      ? `${(n / 1e6).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} milyon`
+      : `${Math.round(n / 1000)} bin`;
+  return (
+    <section className="notice-card" aria-label="Sadeleştirme önerisi">
+      <p>
+        Bu model <b>{fmt(offer.triangles)}</b> üçgen. {fmt(SIMPLIFY_TARGET)} üçgene sadeleştirmek
+        seçimi, önizlemeyi ve kesimi birkaç kat hızlandırır; yüzey milimetrenin onda biri kadar
+        oynar. Ctrl+Z ile geri alınır.
+      </p>
+      <div className="row">
+        <button
+          type="button"
+          className="primary"
+          onClick={() => simplifyParts(offer.partIds, SIMPLIFY_TARGET)}
+        >
+          Sadeleştir
+        </button>
+        <button type="button" onClick={() => set({ simplifyOffer: null })}>
+          Olduğu gibi kalsın
         </button>
       </div>
     </section>
@@ -234,6 +267,7 @@ export function App() {
       <main className="stage">
         <ViewportHost />
         <EmptyStage />
+        <SimplifyOffer />
         <ViewCube />
         <NavBar />
         <ValueTags />

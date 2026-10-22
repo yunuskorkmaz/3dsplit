@@ -17,6 +17,7 @@ import { computeMeshTopology, type MeshTopology, withMeshTopology } from '../cor
 import { refineMesh } from '../core/refine';
 import { cutOutDefects, type RepairReport, repairMesh } from '../core/repair';
 import { sampleFigure } from '../core/sample';
+import { simplifyMesh } from '../core/simplify';
 import { smoothCutEdge } from '../core/smooth';
 import { BASE_SLOT, type LabeledMesh, type MeshData } from '../core/types';
 import { voxelRepair } from '../core/voxelRepair';
@@ -180,6 +181,13 @@ const api = {
         return { ok: false as const, error: e.message, loops: e.loops ?? [] };
       throw e;
     }
+  },
+
+  /** X96: büyük modeli hedef üçgen sayısına sadeleştirir. */
+  async simplify(mesh: LabeledMesh, targetTriangles: number) {
+    await ready;
+    const r = simplifyMesh(mesh, targetTriangles);
+    return Comlink.transfer(r, buffersOf([r.mesh]));
   },
 
   async preview(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {

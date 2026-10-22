@@ -21,7 +21,7 @@ import {
   smoothAt,
   updatePin,
 } from '../state/actions';
-import { get, notify, set, useStore } from '../state/store';
+import { get, notify, type Part, set, useStore } from '../state/store';
 import { type Hit, Viewport } from '../viewport/Viewport';
 
 const DIMMED = new THREE.Color('#2a2a2a');
@@ -44,6 +44,21 @@ function slotColor(label: number): THREE.Color {
 }
 
 let activeViewport: Viewport | null = null;
+
+/**
+ * Sahneye gidecek parçalar. X96: gizli kaynak parça (kesimden önceki hal) sahneye
+ * konmaz: büyük modelde her kesim GPU'da bir kopya daha tutuyordu. Gösterilince kurulur.
+ */
+function partViews(parts: Part[], selectedPartId: string | null) {
+  return parts
+    .filter((p) => p.visible || p.badge !== 'source')
+    .map((p) => ({
+      id: p.id,
+      mesh: p.mesh,
+      visible: p.visible,
+      selected: p.id === selectedPartId,
+    }));
+}
 
 /** Görünümü sığdır (araç çubuğu, Home tuşu). */
 export function fitView(): void {
@@ -273,15 +288,7 @@ export function ViewportHost() {
       onContextRestored() {
         notify('info', 'Grafik bağlamı geri geldi, model yeniden çizildi.');
         const st = get();
-        vp.sync(
-          st.parts.map((p) => ({
-            id: p.id,
-            mesh: p.mesh,
-            visible: p.visible,
-            selected: p.id === st.selectedPartId,
-          })),
-          slotColor,
-        );
+        vp.sync(partViews(st.parts, st.selectedPartId), slotColor);
       },
       onBrushResize(deltaY) {
         set((s) => ({
@@ -307,15 +314,7 @@ export function ViewportHost() {
   }, []);
 
   useEffect(() => {
-    vpRef.current?.sync(
-      parts.map((p) => ({
-        id: p.id,
-        mesh: p.mesh,
-        visible: p.visible,
-        selected: p.id === selectedPartId,
-      })),
-      slotColor,
-    );
+    vpRef.current?.sync(partViews(parts, selectedPartId), slotColor);
   }, [parts, selectedPartId, slots]);
 
   // X80: boş sahneye açılan dosyanın bütün parçaları gelince görünüm yeniden sığdırılır

@@ -18,7 +18,9 @@ export {
   exportStlZip,
   importFiles,
   openSample,
+  SIMPLIFY_TARGET,
   saveProject,
+  simplifyParts,
 } from './actionsFile';
 export { jumpToHistory, redo, undo } from './actionsHistory';
 export {

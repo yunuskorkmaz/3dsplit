@@ -274,6 +274,8 @@ Kabul: e2e: figure aç, boya, kes → sayfayı yenile → kart → Devam et → 
 - 1M üçgeni aşan modelde açılışta seçenek: "Bu model 1,47M üçgen. Önerilen: 400k'ya sadeleştir (ayrıntı korunur, işlemler hızlanır). [Sadeleştir] [Olduğu gibi aç]". Sadeleştirme manifold `simplify` ile, sapma ortalama kenarın yarısı kadar.
 - Worker'daki 120 s sınırı büyük modelde üçgen sayısıyla büyür (kesim takılmasın).
 
+Uygulamada: hedef 400 bin; tolerans ortalama kenarın %1'inden başlayıp ikiye katlanır, hedefin altına inen ilk sonuç alınır (ilk denemede %25'ten başlamak 45 bine iniyordu). Komut aramada "Sadeleştir" seçili parçayı yarıya indirir. Gizli kaynak parçalar sahneye konmaz (GPU'da kopya tutulmaz), gösterilince kurulur.
+
 Kabul: BLUEY+SENTADA aç → sadeleştir → Akıllı seç → Pimli kes → 3MF; her adımın süresi günlükte.
 
 ## X97 Ne olduğu görünür

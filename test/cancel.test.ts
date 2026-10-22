@@ -43,7 +43,7 @@ describe('iş iptali', () => {
     ).then(() => {
       applied = true;
     });
-    await expect(pending).rejects.toThrow('İşlem 120 saniyede bitmedi. Model değişmedi.');
+    await expect(pending).rejects.toThrow(/^İşlem \d+ saniyede bitmedi\. Model değişmedi\.$/);
     expect(applied).toBe(false);
   });
 });

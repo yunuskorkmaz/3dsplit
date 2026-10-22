@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-21):** A1–E2 ve X1–X94 bitti (Sprint 8 ve 9: `docs/ux-plan.md`). Yeni iş **X95** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-21):** A1–E2 ve X1–X96 bitti (Sprint 8 ve 9: `docs/ux-plan.md`). Yeni iş **X101** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -92,7 +92,7 @@ Ekran davranışları: [docs/ux-plan.md](ux-plan.md) (Sprint 10 başlığı). S�
 | ID | İş | Neden | Durum |
 | --- | --- | --- | --- |
 | X95 | Oturum IndexedDB'ye kendiliğinden yazılır; açılışta "Devam et" | Yenileyince bütün iş gidiyor | [x] |
-| X96 | Büyük model: ölç, en yavaş iki adımı düzelt, 1M üstünde sadeleştirme önerisi | 1,47M üçgende kesim ve önizleme dakikalar sürüyor | [ ] |
+| X96 | Büyük model: ölç, en yavaş iki adımı düzelt, 1M üstünde sadeleştirme önerisi | 1,47M üçgende kesim ve önizleme dakikalar sürüyor | [x] |
 | X97 | İşlem görünürlüğü: aşamalı meşgul kartı, sonuçlu işlem adları, kesim sonrası hata yok, durum satırı | Kullanıcı ne yapıldığını anlamıyor | [ ] |
 | X98 | Kesimden çıkan parça "Gövde N", seçim boyası gövde rengine dönüşür; ağaçta İşlemler | Fusion gibi gövde | [ ] |
 | X99 | Renkler → Seçim setleri; set başına gövde/üçgen sayısı, set menüsü | Seçimler adlı set gibi okunmuyor | [ ] |
@@ -354,3 +354,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-21 | X93: X92'deki komşu üçgen karşılaştırması 20° açı eşiğini kullanıyordu; kapalı olmadığı için açılışta voxel ile yeniden kurulan BLUEY+SENTADA (11.192 üçgen, kenar 2,4 mm) yüzeyinde komşular 20–60° basamak yapıyor, seçim parçalanıyordu (200 tıklamanın 62'si küçüldü; başa tıklayınca %39,6 → %1,1). Komşu eşiği `SHARP_CREASE_DEG = 70` (burnun dibi 83–91°). Bluey'de 200 tıklamanın 3'ü değişiyor, göğüste eski seçim dağınık yamalardı, yeni seçim göğüste toplu. Ham mesh'li 6 modelde 40'ar tıklama eskisiyle aynı; figür burnu testi geçiyor | — |
 | 2026-10-21 | X94: açılışta manifold doğrulaması geçmezse voxel'den önce `cutOutDefects`: açık/non-manifold kenarlı üçgenlerin köşelerine değen üçgenler silinir, temel onarım delikleri kapatır; en çok 3 tur, silinen %2'yi geçerse voxel. Boyalı 3MF etiketleri `source` ile taşınır. BLUEY+SENTADA (510 hatalı, 170 açık kenar, 86 kabuk): 1.844 üçgen silindi, 1.472.852 üçgen kaldı, gözler ve kaşlar yerinde; açılış ~60 s → 5,4 s. robo.stl 201 üçgen kaybıyla kapanıyor. Bildirim: "N hatalı kenar çevresinde M üçgen silinip delikler kapatıldı". `test/core.test.ts` (küpe yapışık kanat) | — |
 | 2026-10-22 | X95: parça, boya, seçim setleri, seçili parça, kesim ayarları ve pimler her değişiklikten 1,5 s sonra IndexedDB'ye yazılır (`src/io/session.ts`, `actionsSession.ts`); meşgulken beklenir, yazma sürerken gelen değişiklik bir sonraki tura kalır. Özet ayrı kayıt: açılış kartı mesh okumadan çıkar. Boş ekranda "Kaldığın yer: ad · N gövde · zaman [Devam et] [Yok say]"; dosya açılırsa kart kalkar. Üst çubukta "Kaydedildi 14:32". 1,47M üçgende yazma 63 ms, okuma 22 ms. Geçmiş saklanmaz. `e2e/session.spec.ts` | — |
+| 2026-10-22 | X96: BLUEY+SENTADA (1.472.852 üçgen) ölçüm, Chrome, ms. Sadeleştirmesiz Pimli kes: aç 9.092, Akıllı seç 1.064, önizleme 11.147, kes 7.530, 3MF 3.453. Sadeleştirmesiz Tapa: kes 36.707. 4 art arda kesimde GPU geometrisi 137 → 368 MB (gizli kaynaklar). Düzeltmeler: (1) gizli kaynak parça sahneye konmaz; (2) Worker süre sınırı milyon üçgen başına 4 dk, en az 2 dk (`limitFor`); (3) 1M üçgen üstünde açılışta "Sadeleştir" kartı (`simplifyMesh`, manifold `simplify`, hedef 400 bin, boya faceID ile taşınır, tek geçmiş adımı) ve komut aramada "Sadeleştir". Sadeleştirmeyle: 1.472.852 → 312.006 üçgen, yüzey ≤ 0,01 mm, 5,0 s; Tapa kes 2.831, önizleme 3.681, Akıllı seç 224, 3MF 871. `test/simplify.test.ts`, `e2e/big-model.spec.ts` | — |

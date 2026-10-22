@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { PinShape } from '../core/cut';
 import {
   activeIslands,
@@ -537,19 +537,43 @@ export function CutPanel() {
   );
 }
 
-export function StatusBar() {
+/** X97: meşgul kartı: iş, aşama, geçen süre, İptal. */
+function BusyCard() {
   const busy = useStore((s) => s.busy);
+  const stage = useStore((s) => s.busyStage);
+  const started = useStore((s) => s.busyStarted);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!busy) return;
+    const t = window.setInterval(() => tick((n) => n + 1), 1000);
+    return () => window.clearInterval(t);
+  }, [busy]);
+  if (!busy) return null;
+  const seconds = Math.max(0, Math.round((Date.now() - started) / 1000));
+  return (
+    <div className="msg busy" role="status">
+      <span className="spinner" aria-hidden="true" />
+      <span className="busy-text">
+        <b>{busy}</b>
+        {stage && <span className="busy-stage">{stage}…</span>}
+      </span>
+      <span className="busy-time">{seconds} sn</span>
+      <button
+        type="button"
+        onClick={() => cancelGeometry()}
+        title="İşi durdur; model değişmez (Esc)"
+      >
+        İptal
+      </button>
+    </div>
+  );
+}
+
+export function StatusBar() {
   const messages = useStore((s) => s.messages);
   return (
     <div className="status">
-      {busy && (
-        <div className="msg busy">
-          {busy}
-          <button type="button" onClick={() => cancelGeometry()}>
-            İptal
-          </button>
-        </div>
-      )}
+      <BusyCard />
       {messages.map((m) => (
         <div key={m.id} className={`msg ${m.kind}`} onClick={() => dismiss(m.id)}>
           {m.text}

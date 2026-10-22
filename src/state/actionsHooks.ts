@@ -44,13 +44,13 @@ export function bumpGeometry(mesh: LabeledMesh): void {
 // ---------- yardımcı ----------
 
 export async function busy(label: string, fn: () => Promise<void>): Promise<void> {
-  set({ busy: label });
+  set({ busy: label, busyStage: null, busyStarted: Date.now() });
   try {
     await fn();
   } catch (e) {
     if (!(e instanceof GeometryAbort)) console.error(e);
     notify('error', e instanceof Error ? e.message : String(e));
   } finally {
-    set({ busy: null });
+    set({ busy: null, busyStage: null });
   }
 }

@@ -334,8 +334,13 @@ export async function runCut(): Promise<void> {
   const part = cutTarget();
   if (!part) return;
   const opts = cutOptions();
-  await busy('Kesiliyor…', async () => {
-    const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh));
+  const slotLabel = get().slots.find((s) => s.id === opts.slot)?.name ?? '';
+  const modeLabel =
+    opts.mode === 'socket' ? 'Tapa' : opts.mode === 'keys' ? 'Pimli kes' : 'Yapıştır';
+  await busy(`Kesiliyor · ${modeLabel} · ${slotLabel} · ${part.name}`, async () => {
+    const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh), (stage) =>
+      set({ busyStage: stage }),
+    );
     if (!r.ok) {
       set({ errorLoops: r.loops.length ? r.loops : null });
       notify('error', r.loops.length ? `${r.error} Sorunlu sınır kırmızıyla gösterildi.` : r.error);
@@ -381,6 +386,7 @@ export async function runCut(): Promise<void> {
     set((s) => ({
       parts: after,
       selectedPartId: newParts[0].id,
+      suggestion: null,
       preview: null,
       pins: [],
       selectedPin: -1,
@@ -402,8 +408,10 @@ export async function runCut(): Promise<void> {
 
 async function runSeamCut(part: Part, loop: number[]): Promise<void> {
   const opts = seamOptions(loop);
-  await busy('Kesiliyor…', async () => {
-    const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh));
+  await busy(`Kesiliyor · Dikiş · ${part.name}`, async () => {
+    const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh), (stage) =>
+      set({ busyStage: stage }),
+    );
     if (!r.ok) {
       set({ errorLoops: r.loops.length ? r.loops : null, line: { ...get().line, bad: true } });
       notify('error', r.loops.length ? `${r.error} Halka kırmızıyla gösterildi.` : r.error);
@@ -445,6 +453,7 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
     set((s) => ({
       parts: after,
       selectedPartId: newParts[0].id,
+      suggestion: null,
       preview: null,
       pins: [],
       selectedPin: -1,

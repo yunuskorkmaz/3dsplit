@@ -37,7 +37,7 @@ test('X88: geçmiş şeridi: simgeli adımlar, tıklanan adıma gidilir', async 
   await expect(steps).toHaveCount(n);
   // boyama adımı o rengin renginde, son adım kesim ve bulunulan adım
   const red = (await state(page)).slots.find((s: { id: number }) => s.id === 1).color;
-  const paintStep = bar.getByRole('button', { name: /\. Fırça$/ }).first();
+  const paintStep = bar.getByRole('button', { name: /\. Fırça · Seçim 1 · \d+ üçgen$/ }).first();
   const rgb = await paintStep.evaluate((el) => getComputedStyle(el).color);
   const hex = `#${rgb
     .match(/\d+/g)

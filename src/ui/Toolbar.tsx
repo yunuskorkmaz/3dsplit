@@ -466,7 +466,6 @@ export function ToolOptions() {
     tool === 'bucket' ||
     tool === 'line';
   useStore((s) => s.selectedPartId);
-  const info = TOOLS.find((t) => t.id === tool);
   const radius = (
     <NumberField
       label="Yarıçap"
@@ -742,8 +741,33 @@ export function ToolOptions() {
           )}
         </span>
       )}
-      <span className="tool-hint">{info?.hint}</span>
     </div>
+  );
+}
+
+/** X97: ne üzerinde çalışıldığı: gövde, aktif set, aracın ne beklediği. */
+function StatusLine({ hint }: { hint: string }) {
+  const body = useStore((s) => s.parts.find((p) => p.id === s.selectedPartId)?.name);
+  const set = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
+  const navMode = useStore((s) => s.navMode);
+  return (
+    <p className="status-line">
+      {body ? (
+        <>
+          Gövde: <b>{body}</b>
+          {set && set.id !== 0 && (
+            <>
+              {' '}
+              · Set: <b style={{ color: set.color }}>{set.name}</b>
+            </>
+          )}
+        </>
+      ) : (
+        'Model yok'
+      )}
+      <br />
+      {navMode ? 'Sol tuş kamerada (Esc bırakır)' : hint}
+    </p>
   );
 }
 
@@ -769,6 +793,7 @@ export function ToolPanel() {
         </span>
       }
     >
+      <StatusLine hint={info?.hint ?? ''} />
       <ToolOptions />
     </Panel>
   );

@@ -285,6 +285,8 @@ Kabul: BLUEY+SENTADA aç → sadeleştir → Akıllı seç → Pimli kes → 3MF
 - **Kesimden sonra hata yok:** kesilen parçanın seçimi gövdeye dönüşür (X98), önizleme o parçada açılmaz.
 - **Durum satırı:** araç penceresinin başlığının altında tek satır: "Akıllı seç → Seçim 1 · gövde: testa · bir çıkıntıya tıkla".
 
+Uygulamada: aşamalar yalnız kesimde (seçim bölgeleri, kenar düzeltme, model kurulumu, tapa ve yuva hacmi / kesim yüzü, pimler, gövdeler); diğer ağır işlerde (açma, sadeleştirme, önizleme) kart iş adı ve süreyi gösterir. Durum satırı aracın ipucunu da taşır (eski alt ipucu kalktı). Kesimden sonra öneri hemen silinir.
+
 Kabul: e2e: kes → geçmiş adı "Kes 1 · Tapa · Seçim 1 → …", kırmızı önizleme hatası yok; büyük kesimde meşgul kartı aşama gösterir.
 
 ## X98 Gövdeler (Fusion gibi)

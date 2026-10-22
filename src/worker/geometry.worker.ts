@@ -14,6 +14,7 @@ import {
 } from '../core/cut';
 import { fromManifold, initKernel, KernelError, modelManifold, toManifold } from '../core/kernel';
 import { computeMeshTopology, type MeshTopology, withMeshTopology } from '../core/meshTopology';
+import { setStageReporter, stage } from '../core/progress';
 import { refineMesh } from '../core/refine';
 import { cutOutDefects, type RepairReport, repairMesh } from '../core/repair';
 import { sampleFigure } from '../core/sample';
@@ -168,10 +169,18 @@ const api = {
   },
 
   /** Kesim hatası Error olarak değil veri olarak döner: Comlink hata nesnesinin ek alanlarını (sorunlu halkalar) taşımıyor. */
-  async cut(mesh: LabeledMesh, opts: CutOptions, geomKey?: string) {
+  async cut(
+    mesh: LabeledMesh,
+    opts: CutOptions,
+    geomKey?: string,
+    onStage?: (stage: string) => void,
+  ) {
     await ready;
+    setStageReporter(onStage ?? null);
     try {
+      if (opts.smoothEdge && !opts.seamLoop) stage('Kesim kenarı düzeltiliyor');
       const prepared = edgePrepared(mesh, opts, geomKey);
+      stage('Model kuruluyor');
       const r = withMeshTopology(topologyFor(prepared.key), () =>
         cutRegion(prepared.mesh, opts, modelProvider(prepared.mesh, prepared.key)),
       );
@@ -180,6 +189,8 @@ const api = {
       if (e instanceof CutError)
         return { ok: false as const, error: e.message, loops: e.loops ?? [] };
       throw e;
+    } finally {
+      setStageReporter(null);
     }
   },
 

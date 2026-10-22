@@ -13,8 +13,8 @@ function historyIcon(e: HistoryEntry): IconName {
   if (e.kind === 'paint') {
     if (label.startsWith('Silgi') || label.includes('(sil)') || label === 'Seçimi temizle')
       return 'erase';
-    if (label.startsWith('Kova') || label.startsWith('Gap')) return 'bucket';
-    if (label.startsWith('Smart')) return 'smart';
+    if (label.startsWith('Kova') || label.startsWith('Adalar')) return 'bucket';
+    if (label.startsWith('Akıllı')) return 'smart';
     if (label.startsWith('Çıkıntı')) return 'suggest';
     if (label.startsWith('Çizgi')) return 'line';
     return 'brush';

@@ -29,6 +29,7 @@ import { signedVolume } from './geometry';
 import { CUT_FACE_ID, fromManifoldMapped, KernelError, Scope, toManifold } from './kernel';
 import { meshTopology } from './meshTopology';
 import { closeHoles } from './paint';
+import { stage } from './progress';
 import { boundaryLoops, connectedComponents, extractTriangles } from './topology';
 import { BASE_SLOT, type LabeledMesh, type MeshData, type Vec3 } from './types';
 import { add, dot, normalize, scale, sub, vertexAt } from './vec';
@@ -305,6 +306,7 @@ function cutRegionImpl(mesh: LabeledMesh, opts: CutOptions): CutResult {
   const scope = new Scope();
   try {
     const warnings: string[] = [];
+    stage('Seçim bölgeleri bulunuyor');
     const islands = findIslands(mesh, opts.slot, warnings);
     try {
       const r = cutIslands(mesh, islands, opts, scope, warnings);
@@ -338,7 +340,11 @@ function cutIslands(
   warnings: string[],
 ): CutResult {
   {
-    if (opts.mode === 'socket') return socketCut(mesh, islands, opts, scope, warnings);
+    if (opts.mode === 'socket') {
+      stage('Tapa ve yuva hacmi kuruluyor');
+      return socketCut(mesh, islands, opts, scope, warnings);
+    }
+    stage(opts.planar ? 'Düzlemle ayrılıyor' : 'Kesim yüzü kapatılıyor');
 
     let body: Manifold;
     let parts: Manifold[];
@@ -362,6 +368,7 @@ function cutIslands(
     }
 
     if (opts.mode === 'keys') {
+      stage('Pimler ve delikler ekleniyor');
       const placed = pinCenters(mesh, islands, opts.pins, opts.pin, pinFit(opts), warnings);
       for (const [k, { island, center, axis, spec }] of placed.entries()) {
         const i = islands.indexOf(island);
@@ -384,6 +391,7 @@ function cutIslands(
         }
       }
     }
+    stage('Gövdeler hazırlanıyor');
     return {
       body: fromManifoldMapped(body, mesh.labels, BASE_SLOT),
       parts: parts.map((p) => partFrom(p, mesh.labels, opts.slot)),

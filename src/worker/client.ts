@@ -102,7 +102,11 @@ export const geometry: GeometryApi = {
       (api) => api.prepare(positions, indices, labels),
       indices ? indices.length / 3 : positions.length / 9,
     ),
-  cut: (mesh, opts, geomKey) => call(async (api) => api.cut(mesh, opts, geomKey), trisOf(mesh)),
+  cut: (mesh, opts, geomKey, onStage) =>
+    call(
+      async (api) => api.cut(mesh, opts, geomKey, onStage ? Comlink.proxy(onStage) : undefined),
+      trisOf(mesh),
+    ),
   preview: (mesh, opts, geomKey) => call((api) => api.preview(mesh, opts, geomKey), trisOf(mesh)),
   pinLayout: (mesh, opts) => call((api) => api.pinLayout(mesh, opts), trisOf(mesh)),
   suggest: (mesh, slot) => call((api) => api.suggest(mesh, slot), trisOf(mesh)),

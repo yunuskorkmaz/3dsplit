@@ -14,6 +14,7 @@ export default defineConfig({
     'palette.spec.ts',
     'session.spec.ts',
     'big-model.spec.ts',
+    'clarity.spec.ts',
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',

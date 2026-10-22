@@ -215,6 +215,9 @@ export interface AppState {
   /** X72: kullanıcı modu elle seçti; öneri modu artık kendiliğinden değiştirmez. */
   cutModeManual: boolean;
   busy: string | null;
+  /** X97: meşgul işin o anki aşaması ve başlama anı (geçen süre için). */
+  busyStage: string | null;
+  busyStarted: number;
   messages: Message[];
   /** Etiketler yerinde değiştiği için yeniden boyamayı tetikleyen sayaç. */
   paintVersion: number;
@@ -290,6 +293,8 @@ export const useStore = create<AppState>(() => ({
   cutModeManual: false,
   errorLoops: null,
   busy: null,
+  busyStage: null,
+  busyStarted: 0,
   messages: [],
   paintVersion: 0,
   undoStack: [],

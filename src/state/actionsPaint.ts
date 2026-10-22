@@ -112,9 +112,25 @@ export function endStroke(): Extract<HistoryEntry, { kind: 'paint' }> | null {
   const tris = Uint32Array.from(s.before.keys());
   const before = Uint16Array.from(s.before.values());
   const after = Uint16Array.from(tris, (t) => part.mesh.labels[t]);
-  const entry = { kind: 'paint' as const, mesh: part.mesh, tris, before, after, label: s.label };
+  const entry = {
+    kind: 'paint' as const,
+    mesh: part.mesh,
+    tris,
+    before,
+    after,
+    label: describeStroke(s.label, after),
+  };
   pushHistory(entry);
   return entry;
+}
+
+/** X97: geçmişte adımın sonucu da okunsun: "Akıllı seç · Seçim 1 · 1.240 üçgen". */
+function describeStroke(label: string, after: Uint16Array): string {
+  const n = after.length.toLocaleString('tr-TR');
+  const set = after.find((l) => l !== BASE_SLOT);
+  if (set === undefined) return `${label} · ${n} üçgen silindi`;
+  const name = get().slots.find((x) => x.id === set)?.name ?? `Seçim ${set}`;
+  return `${label} · ${name} · ${n} üçgen`;
 }
 
 function paintLabel(erase: boolean): number {
@@ -238,7 +254,7 @@ export function smartFillAt(partId: string, tri: number, erase: boolean): void {
   const part = partById(partId);
   if (!part) return;
   const topo = topologyOf(part.mesh);
-  beginStroke(partId, erase ? 'Smart Fill (sil)' : 'Smart Fill');
+  beginStroke(partId, erase ? 'Akıllı seç (sil)' : 'Akıllı seç');
   const m = mirrored(part, triCenter(part, tri));
   const seeds = m && m.tri !== tri ? [tri, m.tri] : [tri];
   const tris = smartSelectMany(topo, part.mesh, seeds);
@@ -307,7 +323,7 @@ export function gapFillSelected(): void {
     if (list) list.push(t);
     else byLabel.set(newLabels[i], [t]);
   });
-  beginStroke(part.id, 'Gap Fill');
+  beginStroke(part.id, 'Adaları birleştir');
   for (const [label, list] of byLabel) applyLabels(part, list, label);
   endStroke();
   notify('info', `${tris.length} üçgen komşu renge çevrildi.`);

@@ -101,9 +101,11 @@ function prismUnion(
 }
 
 /**
- * X65: yuva payı. Yan yüzler `c` kadar dışarı, en derin taban `c` kadar içeri
- * kayar. Kaydırılmış kopyaların birleşimi, birbirine çok yakın üçgenlerde
- * boolean'ı bitirmiyordu.
+ * X65: yuva payı. Yan yüzler `c` kadar dışarı, `dir`in tersine bakan taban `c` kadar
+ * içeri kayar. Kaydırılmış kopyaların birleşimi, birbirine çok yakın üçgenlerde
+ * boolean'ı bitirmiyordu. X101: yanal itme yalnız yan duvar üçgenlerinin normalinden,
+ * aşağı itme tabanın tüm köşelerine; önce yalnız en derin köşe iniyordu, eğri tabanda
+ * tek köşelik çukur yelpaze izi bırakıyordu.
  */
 export function growVolume(vol: Manifold, dir: Vec3, c: number, scope: Scope): Manifold {
   if (c <= 0) return vol;
@@ -112,7 +114,9 @@ export function growVolume(vol: Manifold, dir: Vec3, c: number, scope: Scope): M
   const n = src.numVert;
   const pos = src.vertProperties;
   const tri = src.triVerts;
-  const vn = new Float32Array(n * 3);
+  // yan duvar normallerinin köşe toplamı ve köşe tabana değiyor mu
+  const side = new Float32Array(n * 3);
+  const floor = new Uint8Array(n);
   for (let t = 0; t < src.numTri; t++) {
     const ia = tri[3 * t];
     const ib = tri[3 * t + 1];
@@ -129,25 +133,24 @@ export function growVolume(vol: Manifold, dir: Vec3, c: number, scope: Scope): M
     const nx = uy * wz - uz * wy;
     const ny = uz * wx - ux * wz;
     const nz = ux * wy - uy * wx;
-    for (const i of [ia, ib, ic]) {
-      vn[3 * i] += nx;
-      vn[3 * i + 1] += ny;
-      vn[3 * i + 2] += nz;
+    const len = Math.hypot(nx, ny, nz);
+    if (len < 1e-12) continue;
+    const nd = (nx * dir[0] + ny * dir[1] + nz * dir[2]) / len;
+    if (nd < -0.5) {
+      floor[ia] = floor[ib] = floor[ic] = 1;
+    } else if (nd < 0.5) {
+      for (const i of [ia, ib, ic]) {
+        side[3 * i] += nx;
+        side[3 * i + 1] += ny;
+        side[3 * i + 2] += nz;
+      }
     }
-  }
-  let minD = Infinity;
-  const along = new Float64Array(n);
-  for (let i = 0; i < n; i++) {
-    const d =
-      pos[stride * i] * dir[0] + pos[stride * i + 1] * dir[1] + pos[stride * i + 2] * dir[2];
-    along[i] = d;
-    if (d < minD) minD = d;
   }
   const out = new Float32Array(pos);
   for (let i = 0; i < n; i++) {
-    let nx = vn[3 * i];
-    let ny = vn[3 * i + 1];
-    let nz = vn[3 * i + 2];
+    let nx = side[3 * i];
+    let ny = side[3 * i + 1];
+    let nz = side[3 * i + 2];
     const nd = nx * dir[0] + ny * dir[1] + nz * dir[2];
     nx -= dir[0] * nd;
     ny -= dir[1] * nd;
@@ -159,7 +162,7 @@ export function growVolume(vol: Manifold, dir: Vec3, c: number, scope: Scope): M
       out[o + 1] += (ny / llen) * c;
       out[o + 2] += (nz / llen) * c;
     }
-    if (along[i] <= minD + 1e-4) {
+    if (floor[i]) {
       out[o] -= dir[0] * c;
       out[o + 1] -= dir[1] * c;
       out[o + 2] -= dir[2] * c;

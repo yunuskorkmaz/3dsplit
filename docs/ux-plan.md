@@ -316,6 +316,6 @@ Kabul: e2e: iki set boya → set satırlarında gövde/üçgen sayısı; "Bu set
 - "Kenarı düzelt" üç düzeyli olur: Hafif / Orta (varsayılan, bugünkü) / Güçlü. Güçlüde sınır eğrisi daha geniş Gauss ile yumuşatılır; alan dengesi korunur.
 - Yumuşat aracında "Tüm sınırı yumuşat" aynı düzeyi kullanır.
 
-Uygulamada: kısıtlı Delaunay yerine halkadan örülen kapağın iç kenarları ortadan bölünür (hedef kenar: halkanın ortalama kenarı, ama kapak boyunca en çok ~40 üçgen), Delaunay çevirmesi uygulanır, iç yükseklikler Laplace ile dağılır (`src/core/capRefine.ts`). Kullanıldığı yerler: Pimli kes / Yapıştır kapağı (`capSplit`) ve Tapa kapak prizması (`capPlugVolumes`). Yuva tabanında tolerans payı yolundan gelen hafif yelpaze izi kaldı. "Tüm sınırı yumuşat" kendi gücünü kullanmaya devam ediyor.
+Uygulamada: kısıtlı Delaunay yerine halkadan örülen kapağın iç kenarları ortadan bölünür (hedef kenar: halkanın ortalama kenarı, ama kapak boyunca en çok ~40 üçgen), Delaunay çevirmesi uygulanır, iç yükseklikler Laplace ile dağılır (`src/core/capRefine.ts`). Kullanıldığı yerler: Pimli kes / Yapıştır kapağı (`capSplit`) ve Tapa kapak prizması (`capPlugVolumes`). Yuva tabanında tolerans payı yolundan gelen hafif yelpaze izi X101 ile kalktı. "Tüm sınırı yumuşat" kendi gücünü kullanmaya devam ediyor.
 
 Kabul: test/: kapak üçgenlerinin en küçük açısı ≥ 20°; e2e: testa kulağı Tapa yuvası ekran görüntüsü günlükte (önce/sonra).

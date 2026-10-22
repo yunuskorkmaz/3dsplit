@@ -14,6 +14,8 @@ export {
   type CutOptions,
   type CutPreview,
   type CutResult,
+  EDGE_SMOOTH_MULTIPLES,
+  type EdgeSmoothing,
   type ModelProvider,
   type PinOptions,
   type PinPlacement,

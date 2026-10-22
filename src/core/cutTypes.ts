@@ -90,6 +90,8 @@ export interface CutOptions {
    * yazılmaz; manifold önbelleği bu kopyaya ayrı anahtarla bağlanır.
    */
   smoothEdge?: boolean;
+  /** X100: kenar düzeltme gücü; Gauss yarıçapı ortalama kenarın `EDGE_SMOOTH_MULTIPLES` katı. */
+  edgeSmoothing?: EdgeSmoothing;
   /**
    * X56: dikiş halkasının köşe sırası. Varsa boyalı slot kesilmez; model bu
    * halkanın düzleminden iki kapalı parçaya ayrılır.
@@ -165,3 +167,13 @@ export interface Island {
   /** Kararlı kimlik: adanın (delik katılmadan önceki) en küçük üçgen numarası. Arayüz aynı yolla hesaplar. */
   key: number;
 }
+
+/** X100: kesim kenarını düzeltme gücü. */
+export type EdgeSmoothing = 'light' | 'medium' | 'strong';
+
+/** X100: güç başına Gauss yarıçapı, ortalama kenar uzunluğunun katı (orta: X53'teki 4). */
+export const EDGE_SMOOTH_MULTIPLES: Record<EdgeSmoothing, number> = {
+  light: 2,
+  medium: 4,
+  strong: 10,
+};

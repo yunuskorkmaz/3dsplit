@@ -63,8 +63,10 @@ function edgePrepared(
 ): { mesh: LabeledMesh; key?: string } {
   if (!opts.smoothEdge || opts.seamLoop) return { mesh, key: geomKey };
   return {
-    mesh: smoothCutEdge(mesh, opts.slot),
-    key: geomKey ? `${geomKey}:edge:${opts.slot}:${hashLabels(mesh.labels)}` : undefined,
+    mesh: smoothCutEdge(mesh, opts.slot, opts.edgeSmoothing),
+    key: geomKey
+      ? `${geomKey}:edge:${opts.slot}:${opts.edgeSmoothing ?? 'medium'}:${hashLabels(mesh.labels)}`
+      : undefined,
   };
 }
 

@@ -10,7 +10,7 @@ Ana akış: yükle ve onar → Smart Fill / fırça / çizgi / kova ile seç →
 
 ## Ne bitti
 
-A1–E2 (`docs/project-brief.md`) ve X1–X96 (`docs/ROADMAP.md`) uygulandı. Arayüz kararları `docs/ux-plan.md`'de. Yeni iş **X101** (X97–X100 planda); davranış onaylanmadan arayüz kodlanmaz. Kullanıcı istemeden özellik ekleme. Yeni işe başlamadan önce roadmap'e yaz; bitince `[x]` yap ve "Tamamlananlar günlüğü"ne tarih + commit ekle.
+A1–E2 (`docs/project-brief.md`) ve X1–X100 (`docs/ROADMAP.md`) uygulandı. Arayüz kararları `docs/ux-plan.md`'de. Yeni iş **X101**; davranış onaylanmadan arayüz kodlanmaz. Kullanıcı istemeden özellik ekleme. Yeni işe başlamadan önce roadmap'e yaz; bitince `[x]` yap ve "Tamamlananlar günlüğü"ne tarih + commit ekle.
 
 Çelişirse şu sıra geçerlidir:
 

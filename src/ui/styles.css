@@ -1743,3 +1743,11 @@ ul.slots li .set-usage {
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* X100: kenar düzeltme gücü */
+fieldset.edge-smoothing {
+  margin: 4px 0 6px;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}

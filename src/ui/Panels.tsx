@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { PinShape } from '../core/cut';
+import type { EdgeSmoothing, PinShape } from '../core/cut';
 import {
   activeIslands,
   activePaintCount,
@@ -127,6 +127,16 @@ function SelectionRow() {
   );
 }
 
+const EDGE_LEVELS: { id: EdgeSmoothing; label: string; hint: string }[] = [
+  { id: 'light', label: 'Hafif', hint: 'Sınır boyaya yakın kalır; yalnız üçgen basamakları gider' },
+  { id: 'medium', label: 'Orta', hint: 'Varsayılan: küçük dalgalar düzelir' },
+  {
+    id: 'strong',
+    label: 'Güçlü',
+    hint: 'Sınır geniş bir eğriye oturur; kaba mesh ve fırça boyasında en pürüzsüz kesim',
+  },
+];
+
 /** Seçicide her seferinde yeni dizi yeniden çizim döngüsü yapar. */
 const NO_WARNINGS: string[] = [];
 
@@ -188,6 +198,22 @@ export function CutPanel() {
           />
           <span>Kenarı düzelt</span>
         </label>
+        {cut.smoothEdge && (
+          <fieldset className="row segmented edge-smoothing">
+            <legend className="visually-hidden">Kenar düzeltme gücü</legend>
+            {EDGE_LEVELS.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                className={(cut.edgeSmoothing ?? 'medium') === l.id ? 'active' : ''}
+                onClick={() => update({ edgeSmoothing: l.id })}
+                title={l.hint}
+              >
+                {l.label}
+              </button>
+            ))}
+          </fieldset>
+        )}
         {suggestion && (
           <div className={`suggestion ${suggestion.mode === cut.mode ? 'ok' : ''}`}>
             {suggestion.mode === cut.mode ? '✓ ' : 'Öneri: '}

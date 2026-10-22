@@ -65,6 +65,7 @@ export function cutOptions(): CutOptions {
     ringProfile: cut.mode === 'socket' ? cut.ringProfile : undefined,
     planar: cut.mode !== 'socket' && cut.planar,
     smoothEdge: cut.smoothEdge,
+    edgeSmoothing: cut.edgeSmoothing ?? 'medium',
     minWall: cut.minWall,
     direction: cut.mode === 'socket' && cut.direction ? cut.direction : undefined,
     pin: {

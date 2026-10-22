@@ -77,3 +77,15 @@ test('X86: araç penceresi: ayarlar, seçim satırı, Önizleme kutusu, İptal /
   await page.screenshot({ path: 'test-results/tool-window.png' });
   expect(errors).toEqual([]);
 });
+
+test('X100: Kenarı düzelt gücü seçilir ve kesime gider', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles('samples/figure.stl');
+  await expect(page.locator('ul.parts li')).toHaveCount(1, { timeout: 30_000 });
+  const levels = page.getByRole('group', { name: 'Kenar düzeltme gücü' });
+  await expect(levels.getByRole('button', { name: 'Orta' })).toHaveClass(/active/);
+  await levels.getByRole('button', { name: 'Güçlü' }).click();
+  expect((await state(page)).cut.edgeSmoothing).toBe('strong');
+  await page.getByLabel('Kenarı düzelt').uncheck();
+  await expect(levels).toHaveCount(0);
+});

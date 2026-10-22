@@ -3,6 +3,7 @@ import type {
   CutMode,
   CutPreview,
   CutSuggestion,
+  EdgeSmoothing,
   PinLayout,
   PinPlacement,
   PinShape,
@@ -50,6 +51,8 @@ export interface CutSettings {
   planar: boolean;
   /** X53: kesimden önce sınırı üçgenlerin içinden geçir. */
   smoothEdge: boolean;
+  /** X100: kenar düzeltme gücü. */
+  edgeSmoothing: EdgeSmoothing;
   /** C12: açıkken tüm bölgeler aynı derinlikte; kapalıyken `islandDepths`. */
   linkAll: boolean;
   /** Ada anahtarı (en küçük üçgen numarası) -> derinlik. */
@@ -256,6 +259,7 @@ export const useStore = create<AppState>(() => ({
     ringProfile: [0, 0, 0, 0, 0, 0, 0, 0],
     planar: false,
     smoothEdge: true,
+    edgeSmoothing: 'medium',
     linkAll: true,
     islandDepths: {},
     direction: null,

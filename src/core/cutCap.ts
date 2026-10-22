@@ -1,3 +1,4 @@
+import { refineCap } from './capRefine';
 import { loopPlane } from './cutSeam';
 import { CutError, type Island } from './cutTypes';
 import { CUT_FACE_ID, kernel } from './kernel';
@@ -94,6 +95,73 @@ export function triangulateLoop(positions: Float32Array, loop: number[], normal?
 }
 
 /**
+ * X100: halka kapağı, içi sıklaştırılmış (`refineCap`). Yeni köşeler `extra` (xyz)
+ * dizisindedir ve `base`ten başlayan numaraları alır; halka köşeleri kendi numarasıyla kalır.
+ * Halka tekrarlı köşe taşıyorsa ya da izdüşüm çöküyorsa bugünkü kapak döner.
+ */
+export function triangulateLoopRefined(
+  positions: Float32Array,
+  loop: number[],
+  normal: Vec3 | undefined,
+  base: number,
+): { indices: number[]; extra: number[] } {
+  const idx = triangulateLoop(positions, loop, normal);
+  const local = new Map<number, number>();
+  for (let i = 0; i < loop.length; i++) local.set(loop[i], i);
+  if (local.size !== loop.length) return { indices: idx, extra: [] };
+  const nrm = normal ?? loopPlane(positions, loop).normal;
+  const [u, v] = orthoBasis(nrm);
+  const xy: number[] = [];
+  const h: number[] = [];
+  let ring = 0;
+  for (let i = 0; i < loop.length; i++) {
+    const p = vertexAt(positions, loop[i]);
+    xy.push(dot(p, u), dot(p, v));
+    h.push(dot(p, nrm));
+    const q = vertexAt(positions, loop[(i + 1) % loop.length]);
+    ring += Math.hypot(...sub(p, q));
+  }
+  const tris = idx.map((g) => local.get(g) as number);
+  // kapak gövdeye bakar: düzlemde saat yönündeyse sıklaştırma için çevrilir, sonra geri
+  let signed = 0;
+  for (let i = 0; i < tris.length; i += 3) {
+    const [a, b, c] = [tris[i], tris[i + 1], tris[i + 2]];
+    signed +=
+      (xy[2 * b] - xy[2 * a]) * (xy[2 * c + 1] - xy[2 * a + 1]) -
+      (xy[2 * c] - xy[2 * a]) * (xy[2 * b + 1] - xy[2 * a + 1]);
+  }
+  const flip = signed < 0;
+  const oriented = flip ? flipAll(tris) : tris;
+  // hedef kenar: halkanın ortalama kenarı, ama kapak boyunca en çok ~40 üçgen (sık mesh'te
+  // kapak binlerce üçgene çıkıp boolean'ı yavaşlatmasın)
+  let x0 = Infinity;
+  let x1 = -Infinity;
+  let y0 = Infinity;
+  let y1 = -Infinity;
+  for (let i = 0; i < loop.length; i++) {
+    x0 = Math.min(x0, xy[2 * i]);
+    x1 = Math.max(x1, xy[2 * i]);
+    y0 = Math.min(y0, xy[2 * i + 1]);
+    y1 = Math.max(y1, xy[2 * i + 1]);
+  }
+  const target = Math.max(ring / loop.length, Math.hypot(x1 - x0, y1 - y0) / 40);
+  const refined = refineCap({ xy, h, tris: oriented }, target);
+  if (refined.h.length === loop.length) return { indices: idx, extra: [] };
+  const extra: number[] = [];
+  for (let i = loop.length; i < refined.h.length; i++) {
+    const p = add(
+      add(scale(u, refined.xy[2 * i]), scale(v, refined.xy[2 * i + 1])),
+      scale(nrm, refined.h[i]),
+    );
+    extra.push(p[0], p[1], p[2]);
+  }
+  const out = (flip ? flipAll(refined.tris) : refined.tris).map((l) =>
+    l < loop.length ? loop[l] : base + (l - loop.length),
+  );
+  return { indices: out, extra };
+}
+
+/**
  * İzdüşümü kendini kesen halkayı üçgenlenebilir hale getirir. Sadece
  * üçgen bağlantısı bu 2B noktalardan kurulur; 3B köşeler değişmez.
  * Önce Laplace yumuşatması (tırtıklı sınırın mikro zikzaklarını açar),
@@ -182,9 +250,12 @@ export function capSplit(
 ): { body: SplitMesh; parts: SplitMesh[] } {
   const triCount = mesh.labels.length;
   const inIsland = new Uint8Array(triCount);
+  // X100: kapak içindeki yeni köşeler mesh köşelerinin arkasına eklenir
+  const baseCount = mesh.positions.length / 3;
+  const extra: number[] = [];
   const bodyIdx: number[] = [];
   const bodyOrigin: number[] = [];
-  const parts: SplitMesh[] = [];
+  const parts: { idx: number[]; origin: number[] }[] = [];
 
   for (const island of islands) {
     for (const t of island.tris) inIsland[t] = 1;
@@ -195,7 +266,13 @@ export function capSplit(
       partOrigin.push(t);
     }
     for (const loop of island.loops) {
-      const cap = triangulateLoop(mesh.positions, loop, projection?.(island));
+      const { indices: cap, extra: more } = triangulateLoopRefined(
+        mesh.positions,
+        loop,
+        projection?.(island),
+        baseCount + extra.length / 3,
+      );
+      for (const x of more) extra.push(x);
       for (let i = 0; i < cap.length; i += 3) {
         partIdx.push(cap[i], cap[i + 1], cap[i + 2]);
         partOrigin.push(CUT_FACE_ID);
@@ -203,14 +280,23 @@ export function capSplit(
         bodyOrigin.push(CUT_FACE_ID);
       }
     }
-    parts.push(compact(mesh.positions, partIdx, partOrigin));
+    parts.push({ idx: partIdx, origin: partOrigin });
   }
   for (let t = 0; t < triCount; t++) {
     if (inIsland[t]) continue;
     bodyIdx.push(mesh.indices[3 * t], mesh.indices[3 * t + 1], mesh.indices[3 * t + 2]);
     bodyOrigin.push(t);
   }
-  return { body: compact(mesh.positions, bodyIdx, bodyOrigin), parts };
+  let positions = mesh.positions;
+  if (extra.length) {
+    positions = new Float32Array(mesh.positions.length + extra.length);
+    positions.set(mesh.positions);
+    positions.set(extra, mesh.positions.length);
+  }
+  return {
+    body: compact(positions, bodyIdx, bodyOrigin),
+    parts: parts.map((p) => compact(positions, p.idx, p.origin)),
+  };
 }
 
 function compact(positions: Float32Array, idx: number[], origin: number[]): SplitMesh {
@@ -375,10 +461,41 @@ export function capPlugVolumes(
 ): { mesh: MeshData; dir: Vec3 }[] {
   return island.loops.map((loop) => {
     const dir = projection?.(island) ?? loopPlane(positions, loop).normal;
-    // triangulateLoop gövdeye bakan kapak verir; süpürme için dışa (dir) bakanı gerekir
-    const cap = flipAll(triangulateLoop(positions, loop, dir));
+    // gövdeye bakan kapak; süpürme için dışa (dir) bakanı gerekir. X100: içi sıklaştırılır,
+    // köşeler yerel diziye alınır (büyük mesh'in tamamı kopyalanmaz)
+    const base = positions.length / 3;
+    const r = triangulateLoopRefined(positions, loop, dir, base);
+    const map = new Map<number, number>();
+    const local: number[] = [];
+    const at = (g: number) => {
+      let l = map.get(g);
+      if (l === undefined) {
+        l = map.size;
+        map.set(g, l);
+        if (g < base) local.push(positions[3 * g], positions[3 * g + 1], positions[3 * g + 2]);
+        else
+          local.push(
+            r.extra[3 * (g - base)],
+            r.extra[3 * (g - base) + 1],
+            r.extra[3 * (g - base) + 2],
+          );
+      }
+      return l;
+    };
+    const cap = flipAll(r.indices.map(at));
+    const ring = loop.map(at);
     return {
-      mesh: extrudePatch(positions, cap, [loop], dir, depth, eps, squeeze, inset, ringProfile),
+      mesh: extrudePatch(
+        Float32Array.from(local),
+        cap,
+        [ring],
+        dir,
+        depth,
+        eps,
+        squeeze,
+        inset,
+        ringProfile,
+      ),
       dir,
     };
   });

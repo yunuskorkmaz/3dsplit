@@ -4,7 +4,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-21):** A1–E2 ve X1–X96 bitti (Sprint 8 ve 9: `docs/ux-plan.md`). Yeni iş **X101** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-22):** A1–E2 ve X1–X100 bitti (Sprint 8–11: `docs/ux-plan.md`). Yeni iş **X101** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -96,7 +96,7 @@ Ekran davranışları: [docs/ux-plan.md](ux-plan.md) (Sprint 10 başlığı). S�
 | X97 | İşlem görünürlüğü: aşamalı meşgul kartı, sonuçlu işlem adları, kesim sonrası hata yok, durum satırı | Kullanıcı ne yapıldığını anlamıyor | [x] |
 | X98 | Kesimden çıkan parça "Gövde N", seçim boyası gövde rengine dönüşür; ağaçta İşlemler | Fusion gibi gövde | [x] |
 | X99 | Renkler → Seçim setleri; set başına gövde/üçgen sayısı, set menüsü | Seçimler adlı set gibi okunmuyor | [x] |
-| X100 | Kapak düzgün üçgenlenir; Kenarı düzelt Hafif/Orta/Güçlü | Tapa yuvasında gölge çizgileri ve dalga | [ ] |
+| X100 | Kapak düzgün üçgenlenir; Kenarı düzelt Hafif/Orta/Güçlü | Tapa yuvasında gölge çizgileri ve dalga | [x] |
 
 ## Ana akış
 
@@ -358,3 +358,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-22 | X98: kesimde ayrılan parça "Gövde N" (sıradaki numara), kalan gövde adını korur; ikisi de `origin` {"Kes K", "Tapa · Renk 1"} taşır (oturum ve projede saklanır). Kesilen setin boyası yeni gövdelerden silinir, set rengi gövde rengine (`colorSlot`) geçer; görünümde seçimsiz üçgenler gövde renginde (`colorsFor`). Böylece kesimden sonra önizleme o parçada açılmaz, kırmızı "parçanın tamamını kaplıyor" hatası gitti. Ağaçta gövde satırında renk karesi ve "Kes 1'den · Tapa · Renk 1"; yeni İşlemler klasörü (Aç, Kes K → gövdeler; tıklayınca gövde gösterilip seçilir); Kaynaklar → Önceki haller, rozet "önceki hal". Geçmiş ve bildirim: "Kes 1 · Tapa · Renk 1 → Gövde 1". e2e'ler yeni bildirime göre; tree e2e'sine gövde kontrolü | — |
 | 2026-10-22 | X99: Renkler klasörü "Seçim setleri"; yeni setler "Seçim N"; set satırında kaç gövdede kaç üçgen ("1 gövde · 1.240" / "boş"); ⋯ / sağ tık: Yeniden adlandır, Seçili parçada temizle, Bu seti kes (seti taşıyan gövdeyi seçip keser), Seti kaldır. "+ Seçim seti", "Aktif seti öne çıkar"; komut aramada "Seçim seti ekle"; yardım metni setlere göre. e2e: tree X99, slots/tool-window/history yeni adlara göre | — |
 | 2026-10-22 | X97: meşgul kartı: dönen işaret, iş adı ("Kesiliyor · Tapa · Seçim 1 · figure"), Worker'dan gelen aşama (`src/core/progress.ts`, Comlink geri çağrısı), geçen saniye, İptal. Boyama adımları sonucu söyler ("Akıllı seç · Seçim 1 · 1.240 üçgen", "Silgi · 120 üçgen silindi"); İngilizce adlar (Smart Fill, Gap Fill) Türkçe. Araç penceresinin üstünde durum satırı: gövde, aktif set, aracın ne beklediği (gezinme kipinde "Sol tuş kamerada"). Kesimden sonra öneri hemen silinir. `e2e/clarity.spec.ts`; npm test 114, e2e 31, Chrome e2e 28 | — |
+| 2026-10-22 | X100: "Kenarı düzelt" Hafif / Orta / Güçlü (Gauss yarıçapı ortalama kenarın 2 / 4 / 10 katı; `edgeSmoothing`, önbellek anahtarında). Dişli test sınırı (ideal 115 mm): ham 313, Hafif 129, Orta 115,5, Güçlü 115,1 mm. Kapak sıklaştırma (`capRefine.ts`): iç kenar bölme + Delaunay çevirme + Laplace yükseklik; Pimli kes/Yapıştır kapağında ve Tapa kapak prizmasında. Küre kubbe kapağında en küçük açı ortancası 10,8° → 44,4°; parça ve gövde manifold. testa kulağı Tapa yüzü gölge çizgisiz; kes süresi Pimli 2,4 s, Tapa 3,5 s. `test/edgeSmoothing.test.ts`, `test/capRefine.test.ts`; npm test 116, e2e 32, Chrome e2e 29 | — |

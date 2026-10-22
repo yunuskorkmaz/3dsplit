@@ -1,3 +1,4 @@
+import { EDGE_SMOOTH_MULTIPLES, type EdgeSmoothing } from './cutTypes';
 import { faceCentroids, faceNormalsAndAreas } from './geometry';
 import { cleanSelection } from './paint';
 import { boundaryLoops, buildAdjacency } from './topology';
@@ -160,7 +161,11 @@ export function smoothRegionBoundary(
  * Girdi değişmez. Bölgeye yalnız taban katılır; çıkan üçgen komşudaki çoğunluk
  * etiketini alır. Yarıçap ortalama kenarın 4 katıdır.
  */
-export function smoothCutEdge(mesh: LabeledMesh, slot: number): LabeledMesh {
+export function smoothCutEdge(
+  mesh: LabeledMesh,
+  slot: number,
+  strength: EdgeSmoothing = 'medium',
+): LabeledMesh {
   if (slot === BASE_SLOT || !mesh.labels.includes(slot)) return mesh;
   const adj = buildAdjacency(mesh);
   const labels = mesh.labels;
@@ -168,7 +173,7 @@ export function smoothCutEdge(mesh: LabeledMesh, slot: number): LabeledMesh {
     mesh,
     adj,
     slot,
-    meanEdgeLength(mesh) * 4,
+    meanEdgeLength(mesh) * EDGE_SMOOTH_MULTIPLES[strength],
     (t) => labels[t] === BASE_SLOT,
     (t) => majorityOtherLabel(adj, labels, t, slot),
     true,

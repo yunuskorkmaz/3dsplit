@@ -319,3 +319,16 @@ Kabul: e2e: iki set boya → set satırlarında gövde/üçgen sayısı; "Bu set
 Uygulamada: kısıtlı Delaunay yerine halkadan örülen kapağın iç kenarları ortadan bölünür (hedef kenar: halkanın ortalama kenarı, ama kapak boyunca en çok ~40 üçgen), Delaunay çevirmesi uygulanır, iç yükseklikler Laplace ile dağılır (`src/core/capRefine.ts`). Kullanıldığı yerler: Pimli kes / Yapıştır kapağı (`capSplit`) ve Tapa kapak prizması (`capPlugVolumes`). Yuva tabanında tolerans payı yolundan gelen hafif yelpaze izi X101 ile kalktı. "Tüm sınırı yumuşat" kendi gücünü kullanmaya devam ediyor.
 
 Kabul: test/: kapak üçgenlerinin en küçük açısı ≥ 20°; e2e: testa kulağı Tapa yuvası ekran görüntüsü günlükte (önce/sonra).
+
+# Sprint 12: güven — iş kaybı ve yanlış kesim
+
+Kaynak: `docs/review/00-ozet.md`, `docs/review/02b-audit-ux.md`. Davranışlar 2026-10-28'de onaylandı (ROADMAP "Review planı").
+
+## X102 Geri al modeli kaldırmaz
+
+- Boş sahneye açılan dosya geçmişin tabanıdır: geçmişe adım olarak girmez, geri al/yinele yığınları boşalır. Geçmiş şeridinde "Başlangıç" açılmış modeldir.
+- Model açıkken açılan ikinci dosya tek adımdır ("Aç: ad" ya da "Aç: ad ve N parça"); geri alınca yalnız o dosyanın parçaları gider.
+- Sahne boşalınca (ör. bütün gövdeler silinince) otomatik kayıt eski kaydı silmez; yenileyince son dolu hal "Devam et" ile gelir. Kaydı yalnız "Yok say" siler (X106 bunu ayrıca ele alır).
+- Çizgi ya da Dikiş'te yarım halka varken Cmd/Ctrl+Z son noktayı siler (Backspace gibi); halka yokken her zamanki geri al.
+
+Kabul: e2e `undo-base.spec.ts`: açılıştan sonra geçmiş boş ve Cmd+Z modeli kaldırmaz; yarım çizgide Cmd+Z bir nokta siler; Başlangıç'ta model yerinde; gövde silinip sahne boşalınca yenilemede "Devam et" gelir; dolu sahneye ikinci dosya tek adımda geri alınır.

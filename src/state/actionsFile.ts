@@ -83,6 +83,11 @@ export async function simplifyParts(ids: string[], target = SIMPLIFY_TARGET): Pr
 /** İçe aktarılan nesneleri onarıp parça olarak ekler. */
 async function addObjects(objects: ImportedObject[]): Promise<void> {
   const added: Part[] = [];
+  const sceneBefore = get().parts;
+  // X102: boş sahneye açılan dosya geçmişin tabanıdır, geri alınamaz
+  const base = !sceneBefore.length;
+  // X72: yeni model: mod yine öneriyi izler
+  if (base) set({ cutModeManual: false });
   for (const obj of objects) {
     const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
     if (obj.labels) ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []);
@@ -121,12 +126,17 @@ async function addObjects(objects: ImportedObject[]): Promise<void> {
       colorSlot: BASE_SLOT,
       manifold: prepared.manifold,
     };
-    const before = get().parts;
-    // X72: yeni model: mod yine öneriyi izler
-    if (!before.length) set({ cutModeManual: false });
-    set({ parts: [...before, part], selectedPartId: part.id });
-    pushHistory({ kind: 'parts', before, after: get().parts }, `Aç: ${part.name}`);
+    set((s) => ({ parts: [...s.parts, part], selectedPartId: part.id }));
     added.push(part);
+  }
+  if (base) set({ undoStack: [], redoStack: [] });
+  else if (added.length) {
+    // dolu sahneye ekleme tek adım: geri alınca yalnız bu dosyanın parçaları gider
+    const more = added.length > 1 ? ` ve ${added.length - 1} parça` : '';
+    pushHistory(
+      { kind: 'parts', before: sceneBefore, after: get().parts },
+      `Aç: ${added[0].name}${more}`,
+    );
   }
   // X80: çok parçalı dosyada son yüklenen değil, en büyük (hacim) parça seçili
   const big = added[largestPart(added.map((p) => p.mesh))];

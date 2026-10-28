@@ -42,8 +42,13 @@ test('X95: yenileyince kaldığın yerden devam', async ({ page }) => {
   await page.locator('.cut-actions').getByRole('button', { name: 'Kes', exact: true }).click();
   await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
   // ikinci boya: kesimden sonra da yazılsın
+  const savedBefore = (await state(page)).session.savedAt ?? 0;
   await page.keyboard.press('2');
   await page.mouse.click(nose.x + 40, nose.y + 60);
+  // açılıştaki ilk kayıt da "Kaydedildi" yazar: bu boyadan sonraki kaydı bekle
+  await expect
+    .poll(async () => (await state(page)).session.savedAt ?? 0, { timeout: 10_000 })
+    .toBeGreaterThan(savedBefore);
   await expect(page.locator('.session-status')).toContainText('Kaydedildi', { timeout: 10_000 });
   const before = await summary(page);
 

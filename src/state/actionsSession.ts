@@ -14,8 +14,6 @@ const SAVE_DELAY = 1500;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let writing = false;
 let pending = false;
-/** Bu oturumda model açıldı mı: açılmadıysa boş sahne eski kaydı silmez. */
-let hadParts = false;
 
 function snapshot(s: AppState): SessionData {
   return {
@@ -44,21 +42,18 @@ async function write(): Promise<void> {
     return;
   }
   const s = get();
+  // X102: boş sahne kaydı silmez; son dolu hal "Devam et" ile geri gelir
+  if (!s.parts.length) return;
   // ağır iş ya da fırça darbesi sürerken bekle: yarım durum yazılmasın
   if (s.busy) return schedule();
   writing = true;
   set((st) => ({ session: { ...st.session, saving: true } }));
   try {
-    if (!s.parts.length) {
-      await clearSession();
-      set((st) => ({ session: { ...st.session, saving: false, savedAt: null } }));
-    } else {
-      const name = s.parts.find((p) => p.badge !== 'source')?.name ?? 'oturum';
-      const bodies = s.parts.filter((p) => p.badge !== 'source').length;
-      const savedAt = Date.now();
-      await saveSession({ name, bodies, savedAt }, snapshot(s));
-      set((st) => ({ session: { ...st.session, saving: false, savedAt } }));
-    }
+    const name = s.parts.find((p) => p.badge !== 'source')?.name ?? 'oturum';
+    const bodies = s.parts.filter((p) => p.badge !== 'source').length;
+    const savedAt = Date.now();
+    await saveSession({ name, bodies, savedAt }, snapshot(s));
+    set((st) => ({ session: { ...st.session, saving: false, savedAt } }));
   } catch (e) {
     set((st) => ({ session: { ...st.session, saving: false } }));
     notify('warn', `Oturum tarayıcıya kaydedilemedi: ${e instanceof Error ? e.message : e}`);
@@ -93,13 +88,10 @@ export function startSessionAutosave(): () => void {
       s.selectedPartId !== prev.selectedPartId ||
       s.cut !== prev.cut ||
       s.pins !== prev.pins;
-    if (!changed) return;
-    if (s.parts.length) {
-      hadParts = true;
-      // yeni model açıldı: eski kayıt önerisi kalkar, yerine bu yazılır
-      if (s.session.offer) set((st) => ({ session: { ...st.session, offer: null } }));
-    }
-    if (hadParts) schedule();
+    if (!changed || !s.parts.length) return;
+    // yeni model açıldı: eski kayıt önerisi kalkar, yerine bu yazılır
+    if (s.session.offer) set((st) => ({ session: { ...st.session, offer: null } }));
+    schedule();
   });
 }
 

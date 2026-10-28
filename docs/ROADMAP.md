@@ -4,7 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-22):** A1–E2 ve X1–X101 bitti (Sprint 8–11: `docs/ux-plan.md`). Yeni iş **X102** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-28):** A1–E2 ve X1–X102 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sıradaki: X103.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -98,6 +100,75 @@ Ekran davranışları: [docs/ux-plan.md](ux-plan.md) (Sprint 10 başlığı). S�
 | X99 | Renkler → Seçim setleri; set başına gövde/üçgen sayısı, set menüsü | Seçimler adlı set gibi okunmuyor | [x] |
 | X100 | Kapak düzgün üçgenlenir; Kenarı düzelt Hafif/Orta/Güçlü | Tapa yuvasında gölge çizgileri ve dalga | [x] |
 | X101 | Yuva payı tabanın tamamını indirir | Yuva tabanında yelpaze izi: pay yalnız en derin köşeyi indiriyordu | [x] |
+
+## Review planı (Sprint 12–15)
+
+Kaynak: ürün review'u, `docs/review/00-ozet.md` (bulgular #1–#31) ve `docs/review/02b-audit-ux.md` (kod denetimi, "02b-N"). "Kaynak" sütunu bu numaraları gösterir; kanıt ve dosya:satır oradadır.
+
+Kurallar:
+- "İş" sütunu önerilen davranıştır. Arayüz değiştiren maddeye başlamadan davranış kullanıcıyla onaylanır ve `docs/ux-plan.md`'ye yazılır. "Onay" sütunu: `bekliyor` / `onaylandı` / `gerekmez` (görünür davranışı değiştirmeyen düzeltme).
+- Sıra sprint içinde yukarıdan aşağıya. Emek: S = gün içinde, M = birkaç dosya ve test, L = yeni çekirdek fonksiyon.
+- Bitince `[x]`, "Tamamlananlar günlüğü"ne tarih ve commit.
+
+### Sprint 12 — güven: iş kaybı ve yanlış kesim
+
+| ID | İş | Neden | Kaynak | Emek | Onay | Durum |
+| --- | --- | --- | --- | --- | --- | --- |
+| X102 | Dosya açmak geçmişin tabanı olur, geri alınamaz. Boş sahne oturum kaydını silmez. Çizgi/Dikiş açıkken Cmd+Z son noktayı siler | Cmd+Z modeli kaldırıyor; otomatik kayıt boş sahneyi yazıyor, yenileyince bütün iş gidiyor | #1 (Kritik) | M | onaylandı | [x] |
+| X103 | Set ya da boya değişince eski öneri hemen kalkar, "Öneri hesaplanıyor" görünür, bu sürede Kes kapalı. Kesim iletisindeki mod ile şerit her zaman aynı | Eski öneri ~11 s geçerli; o arada Kes gözü pimsiz, yanlış modla kesiyor, ekran Tapa diyor | #2 (Kritik) | S | onaylandı | [ ] |
+| X104 | Boyalı 3MF açılınca aktif set Taban, Kes kapalı, adım şeridi "Seç"te. Bütün setler tek biçimde adlanır | Tek tık 20 s'de istenmeyen 8 parça; "Seçim N" / "Filament N" karışık | #3, #7, 02b-5 | S | onaylandı | [ ] |
+| X105 | Kesimi geri almak pimleri, Tapa yönünü ve bölge derinliklerini de geri getirir. Elle konan pimler sete ve gövdeye bağlıdır; başka sete geçince taşınmaz | Ctrl+Z gövdeyi getiriyor, elle konan pimler kayboluyor; sol kolun pimleri sağ kol kesimine gidiyor | 02b-6, 02b-7 | M | onaylandı | [ ] |
+| X106 | "Yok say" kaydı hemen silmez (geri alınabilir ya da adı ne yaptığını söyler). Proje açmak ve kart açıkken dosya sürüklemek kayıtlı oturumu sormadan ezmez | Onaysız, kurtarılamayan oturum kaybı | 02b-8 | S | onaylandı | [ ] |
+| X107 | Dikiş açıkken panel başlığı, şerit ve içerik aynı modu söyler; Kes yalnız halka hazırsa açık. Yardım davranışla aynı şeyi söyler; araç ipuçları Çizgi ve Dikiş'in hangi iş için olduğunu yazar | Başlık "Yapıştır", şerit ve içerik Tapa; kol için hangi araç belli değil | #9, 02b-9 | S | onaylandı | [ ] |
+| X108 | Yardım "İş akışı" listesi üst adım şeridinin `.steps` kuralından ayrılır | Liste 8 dar sütuna bölünüyor, okunmuyor | #10 | S | gerekmez | [ ] |
+
+### Sprint 13 — renk ve dışa aktarma doğruluğu
+
+| ID | İş | Neden | Kaynak | Emek | Onay | Durum |
+| --- | --- | --- | --- | --- | --- | --- |
+| X109 | 3MF'teki nesne başına filament gövde rengi olarak okunur, dışa aktarmada geri yazılır; okunamazsa açılışta söylenir | Grogu'da 3 renk → çıktıda hepsi Filament 1; açıp kaydetmek rengi siliyor | #4 | M | bekliyor | [ ] |
+| X110 | Dışa aktarmadan önce kesilmemiş renkler söylenir ("gövdede kesilmemiş 4 renk var"). Filament eşlemesi parça ve renk adıyla, kapanmayan bir yerde görünür; "hazır" iletisi parça sayısını yazar | Kesilmemiş renkler sessizce düşüyor; eşleme 8 s'de kayboluyor | #6, 02b-4 | S | bekliyor | [ ] |
+| X111 | Boyalı bölgeden seçilen set o bölgenin rengini alır; yeni set modelde olmayan bir renk alır | Beyaz göz tapası turuncu filamente gidiyor | #7 | S | bekliyor | [ ] |
+| X112 | Çizgi: boyanan alan sıfırsa ya da yumuşatmadan sonra kalmadıysa başarı iletisi yok, neden söylenir. Halka tek yüzü sardıysa ve mod Pimli kes ise kolun etrafından geçmek ya da Dikiş önerilir. Kapatma yalnız ilk noktanın üstünde; örtülen noktalar soluk | "16 üçgen boyandı" deyip boş; kol görevinde 2,5 dk takılma | #5, #24, #25 | M | bekliyor | [ ] |
+| X113 | Bölge içindeki başka renkli alan "boyanmamış delik" diye tapaya katılmaz | Siyah göz bebeği beyaz göz tapasına giriyor | #17 | M | bekliyor | [ ] |
+| X114 | Kesim olmayacağı bilinirken Kes kapalı ve nedeni yazılı. Basılamayacak kadar küçük seçim uyarılır. Kesim hataları ne yapılacağını söyler (Kenarı düzelt, Yumuşat, Düzlemle kes) | Aynı hata 3 kez; 1 üçgenden 2,6 mm tapa; "kapak düzleminde çökük" gibi iletiler | #12, #19, 02b-10 | S | bekliyor | [ ] |
+
+### Sprint 14 — deneme parçası döngüsü
+
+| ID | İş | Neden | Kaynak | Emek | Onay | Durum |
+| --- | --- | --- | --- | --- | --- | --- |
+| X115 | Deneme parçasına model olmadan (boş ekran) ve komut aramadan ulaşılır. Üretilen parça modele karışmadan ayrı indirilir; adım şeridini etkilemez | Bulmak 6 boşa eylem; parça modelin yanına düşüyor, her gövde elle gizleniyor | #8, 02b-3 | M | bekliyor | [ ] |
+| X116 | Seçilen tolerans tarayıcıda kalıcı (Tabla ayarı gibi). Sıkı/Normal/Gevşek mm ve çentik sayısını yazar; çentik → değer eşlemesi kalıcı görünür; boşluk 0 iken ileti doğru delik sayısını söyler | Deneme baskısının sonucu sonraki modelde 0,2'ye dönüyor | #8, 02b-1, 02b-2 | S | bekliyor | [ ] |
+
+### Sprint 15 — metin, klavye, erişilebilirlik, pürüzler
+
+| ID | İş | Neden | Kaynak | Emek | Onay | Durum |
+| --- | --- | --- | --- | --- | --- | --- |
+| X117 | Metin birliği: ham İngilizce hata yerine Türkçe ve eylemli ileti; "slot", "Smart Fill", "Keys" arayüzden çıkar; desteklenmeyen dosyada desteklenenler sayılır; ondalık virgül tek biçim | "Invalid typed array length"; aynı kavrama dört ad | #11, #20, #29, #30, 02b-10 | M | bekliyor | [ ] |
+| X118 | Klavye ve ekran okuyucu: odaklanan öğe yapışkan Kes alanının altında kalmaz; Yardım odağı tutar; kesimden sonra odak kaybolmaz; bildirimler ve panel başlıkları düğme; bildirim alanında `aria-live` | WCAG 2.4.11, 2.1.1, 4.1.2 | #14, 02b-11 | M | bekliyor | [ ] |
+| X119 | Kontrast: Kes düğmesi metni, set rengiyle yazılan rozet ve durum satırı en az 4,5:1, seçili segment en az 3:1 | 2,51:1 ve 1,11–1,21:1 (WCAG 1.4.3, 1.4.11) | #13 | S | bekliyor | [ ] |
+| X120 | Görünüş küpünden arka ve alt görünüşe geçilir | Arkaya yalnız ⌘K ile dönülüyor | #15 | S | bekliyor | [ ] |
+| X121 | Model açıkken ikinci "Aç" ne yapacağını sorar (değiştir / ekle); çok plakalı 3MF plakaları yığılmaz | İki figür üst üste; Grogu'nun 3 plakası tek sahnede | #16 | M | bekliyor | [ ] |
+| X122 | Delete yalnız seçili pimi siler; pim seçili değilse seti silmez | İpucu "seçili pimi sil" derken bütün set gidiyor | #18 | S | bekliyor | [ ] |
+| X123 | Kesimden sonra yeni parça görünür; geri alınınca eski "kesildi" iletisi kalkar, iletiler yığılmaz; aynı anda iki farklı "İptal" olmaz | Parça görünmüyor; ~150 px ileti yığını | #21, #23 | S | bekliyor | [ ] |
+| X124 | Zaten parçalara bölünmüş modelde (Grogu) bunu söyleyen yönlendirme | Kullanıcı olmayan boyayı arıyor | #22 | S | bekliyor | [ ] |
+| X125 | Model yokken araçlar soluk; Space "Önce bir model açın" der | Boş sahnede araçlar etkin, ileti yanlış | #26 | S | bekliyor | [ ] |
+| X126 | Dışa aktarılan dosya adı kaynak dosyadan gelir; deneme parçası kendi adını alır | `quant_1.3mf`, `figure.3mf` | #27 | S | bekliyor | [ ] |
+| X127 | Uzun kesimde kalan süre ya da yüzde | ~11 s'lik kesimde yalnız geçen süre var | #28 | M | bekliyor | [ ] |
+
+Alınmayan: #31 (1,89 M üçgende fırça takılması, L). Sadeleştirme önerisi (X96) bu durumu karşılıyor; yeniden ölçülünce karar verilir.
+
+### Özellik adayları (numara yok, onay bekliyor)
+
+Kullanıcı istemeden özellik eklenmez. Onaylanırsa X numarası alıp ilgili sprinte girer. Gerekçe: `docs/review/00-ozet.md` "Eklenirse en çok değer katacak 5 özellik" ve `docs/review/04-pazar.md`.
+
+| Aday | Neden | Emek |
+| --- | --- | --- |
+| Renk başına plaka ya da dosya | AMS'siz kullanıcı her rengi ayrı basıyor; PaintLab'da var; plaka dizme kodu hazır (`src/io/layout.ts`) | S–M |
+| Yükseklik aralığıyla boyama | Audja, PaintLab, Bambu, Orca'da var; "beklenen" sınıfta tek eksik | M |
+| Mıknatıs cebi | Multipart3D'de var; yapıştırma şikâyeti (T3) | M |
+
+(Nesne renklerini koruma X109, kalıcı tolerans X116 olarak hata düzeltmesi kapsamında.)
 
 ## Ana akış
 
@@ -361,3 +432,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-22 | X97: meşgul kartı: dönen işaret, iş adı ("Kesiliyor · Tapa · Seçim 1 · figure"), Worker'dan gelen aşama (`src/core/progress.ts`, Comlink geri çağrısı), geçen saniye, İptal. Boyama adımları sonucu söyler ("Akıllı seç · Seçim 1 · 1.240 üçgen", "Silgi · 120 üçgen silindi"); İngilizce adlar (Smart Fill, Gap Fill) Türkçe. Araç penceresinin üstünde durum satırı: gövde, aktif set, aracın ne beklediği (gezinme kipinde "Sol tuş kamerada"). Kesimden sonra öneri hemen silinir. `e2e/clarity.spec.ts`; npm test 114, e2e 31, Chrome e2e 28 | — |
 | 2026-10-22 | X100: "Kenarı düzelt" Hafif / Orta / Güçlü (Gauss yarıçapı ortalama kenarın 2 / 4 / 10 katı; `edgeSmoothing`, önbellek anahtarında). Dişli test sınırı (ideal 115 mm): ham 313, Hafif 129, Orta 115,5, Güçlü 115,1 mm. Kapak sıklaştırma (`capRefine.ts`): iç kenar bölme + Delaunay çevirme + Laplace yükseklik; Pimli kes/Yapıştır kapağında ve Tapa kapak prizmasında. Küre kubbe kapağında en küçük açı ortancası 10,8° → 44,4°; parça ve gövde manifold. testa kulağı Tapa yüzü gölge çizgisiz; kes süresi Pimli 2,4 s, Tapa 3,5 s. `test/edgeSmoothing.test.ts`, `test/capRefine.test.ts`; npm test 116, e2e 32, Chrome e2e 29 | — |
 | 2026-10-22 | X101: `growVolume` (yuva payı) tabanda yalnız en derin köşeyi `c` kadar indiriyordu; eğri tabanda tek köşelik çukur ve çevresinde yelpaze kalıyordu. Artık `dir`in tersine bakan üçgenlerin bütün köşeleri iner, yana itme yalnız yan duvar normallerinden gelir (taban iç köşeleri yana kaymaz). `test/growVolume.test.ts`; npm test 117, e2e 32 | — |
+| 2026-10-28 | X102: boş sahneye açılan dosya geçmişin tabanı (adım değil; yığınlar boşalır), dolu sahneye ekleme tek "Aç" adımı. Boş sahne otomatik kaydı silmez, "Devam et" son dolu hali getirir. Çizgi/Dikiş'te yarım halkada Cmd/Ctrl+Z son noktayı siler. `e2e/undo-base.spec.ts` (Chrome config'e eklendi); session.spec'teki kayıt bekleme yarışı düzeltildi (açılıştaki ilk "Kaydedildi"yi bekliyordu). npm test 117, Chrome e2e 31, e2e 33 | — |

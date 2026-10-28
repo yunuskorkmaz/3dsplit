@@ -176,6 +176,10 @@ function useShortcuts() {
       }
       if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault();
+        // X102: yarım çizgide geri al son noktayı siler, modeli değil
+        const tool = get().tool;
+        if (!e.shiftKey && (tool === 'line' || tool === 'seam') && get().line.anchors.length)
+          return lineUndo();
         if (e.shiftKey) redo();
         else undo();
         return;

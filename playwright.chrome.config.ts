@@ -18,6 +18,7 @@ export default defineConfig({
     'shell.spec.ts',
     'slots.spec.ts',
     'seam.spec.ts',
+    'undo-base.spec.ts',
     'print-size.spec.ts',
     'suggest.spec.ts',
     'keys-flow.spec.ts',

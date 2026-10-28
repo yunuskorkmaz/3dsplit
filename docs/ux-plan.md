@@ -384,3 +384,74 @@ Kabul: e2e `session.spec.ts`: Yok say'dan sonra yenileyince kart yine gelir; fig
 Uygulamada: kayıtlı kesim modu değişmez (Tapa seçiliyken Dikiş'e geçip dönünce Tapa sürer); Dikiş yalnız gösterimde ve kesimde Pimli kes / Yapıştır'ı kullanır.
 
 Kabul: e2e `seam.spec.ts` X107: boyalı seçimle Dikiş'te Kes kapalı; mod Tapa iken şeritte Tapa kapalı, Yapıştır vurgulu, başlık "Yapıştır — dikiş", Tapa metni ve Derinlik yok; Pimli kes'e geçince başlık değişir; hazır halkada Kes açık, hatalı halkada kapalı.
+
+# Sprint 13: renk ve dışa aktarma doğruluğu
+
+Kaynak: `docs/review/00-ozet.md` #4, #5, #6, #7, #12, #17, #19, #24, #25 ve `docs/review/02b-audit-ux.md` 4, 10. Davranışlar 2026-10-28'de onaylandı (ROADMAP "Review planı"); "Karar" satırlarında önerilen (a) seçildi.
+
+## X109 3MF'teki nesne rengi gövde rengi olur ve geri yazılır
+
+- Bambu/Orca 3MF'te nesne başına filament (`model_settings.config` › `extruder`) okunur. Nesne o filamentin "Filament N" setini gövde rengi olarak alır; set yoksa açılır, rengi dosyadaki filament renginden gelir. Grogu: 12 gövde Filament 3, 6 ve 7 renginde görünür.
+- Boyalı nesnede boyasız yüzey (Taban) de gövde rengiyle görünür; Bambu'da boyasız yüzey nesnenin filamentiyle basıldığı için ekran baskıyla aynı olur.
+- Dışa aktarmada (3MF — Bambu) "Filament N" setinin rengindeki gövde N numaralı filamente yazılır. Hiçbir şey değiştirmeden aç ve kaydet: her nesne kaynaktaki numarayla çıkar. 3MF'ten gelmeyen renkler (Seçim N, Taban gri) kalan boş numaraları sırayla alır.
+- Dosyada nesne filamenti var ama filament renkleri yoksa gövdeler yine numaraya göre gruplanır, renkler paletten gelir ve açılışta söylenir: "Dosyada filament renkleri yok; gövdeler Filament N setlerine ayrıldı, renkleri slicer'daki gibi değil."
+- Gövde rengi ağaçta gövde satırındaki renk karesinde görünür (bugünkü gibi); açılış iletisi kaç gövdenin hangi filamentte olduğunu söyler: "Grogu: 12 gövde 3 filamentte (Filament 3, 6, 7)."
+
+Karar (seçilen: a): filament numarası (a) kaynaktaki gibi korunur (önerilen; Grogu'da 3, 6, 7 kalır) ya da (b) renklere göre 1'den yeniden sıralanır (bugünkü davranış; Grogu'da 1, 2, 3).
+
+Kabul: birim testi `parse3mf` nesne filamentini okur; e2e Grogu: açılışta gövde renkleri 3 farklı, Bambu 3MF'te `extruder` değerleri kaynaktakiyle aynı (3 ×2, 6 ×3, 7 ×7).
+
+## X110 Dışa aktarmada ne kaybolacağı ve hangi filamentin ne olduğu görünür
+
+- Dışa aktar menüsü açılınca, görünen gövdelerde kesilmemiş boyalı renk varsa menünün üstünde uyarı satırı: "Gövde 1'de kesilmemiş 4 renk var (Filament 2, 3, 4, 5); dosyada gövde tek renk olur." Satıra tıklamak o gövdeyi ve ilk kesilmemiş seti seçer. Dışa aktarma engellenmez.
+- Gizli gövdeler de satırda sayılır: "3 gizli gövde dosyaya girmez." Kaynak rozetli eski haller sayılmaz (bilerek dışarıda).
+- 3MF hazır olunca ileti kendiliğinden kapanmaz (kapatılana kadar durur) ve eşlemeyi parça ve renk adıyla yazar: "3MF hazır: 9 gövde, 3 filament. Filament 1 — Taban (gri): Bluey. Filament 2 — Filament 1 (beyaz): Gövde 3, Gövde 4. …" Renk adı setin adıdır; renk kutusu iletide set renginde.
+- Eşleme son dışa aktarmadan sonra Dışa aktar menüsünde "Son dışa aktarma" satırında da durur (sayfa yenilenene kadar).
+
+Karar (seçilen: a): kesilmemiş renk uyarısı (a) menüde satır, engellemez (önerilen) ya da (b) dışa aktarmadan önce "Yine de aktar / Vazgeç" sorar.
+
+Kabul: e2e Bluey: göz kesildikten sonra Dışa aktar menüsünde kesilmemiş renk satırı ve sayısı; 3MF'ten sonra ileti 8 s sonra hâlâ görünür ve parça adlarını içerir.
+
+## X111 Seçilen bölgenin rengi doğru gelir
+
+- Yeni ya da boş bir sete ilk boya, başka bir setin boyası üzerine geliyorsa (ör. beyaz Filament 1 bölgesinin bir kısmı) set o rengi alır. İlk boya boyasız yüzeye geliyorsa set gövde rengini alır (X109'dan sonra 3MF'teki nesne rengi). Bunu yalnız ilk boya yapar; kullanıcı rengi değiştirdiyse dokunulmaz.
+- "+ Seçim seti" yeni sete paletten, mevcut setlerin ve gövde renklerinin hiçbirine yakın olmayan bir renk verir; palet tükenirse ton açısı en uzak renk üretilir.
+- Kesimden çıkan gövde setin rengini taşır (X98); böylece beyaz göz tapası beyaz görünür ve 3MF'te beyaz setin filamentine gider.
+
+Kabul: birim testi renk seçici (mevcut renklere en uzak); e2e Bluey: yeni set beyaz bölgeye ilk tıkta beyaz olur; "+ Seçim seti" rengi dosyadaki turuncuya yakın değil.
+
+## X112 Çizgi ne olduğunu doğru söyler
+
+- Halka kendini keserse boyamaz ve söyler: "Çizgi kendini kesiyor; noktaları kesişmeyecek sırayla koy." Bugün halkanın kestiği küçük cep boyanıyor ve yumuşatma onu siliyor.
+- Yumuşatmadan sonra boyalı üçgen kalmadıysa başarı iletisi verilmez: "Çizginin içi çok dar; boya kalmadı. Halkayı genişlet." Boyama geri alınır (geçmişte adım kalmaz).
+- Başarı iletisi yumuşatmadan sonraki sayıyı yazar.
+- Pimli kes "kesit pin için çok ince" uyarısı sonraki adımı söyler: "Kolu ayırmak için halkayı kolun çevresinden geçir ya da Dikiş'i kullan." Aynı ek, kesit yüzeysel olduğunda (öneri "yüzeysel bölge") Pimli kes seçiliyse de çıkar.
+- Halka yalnız ilk noktanın üstüne tıklayınca kapanır (en az 3 nokta). İmleç ilk noktanın üstündeyken nokta büyür ve vurgulanır; yakın ama dışarıdaki tık yeni nokta ekler. Enter ve "Kapat" düğmesi değişmez.
+- Modelin arkasında kalan noktalar ve yol soluk çizilir; öndekiler bugünkü gibi.
+
+Kabul: birim testi `lasso` kendini kesen halkayı ayırt eder; e2e figür kolunda: kendini kesen halka boyamaz ve ileti verir; ilk noktaya yakın tık nokta ekler, ilk noktaya tık kapatır.
+
+## X113 Bölge içindeki başka renk tapaya sessizce katılmaz
+
+- Seçili bölgenin içinde kalan başka setin boyası (ör. göz akının içindeki siyah gözbebeği) kesimde tapaya katılır, ama ileti rengi adıyla söyler ve sonraki adımı verir: "Bölgenin içinde Filament 4 var (3.753 üçgen); tapaya katıldı. Ayrı basmak için kesimden sonra tapayı seçip Filament 4'ü kes." Tapa o boyayı taşıdığı için bu ikinci kesim çalışır (iç içe tapa).
+- Gerçekten boyasız delik (Taban) için ileti: "Bölgenin içindeki N boyasız alan tapaya katıldı."
+- Önizleme açıkken aynı bilgi seçim satırının altında görünür; kesimden önce görülür.
+
+Karar (seçilen: a): başka renkli iç bölge (a) tapaya katılır, ileti doğru ve sonraki adım söylenir (önerilen; çekirdek değişmez, S) ya da (b) tapadan çıkarılır, tapa halka biçiminde olur ve iç renk gövdede kalır (çekirdekte delikli kapak gerekir, M–L, risk: Socket ve Keys'in halka kapağı bugün tek sınır varsayıyor).
+
+Kabul: birim testi `cutRun` iç bölge uyarısı rengi ve üçgen sayısını taşır; e2e Bluey: göz akı kesilince ileti "Filament 4" der; tapa seçilip Filament 4 kesilince ikinci tapa çıkar.
+
+## X114 Olmayacak kesimde Kes kapalı, hatalar ne yapılacağını söyler
+
+- Önizleme kesimin olmayacağını bulduysa (ör. "bölge parçanın tamamını kaplıyor") Kes kapanır ve neden seçim satırında yazar; ileti bir kez çıkar. Boya, set, mod ya da ayar değişince Kes yeniden açılır.
+- Aynı metinli ileti ekranda zaten varsa yenisi eklenmez; var olanın süresi yenilenir.
+- Seçim basılamayacak kadar küçükse (bölgenin en büyük boyutu 3 mm'den az) seçim satırında uyarı: "Seçim 2,6 mm; basılamayabilir." Kes açık kalır.
+- Kesim hataları ve uyarıları ne yapılacağını söyler:
+  - "Bölge parçanın tamamını kaplıyor" → "Bölge bütün gövdeyi kaplıyor; kesilecek sınır yok. Bir kısmını Silgi ile çıkar."
+  - "Sınır halkası kapak düzleminde çökük" → "Sınır kapak için fazla kıvrık. Kenarı düzelt'i aç, Yumuşat ile kenarı düzelt ya da Düzlemle kes'i dene."
+  - "Düzlem kesimi bölgeyi içeren bir parça üretmedi…" → "Bu halkadan düzlemle kesilemiyor. Halkayı bölgenin daha düz yerinden geçir ya da Tapa ile kes."
+  - "N çok küçük boyalı kırıntı atlandı" → "N küçük boya lekesi atlandı (1 mm² altı). Kesmek istiyorsan Fırça ile büyüt."
+  - "süpürme + prizma", "süpürme kullanıldı" → "Bölge tek yönden tam görünmüyor; tapa yaklaşık. Tapa yönünü değiştir ya da bölgeyi küçült."
+  - "N hacimsiz parça atlandı" → "N parça hacimsiz çıktı ve atlandı; Tapa yönünü değiştir."
+
+Kabul: e2e figür: Kova ile bütün gövde boyanınca Kes kapalı ve neden yazılı, ileti bir kez; tek üçgenlik seçimde boyut uyarısı; birim testi yeni hata metinleri.

@@ -6,7 +6,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 **Durum (2026-10-28):** A1–E2 ve X1–X108 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sıradaki: Sprint 13 (X109–), davranış onayı bekliyor.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 davranışları onaylandı. Sıradaki: X109.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -126,12 +126,12 @@ Kurallar:
 
 | ID | İş | Neden | Kaynak | Emek | Onay | Durum |
 | --- | --- | --- | --- | --- | --- | --- |
-| X109 | 3MF'teki nesne başına filament gövde rengi olarak okunur, dışa aktarmada geri yazılır; okunamazsa açılışta söylenir | Grogu'da 3 renk → çıktıda hepsi Filament 1; açıp kaydetmek rengi siliyor | #4 | M | bekliyor | [ ] |
-| X110 | Dışa aktarmadan önce kesilmemiş renkler söylenir ("gövdede kesilmemiş 4 renk var"). Filament eşlemesi parça ve renk adıyla, kapanmayan bir yerde görünür; "hazır" iletisi parça sayısını yazar | Kesilmemiş renkler sessizce düşüyor; eşleme 8 s'de kayboluyor | #6, 02b-4 | S | bekliyor | [ ] |
-| X111 | Boyalı bölgeden seçilen set o bölgenin rengini alır; yeni set modelde olmayan bir renk alır | Beyaz göz tapası turuncu filamente gidiyor | #7 | S | bekliyor | [ ] |
-| X112 | Çizgi: boyanan alan sıfırsa ya da yumuşatmadan sonra kalmadıysa başarı iletisi yok, neden söylenir. Halka tek yüzü sardıysa ve mod Pimli kes ise kolun etrafından geçmek ya da Dikiş önerilir. Kapatma yalnız ilk noktanın üstünde; örtülen noktalar soluk | "16 üçgen boyandı" deyip boş; kol görevinde 2,5 dk takılma | #5, #24, #25 | M | bekliyor | [ ] |
-| X113 | Bölge içindeki başka renkli alan "boyanmamış delik" diye tapaya katılmaz | Siyah göz bebeği beyaz göz tapasına giriyor | #17 | M | bekliyor | [ ] |
-| X114 | Kesim olmayacağı bilinirken Kes kapalı ve nedeni yazılı. Basılamayacak kadar küçük seçim uyarılır. Kesim hataları ne yapılacağını söyler (Kenarı düzelt, Yumuşat, Düzlemle kes) | Aynı hata 3 kez; 1 üçgenden 2,6 mm tapa; "kapak düzleminde çökük" gibi iletiler | #12, #19, 02b-10 | S | bekliyor | [ ] |
+| X109 | 3MF'teki nesne başına filament gövde rengi olarak okunur, dışa aktarmada geri yazılır; okunamazsa açılışta söylenir | Grogu'da 3 renk → çıktıda hepsi Filament 1; açıp kaydetmek rengi siliyor | #4 | M | onaylandı | [ ] |
+| X110 | Dışa aktarmadan önce kesilmemiş renkler söylenir ("gövdede kesilmemiş 4 renk var"). Filament eşlemesi parça ve renk adıyla, kapanmayan bir yerde görünür; "hazır" iletisi parça sayısını yazar | Kesilmemiş renkler sessizce düşüyor; eşleme 8 s'de kayboluyor | #6, 02b-4 | S | onaylandı | [ ] |
+| X111 | Boyalı bölgeden seçilen set o bölgenin rengini alır; yeni set modelde olmayan bir renk alır | Beyaz göz tapası turuncu filamente gidiyor | #7 | S | onaylandı | [ ] |
+| X112 | Çizgi: boyanan alan sıfırsa ya da yumuşatmadan sonra kalmadıysa başarı iletisi yok, neden söylenir. Halka tek yüzü sardıysa ve mod Pimli kes ise kolun etrafından geçmek ya da Dikiş önerilir. Kapatma yalnız ilk noktanın üstünde; örtülen noktalar soluk | "16 üçgen boyandı" deyip boş; kol görevinde 2,5 dk takılma | #5, #24, #25 | M | onaylandı | [ ] |
+| X113 | Bölge içindeki başka renkli alan "boyanmamış delik" diye tapaya katılmaz | Siyah göz bebeği beyaz göz tapasına giriyor | #17 | M | onaylandı | [ ] |
+| X114 | Kesim olmayacağı bilinirken Kes kapalı ve nedeni yazılı. Basılamayacak kadar küçük seçim uyarılır. Kesim hataları ne yapılacağını söyler (Kenarı düzelt, Yumuşat, Düzlemle kes) | Aynı hata 3 kez; 1 üçgenden 2,6 mm tapa; "kapak düzleminde çökük" gibi iletiler | #12, #19, 02b-10 | S | onaylandı | [ ] |
 
 ### Sprint 14 — deneme parçası döngüsü
 

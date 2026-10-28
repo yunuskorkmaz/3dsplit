@@ -12,11 +12,11 @@ import {
   removePin,
   restoreSession,
   SIMPLIFY_TARGET,
-  scheduleSuggestion,
   showAllParts,
   simplifyParts,
   soloPart,
   startSessionAutosave,
+  startSuggestionWatch,
   toggleExplode,
   togglePreview,
   undo,
@@ -242,21 +242,10 @@ function useShortcuts() {
   }, []);
 }
 
-/** Boyama, slot veya parça değişince kesim modu önerisini yenile. */
-function useSuggestion() {
-  const paintVersion = useStore((s) => s.paintVersion);
-  const activeSlot = useStore((s) => s.activeSlot);
-  const selectedPartId = useStore((s) => s.selectedPartId);
-  const parts = useStore((s) => s.parts);
-  useEffect(() => {
-    scheduleSuggestion();
-  }, [paintVersion, activeSlot, selectedPartId, parts]);
-}
-
 export function App() {
   useShortcuts();
   useEffect(() => startSessionAutosave(), []);
-  useSuggestion();
+  useEffect(() => startSuggestionWatch(), []);
   return (
     <div
       className="app"

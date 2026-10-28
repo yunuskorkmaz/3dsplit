@@ -57,6 +57,8 @@ export function CutActions() {
     return activePaintCount() > 0;
   }, [paintVersion, selectedPartId, activeSlot, hasParts]);
   const disabled = !hasParts || (!seamReady && !painted);
+  // X103: mod öneriyi izliyorsa öneri gelene kadar Kes bekler
+  const waiting = useStore((s) => s.suggesting && !s.cutModeManual && s.tool !== 'seam');
   return (
     <div className="cut-actions">
       <label className="field preview-toggle" title={`Kesimi uygulamadan göster (${keys.preview})`}>
@@ -81,7 +83,13 @@ export function CutActions() {
         >
           İptal
         </button>
-        <button type="button" disabled={disabled} className="primary" onClick={runCut}>
+        <button
+          type="button"
+          disabled={disabled || waiting}
+          className="primary"
+          onClick={runCut}
+          title={waiting ? 'Kesim modu belirleniyor; öneri gelince açılır' : undefined}
+        >
           Kes
         </button>
       </div>
@@ -148,6 +156,7 @@ export function CutPanel() {
   const pinCount = useStore((s) => s.pins.length);
   const directionGizmo = useStore((s) => s.directionGizmo);
   const suggestion = useStore((s) => s.suggestion);
+  const suggesting = useStore((s) => s.suggesting && !s.cutModeManual && s.tool !== 'seam');
   // X74: önizleme sessiz yenilenir; uyarıları (pin sığmadı gibi) burada görünür
   const previewOn = useStore((s) => s.previewActive);
   const previewWarnings = useStore((s) =>
@@ -213,6 +222,9 @@ export function CutPanel() {
               </button>
             ))}
           </fieldset>
+        )}
+        {suggesting && !suggestion && hasParts && (
+          <div className="suggestion-pending">Öneri hesaplanıyor…</div>
         )}
         {suggestion && (
           <div className={`suggestion ${suggestion.mode === cut.mode ? 'ok' : ''}`}>

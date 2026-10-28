@@ -8,6 +8,7 @@ export {
   scheduleSuggestion,
   setSocketDirection,
   splitSelected,
+  startSuggestionWatch,
   togglePreview,
   voxelRepairSelected,
 } from './actionsCut';

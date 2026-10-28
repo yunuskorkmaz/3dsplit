@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-28):** A1–E2 ve X1–X102 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-28):** A1–E2 ve X1–X103 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sıradaki: X103.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sıradaki: X104.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -115,7 +115,7 @@ Kurallar:
 | ID | İş | Neden | Kaynak | Emek | Onay | Durum |
 | --- | --- | --- | --- | --- | --- | --- |
 | X102 | Dosya açmak geçmişin tabanı olur, geri alınamaz. Boş sahne oturum kaydını silmez. Çizgi/Dikiş açıkken Cmd+Z son noktayı siler | Cmd+Z modeli kaldırıyor; otomatik kayıt boş sahneyi yazıyor, yenileyince bütün iş gidiyor | #1 (Kritik) | M | onaylandı | [x] |
-| X103 | Set ya da boya değişince eski öneri hemen kalkar, "Öneri hesaplanıyor" görünür, bu sürede Kes kapalı. Kesim iletisindeki mod ile şerit her zaman aynı | Eski öneri ~11 s geçerli; o arada Kes gözü pimsiz, yanlış modla kesiyor, ekran Tapa diyor | #2 (Kritik) | S | onaylandı | [ ] |
+| X103 | Set ya da boya değişince eski öneri hemen kalkar, "Öneri hesaplanıyor" görünür, bu sürede Kes kapalı. Kesim iletisindeki mod ile şerit her zaman aynı | Eski öneri ~11 s geçerli; o arada Kes gözü pimsiz, yanlış modla kesiyor, ekran Tapa diyor | #2 (Kritik) | S | onaylandı | [x] |
 | X104 | Boyalı 3MF açılınca aktif set Taban, Kes kapalı, adım şeridi "Seç"te. Bütün setler tek biçimde adlanır | Tek tık 20 s'de istenmeyen 8 parça; "Seçim N" / "Filament N" karışık | #3, #7, 02b-5 | S | onaylandı | [ ] |
 | X105 | Kesimi geri almak pimleri, Tapa yönünü ve bölge derinliklerini de geri getirir. Elle konan pimler sete ve gövdeye bağlıdır; başka sete geçince taşınmaz | Ctrl+Z gövdeyi getiriyor, elle konan pimler kayboluyor; sol kolun pimleri sağ kol kesimine gidiyor | 02b-6, 02b-7 | M | onaylandı | [ ] |
 | X106 | "Yok say" kaydı hemen silmez (geri alınabilir ya da adı ne yaptığını söyler). Proje açmak ve kart açıkken dosya sürüklemek kayıtlı oturumu sormadan ezmez | Onaysız, kurtarılamayan oturum kaybı | 02b-8 | S | onaylandı | [ ] |
@@ -433,3 +433,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-22 | X100: "Kenarı düzelt" Hafif / Orta / Güçlü (Gauss yarıçapı ortalama kenarın 2 / 4 / 10 katı; `edgeSmoothing`, önbellek anahtarında). Dişli test sınırı (ideal 115 mm): ham 313, Hafif 129, Orta 115,5, Güçlü 115,1 mm. Kapak sıklaştırma (`capRefine.ts`): iç kenar bölme + Delaunay çevirme + Laplace yükseklik; Pimli kes/Yapıştır kapağında ve Tapa kapak prizmasında. Küre kubbe kapağında en küçük açı ortancası 10,8° → 44,4°; parça ve gövde manifold. testa kulağı Tapa yüzü gölge çizgisiz; kes süresi Pimli 2,4 s, Tapa 3,5 s. `test/edgeSmoothing.test.ts`, `test/capRefine.test.ts`; npm test 116, e2e 32, Chrome e2e 29 | — |
 | 2026-10-22 | X101: `growVolume` (yuva payı) tabanda yalnız en derin köşeyi `c` kadar indiriyordu; eğri tabanda tek köşelik çukur ve çevresinde yelpaze kalıyordu. Artık `dir`in tersine bakan üçgenlerin bütün köşeleri iner, yana itme yalnız yan duvar normallerinden gelir (taban iç köşeleri yana kaymaz). `test/growVolume.test.ts`; npm test 117, e2e 32 | — |
 | 2026-10-28 | X102: boş sahneye açılan dosya geçmişin tabanı (adım değil; yığınlar boşalır), dolu sahneye ekleme tek "Aç" adımı. Boş sahne otomatik kaydı silmez, "Devam et" son dolu hali getirir. Çizgi/Dikiş'te yarım halkada Cmd/Ctrl+Z son noktayı siler. `e2e/undo-base.spec.ts` (Chrome config'e eklendi); session.spec'teki kayıt bekleme yarışı düzeltildi (açılıştaki ilk "Kaydedildi"yi bekliyordu). npm test 117, Chrome e2e 31, e2e 33 | — |
+| 2026-10-28 | X103: set/boya/gövde değişince eski öneri aynı anda kalkar, "Öneri hesaplanıyor…" görünür; mod öneriyi izliyorsa öneri gelene kadar Kes kapalı. `runCut` öneri o bölge için gelmemişse önce bekler ("Bu seti kes" yolu), İptal edilirse kesmez. Öneri tetiği React effect'inden store aboneliğine (`startSuggestionWatch`). Bluey'de Filament 4 → Kes: Tapa ile (önce Pimli kes, pimsiz). `e2e/stale-suggestion.spec.ts`; session.spec yük altında boyanın yapıldığını ve 30 s'ye kadar kaydı bekler. npm test 117, Chrome e2e 32, e2e 35 | — |

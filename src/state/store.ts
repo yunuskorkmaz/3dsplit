@@ -215,6 +215,8 @@ export interface AppState {
   errorLoops: Vec3[][] | null;
   /** X5: aktif slot bölgesi için kesim modu önerisi. */
   suggestion: CutSuggestion | null;
+  /** X103: öneri hesaplanıyor; mod öneriyi izliyorsa Kes bekler. */
+  suggesting: boolean;
   /** X72: kullanıcı modu elle seçti; öneri modu artık kendiliğinden değiştirmez. */
   cutModeManual: boolean;
   busy: string | null;
@@ -294,6 +296,7 @@ export const useStore = create<AppState>(() => ({
   previewActive: false,
   slowPreview: [],
   suggestion: null,
+  suggesting: false,
   cutModeManual: false,
   errorLoops: null,
   busy: null,

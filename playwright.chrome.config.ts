@@ -22,6 +22,7 @@ export default defineConfig({
     'print-size.spec.ts',
     'suggest.spec.ts',
     'keys-flow.spec.ts',
+    'stale-suggestion.spec.ts',
     'select.spec.ts',
     'navigate.spec.ts',
     'multipart.spec.ts',

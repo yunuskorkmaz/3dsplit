@@ -332,3 +332,14 @@ Kaynak: `docs/review/00-ozet.md`, `docs/review/02b-audit-ux.md`. Davranışlar 2
 - Çizgi ya da Dikiş'te yarım halka varken Cmd/Ctrl+Z son noktayı siler (Backspace gibi); halka yokken her zamanki geri al.
 
 Kabul: e2e `undo-base.spec.ts`: açılıştan sonra geçmiş boş ve Cmd+Z modeli kaldırmaz; yarım çizgide Cmd+Z bir nokta siler; Başlangıç'ta model yerinde; gövde silinip sahne boşalınca yenilemede "Devam et" gelir; dolu sahneye ikinci dosya tek adımda geri alınır.
+
+## X103 Eski öneriyle kesim olmaz
+
+- Set, boya, seçili gövde ya da gövde listesi değişince eski öneri aynı anda kalkar; yerine "Öneri hesaplanıyor…" görünür.
+- Mod öneriyi izliyorsa (elle seçilmediyse) öneri gelene kadar Kes kapalıdır; ipucu "Kesim modu belirleniyor; öneri gelince açılır". Mod elle seçildiyse Kes beklemez. Dikiş'te öneri kullanılmaz, Kes beklemez.
+- Kes başka yoldan (set menüsünde "Bu seti kes", komut arama) çağrılırsa ve öneri o bölge için gelmemişse kesimden önce beklenir ("Kesim modu belirleniyor…" meşgul kartı). Bu bekleme İptal edilirse kesim yapılmaz.
+- Kesim iletisindeki mod, kesimin yapıldığı moddur; artık eski öneriyle başka modda kesim olmadığı için şeritle çelişmez.
+
+Uygulamada: öneri tetiklemesi React effect'inden store aboneliğine taşındı (`startSuggestionWatch`); effect bir kare geç kalıyor, o karede eski öneri ve açık Kes görünüyordu. Bluey'de (500 bin üçgen) Filament 4'e geçince Kes ~10 s kapalı kalıyor; bu, doğru modla kesmenin bedeli.
+
+Kabul: e2e `stale-suggestion.spec.ts`: kol (Pimli kes) ve burun (Tapa) setleri arasında geçişte eski öneri hemen kalkar, bekleme kartı görünür ve o sırada Kes hiç açılmaz; set değiştirilip hemen kesilince kesim yeni setin önerisiyle (Tapa) yapılır. Chrome'da Bluey: Filament 4 seçilip Kes'e basılınca kesim Tapa ile.

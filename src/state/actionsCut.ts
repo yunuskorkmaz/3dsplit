@@ -1,7 +1,7 @@
 import type { CutMode, CutOptions } from '../core/cut';
 import { boundingBox } from '../core/geometry';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
-import { geometry } from '../worker/client';
+import { GeometryAbort, geometry } from '../worker/client';
 import { busy, geomKey } from './actionsHooks';
 import { lineCancel } from './actionsLine';
 import {
@@ -114,19 +114,33 @@ let suggestSeq = 0;
 /** X78: son istenen öneri sonuçlanınca (ya da gerek kalmayınca) çözülür. */
 let suggestionSettled: Promise<void> = Promise.resolve();
 let settleSuggestion: (() => void) | null = null;
+/** X103: son sonuçlanan önerinin hangi parça, set ve boya için olduğu. */
+let suggestedFor: string | null = null;
+/** X103: son öneri İptal ile kesildi mi (o zaman bekleyen kesim de yapılmaz). */
+let suggestionAborted = false;
 
-export function scheduleSuggestion(): void {
+function suggestionKey(): string {
+  const s = get();
+  return `${s.selectedPartId}:${s.activeSlot}:${s.paintVersion}`;
+}
+
+export function scheduleSuggestion(delay = 400): void {
   if (suggestTimer) clearTimeout(suggestTimer);
   if (!settleSuggestion)
     suggestionSettled = new Promise((resolve) => {
       settleSuggestion = resolve;
     });
+  // X103: eski öneri başka bölgeye ait; hemen kalkar, yenisi gelene kadar Kes bekler
+  if (get().suggestion || !get().suggesting) set({ suggestion: null, suggesting: true });
   suggestTimer = setTimeout(async () => {
     const part = selectedPart();
     const slot = get().activeSlot;
+    const key = suggestionKey();
     const seq = ++suggestSeq;
     const settle = () => {
       if (seq !== suggestSeq) return;
+      suggestedFor = key;
+      set({ suggesting: false });
       settleSuggestion?.();
       settleSuggestion = null;
     };
@@ -138,17 +152,50 @@ export function scheduleSuggestion(): void {
     try {
       const s = await geometry.suggest(part.mesh, slot);
       if (seq !== suggestSeq) return;
+      suggestionAborted = false;
       set({ suggestion: s });
       // X72: elle seçilmediyse mod öneriye geçer (Yapıştır yalnız elle seçilir)
       const { cut, cutModeManual } = get();
       if (s && !cutModeManual && cut.mode !== s.mode && cut.mode !== 'fast')
         set({ cut: { ...cut, mode: s.mode } });
-    } catch {
-      if (seq === suggestSeq) set({ suggestion: null });
+    } catch (e) {
+      if (seq === suggestSeq) {
+        suggestionAborted = e instanceof GeometryAbort;
+        set({ suggestion: null });
+      }
     } finally {
       settle();
     }
-  }, 400);
+  }, delay);
+}
+
+/**
+ * Boyama, set veya parça değişince öneriyi yeniler. X103: store aboneliği, değişiklikle
+ * aynı anda çalışır; React effect'i bir kare geç kalıp eski öneriyi ve açık Kes'i gösteriyordu.
+ */
+export function startSuggestionWatch(): () => void {
+  scheduleSuggestion();
+  return useStore.subscribe((s, prev) => {
+    if (
+      s.paintVersion !== prev.paintVersion ||
+      s.activeSlot !== prev.activeSlot ||
+      s.selectedPartId !== prev.selectedPartId ||
+      s.parts !== prev.parts
+    )
+      scheduleSuggestion();
+  });
+}
+
+/**
+ * X103: mod öneriyi izliyorsa kesimden önce o bölgenin önerisi gelmiş olmalı;
+ * yoksa eski bölgenin moduyla kesilir ("Bu seti kes" seti değiştirip hemen keser).
+ */
+async function awaitFreshSuggestion(): Promise<boolean> {
+  if (get().cutModeManual) return true;
+  if (!get().suggesting && suggestedFor === suggestionKey()) return true;
+  if (!get().suggesting) scheduleSuggestion(0);
+  await busy('Kesim modu belirleniyor…', () => suggestionSettled);
+  return !suggestionAborted;
 }
 
 /**
@@ -332,6 +379,8 @@ export async function runCut(): Promise<void> {
     if (!seam) return notify('warn', 'Önce dikiş halkasını kapatın.');
     return runSeamCut(seam.part, seam.loop);
   }
+  if (!cutTarget()) return;
+  if (!(await awaitFreshSuggestion())) return;
   const part = cutTarget();
   if (!part) return;
   const opts = cutOptions();

@@ -64,7 +64,11 @@ function SessionOffer() {
         >
           Devam et
         </button>
-        <button type="button" onClick={discardSession}>
+        <button
+          type="button"
+          onClick={discardSession}
+          title="Kayıt silinmez; yeni model açınca Komut ara › Önceki oturumu aç ile geri gelir"
+        >
           Yok say
         </button>
       </div>

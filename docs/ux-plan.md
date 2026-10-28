@@ -362,3 +362,13 @@ Kabul: e2e `painted-open.spec.ts` (Bluey): açılışta aktif set Taban, setler 
 Uygulamada: bekleyen pimler bellekte gövdenin mesh'ine bağlı tutulur (`WeakMap`); ölçek, sadeleştirme ya da proje açma mesh'i değiştirince eski pimler düşer. Oturum kaydı yalnız aktif bölgenin pimlerini saklar; başka bölgede bekleyen pimler sayfa yenilenince gider. Tapa yönü ve bölge derinlikleri bölgeye bağlanmadı (onaylanan kapsam yalnız pimler); kesimde sıfırlanıp geri alınca dönerler.
 
 Kabul: e2e `region-pins.spec.ts`: Seçim 1'e iki pim; Seçim 2'de pim yok, Seçim 1'e dönünce iki pim; Seçim 2'deyken Ctrl+Z Seçim 1'e döner ve bir pim kalır; kesimden sonra Ctrl+Z aynı gövde, aynı set, iki pim; yinele pimleri sıfırlar.
+
+## X106 Kayıtlı oturum sormadan silinmez
+
+- "Yok say" yalnız kartı kapatır; kayıt silinmez, yenileyince kart yine gelir. İpucu: "Kayıt silinmez; yeni model açınca Komut ara › Önceki oturumu aç ile geri gelir".
+- Kayıtta başka bir oturum varken yeni model ya da proje açılırsa, eski kayıt ezilmeden önce "Önceki oturum" olarak saklanır (tek düzey). Kart açıkken model açmak ya da dolu sahneye proje açmak bunu iletiyle söyler: "Önceki çalışma saklandı: Komut ara › "Önceki oturumu aç" geri getirir."
+- Komut ara › "Önceki oturumu aç" saklanan oturumu açar; ekrandaki çalışma yerine "önceki" olur (ikisi yer değiştirir).
+
+Uygulamada: oturumun kimliği (`SessionMeta.id`) boş sahneye model ya da proje açılınca yenilenir; kayıtta kimliği farklı bir oturum varsa yazmadan önce `prevMeta`/`prevData`'ya taşınır (aynı IndexedDB işleminde). Kimliksiz eski kayıtlar da ilk yazmada "önceki" olur. Proje açma onay sormaz; kayıp olmadığı için ileti yeterli sayıldı.
+
+Kabul: e2e `session.spec.ts`: Yok say'dan sonra yenileyince kart yine gelir; figure kaydı varken kart açıkken örnek model açılınca ileti çıkar, "Önceki oturumu aç" figure'ü, ikinci kez örneği getirir.

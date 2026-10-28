@@ -13,6 +13,7 @@ import { PROJECT_EXTENSION, readProject, writeProject } from '../io/project';
 import { geometry } from '../worker/client';
 import { busy } from './actionsHooks';
 import { clearPaintSession } from './actionsPaint';
+import { startNewSession } from './actionsSession';
 import {
   get,
   newPartId,
@@ -89,6 +90,9 @@ async function addObjects(objects: ImportedObject[]): Promise<void> {
   const base = !sceneBefore.length;
   // X72: yeni model: mod yine öneriyi izler
   if (base) set({ cutModeManual: false });
+  // X106: boş sahneye açılan model yeni oturumdur; kayıttaki eski oturum saklanır
+  // kart açıkken (kayıt önerilirken) açılan model: kaydın saklandığı söylenir
+  if (base) startNewSession(!!get().session.offer);
   for (const obj of objects) {
     const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
     if (obj.labels && ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []))
@@ -171,6 +175,8 @@ export function saveProject(): void {
 async function openProject(file: File): Promise<void> {
   await busy(`${file.name} açılıyor…`, async () => {
     const data = readProject(new Uint8Array(await file.arrayBuffer()));
+    // X106: proje sahneyi değiştirir; eski çalışma "Önceki oturum" olarak saklanır
+    startNewSession(get().parts.length > 0 || !!get().session.offer);
     reservePartIds(data.parts.map((p) => p.id));
     clearPaintSession();
     set({

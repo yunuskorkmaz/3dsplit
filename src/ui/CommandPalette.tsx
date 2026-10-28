@@ -12,6 +12,7 @@ import {
   openSample,
   redo,
   refineSelected,
+  restoreSession,
   runCut,
   SIMPLIFY_TARGET,
   saveProject,
@@ -230,6 +231,14 @@ function useItems(): Item[] {
         words: 'dosya figür',
         icon: 'open',
         run: () => openSample(),
+      },
+      {
+        id: 'file.previous',
+        label: 'Önceki oturumu aç',
+        words: 'dosya kurtar geri oturum kayıt',
+        icon: 'open',
+        // X106: ezilen çalışma; ekrandaki çalışma da yerine "önceki" olur
+        run: () => restoreSession('previous').then(() => requestAnimationFrame(() => fitView())),
       },
       {
         id: 'file.save',

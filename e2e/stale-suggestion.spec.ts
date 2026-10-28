@@ -42,6 +42,15 @@ test('X103: set değişince eski öneri kalkar, öneri gelene kadar Kes kapalı'
     // biome-ignore lint/suspicious/noExplicitAny: test kaydı
     const w = window as any;
     w.pendingSeen = { card: false, kesOpen: false };
+    // set değiştiği andaki durum (sayfadan okumak yükte 400 ms'yi geçebiliyor)
+    w.atSwitch = null;
+    const off = w.app.store.useStore.subscribe(
+      (s: { activeSlot: number; suggesting: boolean; suggestion: unknown }) => {
+        if (s.activeSlot !== 1) return;
+        w.atSwitch = { suggesting: s.suggesting, suggestion: s.suggestion };
+        off();
+      },
+    );
     new MutationObserver(() => {
       if (!document.querySelector('.suggestion-pending')) return;
       w.pendingSeen.card = true;
@@ -52,9 +61,11 @@ test('X103: set değişince eski öneri kalkar, öneri gelene kadar Kes kapalı'
     }).observe(document.body, { subtree: true, childList: true, attributes: true });
   });
   await page.keyboard.press('1');
-  const s = await state(page);
-  expect(s.suggesting).toBe(true);
-  expect(s.suggestion).toBeNull();
+  // biome-ignore lint/suspicious/noExplicitAny: test kaydı
+  expect(await page.evaluate(() => (window as any).atSwitch)).toEqual({
+    suggesting: true,
+    suggestion: null,
+  });
   await expect(page.locator('.suggestion')).toContainText('Pimli kes', { timeout: 10_000 });
   await expect(kes).toBeEnabled();
   expect((await state(page)).cut.mode).toBe('keys');

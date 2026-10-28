@@ -42,14 +42,16 @@ test('X95: yenileyince kaldığın yerden devam', async ({ page }) => {
   await page.locator('.cut-actions').getByRole('button', { name: 'Kes', exact: true }).click();
   await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
   // ikinci boya: kesimden sonra da yazılsın
-  const { session, paintVersion } = await state(page);
+  const { paintVersion } = await state(page);
   await page.keyboard.press('2');
+  // açılıştaki ve kesimdeki kayıtlar da "Kaydedildi" yazar: boyadan sonra alınan kaydı bekle.
+  // savedAt kaydın alındığı an; tıktan önce alınan kayıt boyayı içermez
+  const clicked = await page.evaluate(() => Date.now());
   await page.mouse.click(nose.x + 40, nose.y + 60);
   await expect.poll(async () => (await state(page)).paintVersion).toBeGreaterThan(paintVersion);
-  // açılıştaki ilk kayıt da "Kaydedildi" yazar: bu boyadan sonraki kaydı bekle (yükte yavaş)
   await expect
     .poll(async () => (await state(page)).session.savedAt ?? 0, { timeout: 30_000 })
-    .toBeGreaterThan(session.savedAt ?? 0);
+    .toBeGreaterThanOrEqual(clicked);
   await expect(page.locator('.session-status')).toContainText('Kaydedildi', { timeout: 10_000 });
   const before = await summary(page);
 
@@ -62,15 +64,56 @@ test('X95: yenileyince kaldığın yerden devam', async ({ page }) => {
   await expect(page.locator('.msg', { hasText: 'Oturum kurtarıldı' })).toBeVisible();
   await page.screenshot({ path: 'test-results/session-restored.png' });
 
-  // Yok say kaydı siler
+  // X106: Yok say yalnız kartı kapatır; kayıt silinmez, yenileyince yine önerilir
   await page.reload();
   await page.locator('.session-offer').getByRole('button', { name: 'Yok say' }).click();
-  // silme bitmeden yenilenirse işlem iptal olur
-  await page.waitForTimeout(500);
-  await page.reload();
-  await expect(page.locator('.empty-stage')).toBeVisible();
-  await page.waitForTimeout(500);
   await expect(page.locator('.session-offer')).toHaveCount(0);
+  await expect(page.locator('.empty-stage')).toBeVisible();
+  await page.reload();
+  await expect(page.locator('.session-offer')).toContainText('2 gövde');
   expect((await state(page)).parts.length).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('X106: yeni model kayıtlı oturumu ezmez, Önceki oturumu aç geri getirir', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const palette = page.getByRole('dialog', { name: 'Komut ara' });
+  const run = async (text: string) => {
+    await page.keyboard.press('Control+k');
+    await palette.getByRole('textbox', { name: 'Komut ara' }).fill(text);
+    await page.keyboard.press('Enter');
+    await expect(palette).toHaveCount(0);
+  };
+  const names = async () =>
+    (await state(page)).parts.map((p: { name: string }) => p.name).join(',');
+  const savedAfter = async (t: number) =>
+    expect
+      .poll(async () => (await state(page)).session.savedAt ?? 0, { timeout: 30_000 })
+      .toBeGreaterThan(t);
+
+  // figure açılır ve kaydedilir
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles('samples/figure.stl');
+  await expect(page.locator('ul.parts li')).toHaveCount(1, { timeout: 30_000 });
+  await savedAfter(0);
+
+  // yenile: kart açıkken örnek model açılır; figure "önceki" olarak saklanır
+  await page.reload();
+  await expect(page.locator('.session-offer')).toContainText('figure');
+  await page.getByRole('button', { name: 'Örnek modeli aç' }).click();
+  await expect(page.locator('ul.parts li')).toHaveCount(1, { timeout: 30_000 });
+  await expect(page.locator('.msg', { hasText: 'Önceki çalışma saklandı' })).toBeVisible();
+  await savedAfter(0);
+  expect(await names()).toBe('örnek figür');
+
+  // önceki oturum geri gelir; ekrandaki çalışma yerine "önceki" olur
+  await run('önceki oturum');
+  await expect.poll(names).toBe('figure');
+  const t = (await state(page)).session.savedAt ?? 0;
+  await savedAfter(t);
+  await run('önceki oturum');
+  await expect.poll(names).toBe('örnek figür');
+  await page.screenshot({ path: 'test-results/session-previous.png' });
   expect(errors).toEqual([]);
 });

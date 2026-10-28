@@ -1,8 +1,8 @@
 import {
-  clearSession,
   loadSession,
   loadSessionMeta,
   type SessionData,
+  type SessionSlot,
   saveSession,
 } from '../io/session';
 import { clearPaintSession } from './actionsPaint';
@@ -14,6 +14,22 @@ const SAVE_DELAY = 1500;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let writing = false;
 let pending = false;
+/** X106: bu sahnenin oturum kimliği; yeni model ya da proje açılınca yenilenir. */
+let sessionId = newSessionId();
+
+function newSessionId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * X106: boş sahneye model ya da proje açıldı: yeni oturum başlar. Kayıttaki eski
+ * oturum ilk yazmada "Önceki oturum" olur. `replaced`: dolu sahne ya da önerilen kayıt değişti.
+ */
+export function startNewSession(replaced = false): void {
+  sessionId = newSessionId();
+  if (replaced)
+    notify('info', 'Önceki çalışma saklandı: Komut ara › "Önceki oturumu aç" geri getirir.');
+}
 
 function snapshot(s: AppState): SessionData {
   return {
@@ -52,7 +68,7 @@ async function write(): Promise<void> {
     const name = s.parts.find((p) => p.badge !== 'source')?.name ?? 'oturum';
     const bodies = s.parts.filter((p) => p.badge !== 'source').length;
     const savedAt = Date.now();
-    await saveSession({ name, bodies, savedAt }, snapshot(s));
+    await saveSession({ id: sessionId, name, bodies, savedAt }, snapshot(s));
     set((st) => ({ session: { ...st.session, saving: false, savedAt } }));
   } catch (e) {
     set((st) => ({ session: { ...st.session, saving: false } }));
@@ -95,13 +111,19 @@ export function startSessionAutosave(): () => void {
   });
 }
 
-export async function restoreSession(): Promise<void> {
-  const data = await loadSession();
+/** Kayıtlı oturumu açar; `previous`: bir önceki (ezilmiş) oturum. */
+export async function restoreSession(slot: SessionSlot = 'current'): Promise<void> {
+  const [meta, data] = await Promise.all([loadSessionMeta(slot), loadSession(slot)]);
   if (!data?.parts.length) {
     set((s) => ({ session: { ...s.session, offer: null } }));
-    notify('warn', 'Kayıtlı oturum okunamadı.');
+    notify(
+      'warn',
+      slot === 'previous' ? 'Saklanmış önceki oturum yok.' : 'Kayıtlı oturum okunamadı.',
+    );
     return;
   }
+  // açılan oturum kendi kimliğiyle sürer; ekrandaki çalışma ilk yazmada "önceki" olur
+  sessionId = meta?.id ?? newSessionId();
   reservePartIds(data.parts.map((p) => p.id));
   clearPaintSession();
   set((s) => ({
@@ -124,7 +146,7 @@ export async function restoreSession(): Promise<void> {
   );
 }
 
-export async function discardSession(): Promise<void> {
+/** X106: kartı kapatır; kayıt silinmez, yeni model açılınca "Önceki oturum" olur. */
+export function discardSession(): void {
   set((s) => ({ session: { ...s.session, offer: null } }));
-  await clearSession();
 }

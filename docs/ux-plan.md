@@ -372,3 +372,15 @@ Kabul: e2e `region-pins.spec.ts`: Seçim 1'e iki pim; Seçim 2'de pim yok, Seçi
 Uygulamada: oturumun kimliği (`SessionMeta.id`) boş sahneye model ya da proje açılınca yenilenir; kayıtta kimliği farklı bir oturum varsa yazmadan önce `prevMeta`/`prevData`'ya taşınır (aynı IndexedDB işleminde). Kimliksiz eski kayıtlar da ilk yazmada "önceki" olur. Proje açma onay sormaz; kayıp olmadığı için ileti yeterli sayıldı.
 
 Kabul: e2e `session.spec.ts`: Yok say'dan sonra yenileyince kart yine gelir; figure kaydı varken kart açıkken örnek model açılınca ileti çıkar, "Önceki oturumu aç" figure'ü, ikinci kez örneği getirir.
+
+## X107 Dikiş yalnız kendi modunu gösterir
+
+- Dikiş Tapa kullanmaz: Dikiş açıkken şeritte Tapa kapalıdır (ipucu "Dikiş Tapa ile kesmez: Pimli kes ya da Yapıştır") ve vurgulanmaz. Mod Pimli kes değilse Yapıştır vurgulanır; panel başlığı "Yapıştır — dikiş" ya da "Pimli kes — dikiş".
+- Panel yalnız Dikiş'in modunun ayarlarını gösterir: Tapa açıklaması, derinlik, yön ve öneri kartı görünmez. Açıklama: "Halkadan ikiye ayırır, kesite pim konur." / "Halkadan ikiye ayırır, parçalar yapıştırılır. Pim için Pimli kes'i seçin."
+- Dikiş'te Kes yalnız halka hazırsa açıktır; boyalı seçim Kes'i açmaz. Halka modeli ikiye ayırmıyorsa (kırmızı) Kes kapalı.
+- Şerit ipuçları aracın hangi iş için olduğunu söyler: Çizgi "Kıvrımı olmayan bölgeyi çevirip boyar (göz, desen)", Dikiş "Kol, bacak, kafa ayırır: çevresine halka çiz, Kes oradan ikiye böler (Pimli kes ile pim konur). Boyamaz."
+- Yardım davranışla aynı: halka düz değilse Kes çizilen halkayı izler; halka modeli ayırmıyorsa kırmızı çizilir ve Kes kapalı kalır.
+
+Uygulamada: kayıtlı kesim modu değişmez (Tapa seçiliyken Dikiş'e geçip dönünce Tapa sürer); Dikiş yalnız gösterimde ve kesimde Pimli kes / Yapıştır'ı kullanır.
+
+Kabul: e2e `seam.spec.ts` X107: boyalı seçimle Dikiş'te Kes kapalı; mod Tapa iken şeritte Tapa kapalı, Yapıştır vurgulu, başlık "Yapıştır — dikiş", Tapa metni ve Derinlik yok; Pimli kes'e geçince başlık değişir; hazır halkada Kes açık, hatalı halkada kapalı.

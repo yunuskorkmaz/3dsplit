@@ -24,7 +24,7 @@ const TOOL_DETAILS: Record<string, string> = {
     'Seçimin kenarında gezdir: tırtıklı sınırı düzgün bir eğriye çeker. Güç arttıkça daha çok düzeltir. Sağdaki penceredeki "Tüm sınırı yumuşat" bütün sınırı bir kerede düzeltir.',
   bucket: 'Tıklanan aynı renkli bağlı bölgeyi aktif slota boyar.',
   line: 'Doğal kıvrımı olmayan bölgeler için: yüzeye noktalar tıkla, yol yüzey üzerinden en kısa yoldan geçer. İlk noktaya tıklayınca ya da Enter ile halka kapanır, içi aktif slota boyanır ve kenar çizgi boyunca düzeltilip üçgenlerin içinden geçirilir. Backspace son noktayı siler, Esc iptal eder.',
-  seam: 'Kol ve bacak için: yüzeye kapalı bir halka çiz. İçi boyanmaz. Kes, halkanın düzleminden iki parça ayırır. Pimli kes seçiliyse kesite pim konur; değilse yapıştırmalık kalır. Halka düz değilse ya da düzlem modeli birden fazla yerden kesiyorsa kesim durur ve halka kırmızı çizilir.',
+  seam: 'Kol ve bacak için: yüzeye kapalı bir halka çiz. İçi boyanmaz. Kes, halkanın düzleminden iki parça ayırır. Pimli kes seçiliyse kesite pim konur; değilse yapıştırmalık kalır (Dikiş Tapa kullanmaz). Halka düz değilse Kes çizilen halkayı izler. Halka modeli ikiye ayırmıyorsa (kolun çevresini dolanmıyorsa) halka kırmızı çizilir ve Kes kapalı kalır.',
   pin: 'Keys modunda pimleri düzenler. Pimler kesim yüzeyinde gerçek boyutlarıyla yarı saydam görünür. Pime tıkla: seçilir; W ile taşıma okları (kesim düzleminde), R ile döndürme halkaları çıkar, sürüklerken pim anlık hareket eder. Pimi yüzeyde sürükleyerek de taşıyabilirsin. Seçiliyken boş yere tıklamak ya da Esc seçimi bırakır; seçili pim yokken boş yere tıklamak yeni pim ekler. Shift+tık siler. Otomatik pime tıklayınca pimler o yerlerde elle düzenlenebilir hale gelir.',
 };
 

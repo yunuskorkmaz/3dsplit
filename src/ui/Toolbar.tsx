@@ -50,14 +50,14 @@ export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: 
     icon: '✎',
     label: 'Çizgi',
     key: 'L',
-    hint: 'Tıkla: nokta ekle. İlk noktaya tıkla ya da Enter: kapat ve boya. Backspace: son nokta, Esc: iptal.',
+    hint: 'Kıvrımı olmayan bölgeyi çevirip boyar (göz, desen). Tıkla: nokta ekle; ilk noktaya tıkla ya da Enter: kapat ve boya. Backspace: son nokta, Esc: iptal.',
   },
   {
     id: 'seam',
     icon: '⌇',
     label: 'Dikiş',
     key: 'D',
-    hint: 'Kapalı halka çizin. İçi boyanmaz; Kes, halkanın düzleminden ayırır. Backspace: son nokta, Esc: iptal.',
+    hint: 'Kol, bacak, kafa ayırır: çevresine halka çiz, Kes oradan ikiye böler (Pimli kes ile pim konur). Boyamaz. Backspace: son nokta, Esc: iptal.',
   },
   {
     id: 'pin',
@@ -150,7 +150,11 @@ function PrintSizeButton({ disabled }: { disabled: boolean }) {
 export function ToolBar() {
   const tool = useStore((s) => s.tool);
   const keys = useKeymap((s) => s.map);
-  const mode = useStore((s) => s.cut.mode);
+  // X107: Dikiş Tapa kullanmaz; şerit Dikiş'in gerçek modunu vurgular
+  const mode = useStore((s) =>
+    s.tool === 'seam' ? (s.cut.mode === 'keys' ? 'keys' : 'fast') : s.cut.mode,
+  );
+  const seam = useStore((s) => s.tool === 'seam');
   const hasParts = useStore((s) => s.parts.length > 0);
   const explode = useStore((s) => s.explode);
   const xray = useStore((s) => s.xray);
@@ -193,8 +197,11 @@ export function ToolBar() {
       id: 'socket',
       icon: 'socket',
       label: 'Tapa',
-      title: 'Tapa: bölge gövdeye girer, gövdede yuva kalır (göz, kaş, burun)',
+      title: seam
+        ? 'Dikiş Tapa ile kesmez: Pimli kes ya da Yapıştır'
+        : 'Tapa: bölge gövdeye girer, gövdede yuva kalır (göz, kaş, burun)',
       active: mode === 'socket',
+      disabled: seam,
       onClick: () => setMode('socket'),
     },
     {

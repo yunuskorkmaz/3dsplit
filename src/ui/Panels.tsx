@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { EdgeSmoothing, PinShape } from '../core/cut';
+import type { CutMode, EdgeSmoothing, PinShape } from '../core/cut';
 import {
   activeIslands,
   activePaintCount,
@@ -56,7 +56,8 @@ export function CutActions() {
     void [paintVersion, selectedPartId, activeSlot, hasParts];
     return activePaintCount() > 0;
   }, [paintVersion, selectedPartId, activeSlot, hasParts]);
-  const disabled = !hasParts || (!seamReady && !painted);
+  // X107: Dikiş'te boya kesilmez; Kes yalnız halka hazırsa açık
+  const disabled = !hasParts || (tool === 'seam' ? !seamReady : !painted);
   // X103: mod öneriyi izliyorsa öneri gelene kadar Kes bekler
   const waiting = useStore((s) => s.suggesting && !s.cutModeManual && s.tool !== 'seam');
   return (
@@ -174,24 +175,23 @@ export function CutPanel() {
   });
   const [ringOpen, setRingOpen] = useState(false);
   useStore((s) => s.paintVersion);
-  const islands = cut.mode === 'socket' ? activeIslands() : [];
+  // X107: Dikiş Tapa kullanmaz; panel Dikiş'in gerçekten yapacağı modu gösterir
+  const mode: CutMode = tool === 'seam' ? (cut.mode === 'keys' ? 'keys' : 'fast') : cut.mode;
+  const islands = mode === 'socket' ? activeIslands() : [];
   const activeSlot = useStore((s) => s.activeSlot);
   const slotName = useStore((s) => s.slots.find((x) => x.id === s.activeSlot)?.name);
   const update = (patch: Partial<CutSettings>) => set((s) => ({ cut: { ...s.cut, ...patch } }));
-  const seamGlue = tool === 'seam' && cut.mode !== 'keys';
-  const modeTitle = seamGlue
-    ? 'Yapıştır'
-    : cut.mode === 'socket'
-      ? 'Tapa'
-      : cut.mode === 'keys'
-        ? 'Pimli kes'
-        : 'Yapıştır';
+  const modeTitle = mode === 'socket' ? 'Tapa' : mode === 'keys' ? 'Pimli kes' : 'Yapıştır';
   const modeHint =
-    cut.mode === 'socket'
-      ? 'Göz, kaş, burun. Tapa gövdeye girer, yerinde yuva kalır.'
-      : cut.mode === 'keys'
-        ? 'Kol, bacak, kafa. Düz kesim ve pim.'
-        : 'Yapıştırmalık kapak. Pim yok.';
+    tool === 'seam'
+      ? mode === 'keys'
+        ? 'Halkadan ikiye ayırır, kesite pim konur.'
+        : 'Halkadan ikiye ayırır, parçalar yapıştırılır. Pim için Pimli kes’i seçin.'
+      : mode === 'socket'
+        ? 'Göz, kaş, burun. Tapa gövdeye girer, yerinde yuva kalır.'
+        : mode === 'keys'
+          ? 'Kol, bacak, kafa. Düz kesim ve pim.'
+          : 'Yapıştırmalık kapak. Pim yok.';
   return (
     <Panel
       id="cut"
@@ -231,11 +231,11 @@ export function CutPanel() {
         {suggesting && !suggestion && hasParts && (
           <div className="suggestion-pending">Öneri hesaplanıyor…</div>
         )}
-        {suggestion && (
-          <div className={`suggestion ${suggestion.mode === cut.mode ? 'ok' : ''}`}>
-            {suggestion.mode === cut.mode ? '✓ ' : 'Öneri: '}
+        {suggestion && tool !== 'seam' && (
+          <div className={`suggestion ${suggestion.mode === mode ? 'ok' : ''}`}>
+            {suggestion.mode === mode ? '✓ ' : 'Öneri: '}
             <b>{suggestion.mode === 'keys' ? 'Pimli kes' : 'Tapa'}</b> — {suggestion.reason}
-            {suggestion.mode !== cut.mode && (
+            {suggestion.mode !== mode && (
               <button type="button" onClick={() => update({ mode: suggestion.mode })}>
                 Uygula
               </button>
@@ -261,7 +261,7 @@ export function CutPanel() {
             izler. Pimli kes seçiliyse kesite pim konur; değilse iki parça yapıştırmalık kalır.
           </p>
         )}
-        {cut.mode === 'socket' && (
+        {mode === 'socket' && (
           <Group title="Tapa">
             <NumberField
               label="Derinlik"
@@ -326,7 +326,7 @@ export function CutPanel() {
             <p className="hint">Tapa bu yönde gövdeye girer.</p>
           </Group>
         )}
-        {cut.mode === 'keys' && (
+        {mode === 'keys' && (
           <Group title="Pim">
             <div className="row segmented">
               {PIN_SHAPES.map((p) => (
@@ -377,7 +377,7 @@ export function CutPanel() {
             </div>
           </Group>
         )}
-        {cut.mode !== 'fast' && (
+        {mode !== 'fast' && (
           <Group title="Tolerans">
             <div className="row segmented">
               {TOLERANCE_PRESETS.map((t) => (
@@ -393,8 +393,8 @@ export function CutPanel() {
               ))}
             </div>
             <p className="hint">
-              {cut.mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arası {cut.clearance} mm.
-              Emin değilsen önce deneme parçası bas.
+              {mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arası {cut.clearance} mm. Emin
+              değilsen önce deneme parçası bas.
             </p>
             <button
               type="button"
@@ -405,7 +405,7 @@ export function CutPanel() {
             </button>
           </Group>
         )}
-        {(tool === 'seam' || cut.mode !== 'socket') && (
+        {(tool === 'seam' || mode !== 'socket') && (
           <NumberField
             label="Yüz boşluğu"
             value={cut.faceGap}
@@ -419,7 +419,7 @@ export function CutPanel() {
         )}
         <details className="advanced">
           <summary>İnce ayar</summary>
-          {cut.mode === 'socket' && (
+          {mode === 'socket' && (
             <>
               <NumberField
                 label="Ayak payı"
@@ -455,7 +455,7 @@ export function CutPanel() {
               />
             </>
           )}
-          {cut.mode === 'keys' && (
+          {mode === 'keys' && (
             <>
               <label
                 className="field"
@@ -525,7 +525,7 @@ export function CutPanel() {
               </label>
             </>
           )}
-          {cut.mode !== 'fast' && (
+          {mode !== 'fast' && (
             <>
               <NumberField
                 label="Boşluk"
@@ -537,7 +537,7 @@ export function CutPanel() {
                 title="Tapa/pim ile yuva arasında her yüzeyde bırakılan boşluk. Yuva bu kadar büyütülür, parça boyutu değişmez"
                 onChange={(v) => update({ clearance: Math.round(v * 100) / 100 })}
               />
-              {cut.mode === 'keys' && (
+              {mode === 'keys' && (
                 <NumberField
                   label="Boy boşluğu"
                   value={cut.pinDepthClearance}
@@ -561,7 +561,7 @@ export function CutPanel() {
               />
             </>
           )}
-          {cut.mode !== 'socket' && (
+          {mode !== 'socket' && (
             <label
               className="field"
               title="Sınır halkası yerine ona en uygun düzlemle kes: dümdüz kesim yüzeyi (kol, kulak)"

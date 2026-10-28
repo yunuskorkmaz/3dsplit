@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-28):** A1–E2 ve X1–X106 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-28):** A1–E2 ve X1–X107 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sıradaki: X107.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sıradaki: X108.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -119,7 +119,7 @@ Kurallar:
 | X104 | Boyalı 3MF açılınca aktif set Taban, Kes kapalı, adım şeridi "Seç"te. Bütün setler tek biçimde adlanır | Tek tık 20 s'de istenmeyen 8 parça; "Seçim N" / "Filament N" karışık | #3, #7, 02b-5 | S | onaylandı | [x] |
 | X105 | Kesimi geri almak pimleri, Tapa yönünü ve bölge derinliklerini de geri getirir. Elle konan pimler sete ve gövdeye bağlıdır; başka sete geçince taşınmaz | Ctrl+Z gövdeyi getiriyor, elle konan pimler kayboluyor; sol kolun pimleri sağ kol kesimine gidiyor | 02b-6, 02b-7 | M | onaylandı | [x] |
 | X106 | "Yok say" kaydı hemen silmez (geri alınabilir ya da adı ne yaptığını söyler). Proje açmak ve kart açıkken dosya sürüklemek kayıtlı oturumu sormadan ezmez | Onaysız, kurtarılamayan oturum kaybı | 02b-8 | S | onaylandı | [x] |
-| X107 | Dikiş açıkken panel başlığı, şerit ve içerik aynı modu söyler; Kes yalnız halka hazırsa açık. Yardım davranışla aynı şeyi söyler; araç ipuçları Çizgi ve Dikiş'in hangi iş için olduğunu yazar | Başlık "Yapıştır", şerit ve içerik Tapa; kol için hangi araç belli değil | #9, 02b-9 | S | onaylandı | [ ] |
+| X107 | Dikiş açıkken panel başlığı, şerit ve içerik aynı modu söyler; Kes yalnız halka hazırsa açık. Yardım davranışla aynı şeyi söyler; araç ipuçları Çizgi ve Dikiş'in hangi iş için olduğunu yazar | Başlık "Yapıştır", şerit ve içerik Tapa; kol için hangi araç belli değil | #9, 02b-9 | S | onaylandı | [x] |
 | X108 | Yardım "İş akışı" listesi üst adım şeridinin `.steps` kuralından ayrılır | Liste 8 dar sütuna bölünüyor, okunmuyor | #10 | S | gerekmez | [ ] |
 
 ### Sprint 13 — renk ve dışa aktarma doğruluğu
@@ -437,3 +437,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-28 | X104: boyalı 3MF açılınca aktif set Taban, araç Akıllı seç, Kes kapalı. Taban aktifken Akıllı seç tıklaması boyamaz, tıklanan rengin setini seçer (eskiden boyayı silerdi). 3MF setleri tek biçimde "Filament N". Adım şeridi yalnız aktif setin boyasıyla "Kes"e geçer. Durum ve seçim satırı Taban'da renge tıklamayı söyler. `e2e/painted-open.spec.ts` (Bluey). npm test 117, Chrome e2e 33, e2e 36 | — |
 | 2026-10-28 | X105: kesim geçmiş kaydı bölge durumunu (gövde, set, pimler, yön, bölge derinlikleri, kesit profili) önce/sonra saklar; geri al bunları getirir (`RegionState`). Elle konan pimler gövde mesh'i + set anahtarıyla bekler (`WeakMap`), başka bölgeye taşınmaz. Pim geçmiş kaydı kendi bölgesini taşır; geri alınca o bölgeye dönülür. `e2e/region-pins.spec.ts`. npm test 117, Chrome e2e 34, e2e 37 | — |
 | 2026-10-28 | X106: "Yok say" kaydı silmez, yalnız kartı kapatır. Oturum kimliği (`SessionMeta.id`); kayıtta başka oturum varsa yazmadan önce "önceki" yerine taşınır (`prevMeta`/`prevData`). Komut ara › "Önceki oturumu aç" ile ikisi yer değiştirir. Kart açıkken model ya da dolu sahneye proje açmak bunu iletiyle söyler. session.spec: X106 testi; X95'teki kayıt bekleme referansı tık anına alındı (yükte kırılıyordu); stale-suggestion set değiştiği anki durumu store aboneliğiyle okur. npm test 117, Chrome e2e 35, e2e 38 | — |
+| 2026-10-28 | X107: Dikiş'te etkin mod Pimli kes ya da Yapıştır; şerit ve panel bunu gösterir, Tapa kapalı, Tapa ayarları ve öneri gizli. Dikiş'te Kes yalnız hazır halkayla açık. Çizgi ve Dikiş ipuçları hangi iş için olduklarını söyler; yardım metni davranışla aynı. `e2e/seam.spec.ts` X107. npm test 117, Chrome e2e 36, e2e 39 | — |

@@ -66,7 +66,7 @@ export function HelpDialog() {
 
 function Workflow() {
   return (
-    <ol className="steps">
+    <ol className="help-steps">
       <li>
         <b>Yükle.</b> STL, OBJ, 3MF veya .3dsplit dosyasını pencereye sürükle. Açık (su geçirmez
         olmayan) mesh otomatik onarılır; olmazsa parçada kırmızı “bozuk” yazar, şeritte Mesh ›

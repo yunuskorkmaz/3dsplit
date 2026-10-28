@@ -26,6 +26,13 @@ test('yükle → Smart Fill → Socket kes → 3MF', async ({ page }) => {
   // yardım penceresi açılıp kapanır
   await page.getByRole('button', { name: /Yardım/ }).click();
   await expect(page.getByRole('dialog', { name: 'Yardım' })).toBeVisible();
+  // X108: iş akışı listesi adım şeridi gibi sütunlara bölünmez
+  const flow = await page.locator('.modal-body ol').evaluate((ol) => {
+    const li = ol.querySelector('li') as HTMLElement;
+    return { display: getComputedStyle(ol).display, ratio: li.offsetWidth / ol.clientWidth };
+  });
+  expect(flow.display).toBe('block');
+  expect(flow.ratio).toBeGreaterThan(0.8);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.keyboard.press('?');

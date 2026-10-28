@@ -1072,11 +1072,11 @@ ul.parts li input.name:focus {
   padding: 0 5px;
   font-size: 11px;
 }
-ol.steps {
+ol.help-steps {
   margin: 0;
   padding-left: 20px;
 }
-ol.steps li {
+ol.help-steps li {
   margin: 0 0 10px;
   line-height: 1.5;
 }

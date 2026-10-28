@@ -352,3 +352,13 @@ Kabul: e2e `stale-suggestion.spec.ts`: kol (Pimli kes) ve burun (Tapa) setleri a
 - Adım şeridi "Kes"e ancak aktif setin seçili gövdede boyası varken geçer; başka setlerin boyası (3MF'teki renkler) geçirmez.
 
 Kabul: e2e `painted-open.spec.ts` (Bluey): açılışta aktif set Taban, setler Filament 1–5, Kes kapalı, adım "Seç"; göz bebeğine tık boyamadan Filament 4'ü seçer (boya sayısı ve geçmiş değişmez), adım "Kes", Kes açılır.
+
+## X105 Pimler bölgeye ait, kesimi geri almak ayarları getirir
+
+- Elle konan pimler seçili gövde + aktif set bölgesine aittir. Başka sete ya da gövdeye geçince pimler o bölgede bekler, panelde görünmez ve başka bölgenin kesimine taşınmaz; geri dönünce yerinde gelir.
+- Pim değişikliğini (ekle, sil, taşı) geri almak o pimin bölgesine döner: başka setteyken Ctrl+Z, pimin setini ve gövdesini seçip değişikliği geri alır.
+- Kesimi geri almak kesilen bölgeyi tümüyle geri getirir: gövde, aktif set, elle konan pimler, Tapa yönü, bölge derinlikleri, kesit profili. Yinele bunları yine kesimdeki gibi sıfırlar.
+
+Uygulamada: bekleyen pimler bellekte gövdenin mesh'ine bağlı tutulur (`WeakMap`); ölçek, sadeleştirme ya da proje açma mesh'i değiştirince eski pimler düşer. Oturum kaydı yalnız aktif bölgenin pimlerini saklar; başka bölgede bekleyen pimler sayfa yenilenince gider. Tapa yönü ve bölge derinlikleri bölgeye bağlanmadı (onaylanan kapsam yalnız pimler); kesimde sıfırlanıp geri alınca dönerler.
+
+Kabul: e2e `region-pins.spec.ts`: Seçim 1'e iki pim; Seçim 2'de pim yok, Seçim 1'e dönünce iki pim; Seçim 2'deyken Ctrl+Z Seçim 1'e döner ve bir pim kalır; kesimden sonra Ctrl+Z aynı gövde, aynı set, iki pim; yinele pimleri sıfırlar.

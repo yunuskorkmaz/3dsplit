@@ -10,6 +10,7 @@ import {
   notify,
   type Part,
   pushHistory,
+  regionState,
   selectedPart,
   set,
   useStore,
@@ -433,6 +434,7 @@ export async function runCut(): Promise<void> {
         : [cleared];
     });
     // yön ve pimler bölgeye özgü: sonraki kesim otomatikten başlar
+    const regionBefore = regionState();
     set((s) => ({
       parts: after,
       selectedPartId: newParts[0].id,
@@ -445,7 +447,7 @@ export async function runCut(): Promise<void> {
     }));
     const made = newParts.slice(1).map((p) => p.name);
     pushHistory(
-      { kind: 'parts', before, after },
+      { kind: 'parts', before, after, region: { before: regionBefore, after: regionState() } },
       `${origin.feature} · ${origin.detail} → ${made.join(', ')}`,
     );
     set({ previewActive: false, preview: null });
@@ -500,6 +502,7 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
         ? [{ ...p, badge: 'source' as const, visible: false }, ...newParts]
         : [cleared];
     });
+    const regionBefore = regionState();
     set((s) => ({
       parts: after,
       selectedPartId: newParts[0].id,
@@ -512,7 +515,10 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
     }));
     lineCancel();
     const made = newParts.slice(1).map((p) => p.name);
-    pushHistory({ kind: 'parts', before, after }, `${origin.feature} · Dikiş → ${made.join(', ')}`);
+    pushHistory(
+      { kind: 'parts', before, after, region: { before: regionBefore, after: regionState() } },
+      `${origin.feature} · Dikiş → ${made.join(', ')}`,
+    );
     set({ previewActive: false, preview: null });
     notify(
       'info',

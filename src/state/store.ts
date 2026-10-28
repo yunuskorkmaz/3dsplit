@@ -85,10 +85,29 @@ export interface Message {
  * Undo kaydı: boyamada değişen üçgenler, kesimde parça listesinin önceki hali.
  * `label`: geçmiş panelinde görünen ad.
  */
+/**
+ * X105: kesilen bölgenin elle ayarları. Kesim bunları sıfırlar; geri alınca geri gelir.
+ * Pimler `partId` + `slot` bölgesine aittir.
+ */
+export interface RegionState {
+  partId: string | null;
+  slot: number;
+  pins: PinPlacement[];
+  direction: Vec3 | null;
+  islandDepths: Record<number, number>;
+  ringProfile: number[];
+}
+
 type HistoryData =
   // boyama kaydı parça kimliğine değil mesh nesnesine bağlı: inceltme/kesim mesh'i değiştirse de kayıt kendi mesh'ine yazar
   | { kind: 'paint'; mesh: LabeledMesh; tris: Uint32Array; before: Uint16Array; after: Uint16Array }
-  | { kind: 'parts'; before: Part[]; after: Part[] }
+  | {
+      kind: 'parts';
+      before: Part[];
+      after: Part[];
+      /** X105: kesimde bölge ayarlarının önceki ve sonraki hali */
+      region?: { before: RegionState; after: RegionState };
+    }
   | {
       kind: 'removeSlot';
       slotId: number;
@@ -100,7 +119,14 @@ type HistoryData =
       colorBefore: { id: string; colorSlot: number }[];
     }
   // Keys pimleri (ekleme, silme, taşıma, döndürme, boyut)
-  | { kind: 'pins'; before: PinPlacement[]; after: PinPlacement[] }
+  | {
+      kind: 'pins';
+      before: PinPlacement[];
+      after: PinPlacement[];
+      /** X105: pimlerin ait olduğu bölge; geri alınca o bölgeye dönülür */
+      partId?: string | null;
+      slot?: number;
+    }
   // X34/X30: üçgen bölme mesh üzerinde yerinde; sadece fark saklanır (tam kopya belleği doldururdu)
   | { kind: 'split'; mesh: LabeledMesh; diff: SplitDiff }
   // yumuşatma fırçası: mesh yerinde değişir, sadece değişen köşe ve üçgenler saklanır
@@ -372,6 +398,19 @@ export function reservePartIds(ids: string[]): void {
     const n = Number(id.replace(/^p/, ''));
     if (Number.isFinite(n)) partCounter = Math.max(partCounter, n);
   }
+}
+
+/** X105: aktif bölgenin pim ve kesim ayarları. */
+export function regionState(): RegionState {
+  const { selectedPartId, activeSlot, pins, cut } = get();
+  return {
+    partId: selectedPartId,
+    slot: activeSlot,
+    pins,
+    direction: cut.direction,
+    islandDepths: cut.islandDepths,
+    ringProfile: cut.ringProfile,
+  };
 }
 
 export function selectedPart(): Part | undefined {

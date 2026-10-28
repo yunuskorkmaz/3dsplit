@@ -27,6 +27,7 @@ export default defineConfig({
     'navigate.spec.ts',
     'multipart.spec.ts',
     'painted-open.spec.ts',
+    'region-pins.spec.ts',
     'live-preview.spec.ts',
     'bed.spec.ts',
     'onboarding.spec.ts',

@@ -1,13 +1,53 @@
 import type { PinPlacement } from '../core/cut';
 import { suggestFeatures } from '../core/paint';
-import { BASE_SLOT, type Vec3 } from '../core/types';
+import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { geometry } from '../worker/client';
 import { cutOptions } from './actionsCut';
 import { applyLabels, beginStroke, endStroke } from './actionsPaint';
-import { get, nextSlotColor, notify, pushHistory, selectedPart, set, useStore } from './store';
+import {
+  type AppState,
+  get,
+  nextSlotColor,
+  notify,
+  pushHistory,
+  selectedPart,
+  set,
+  useStore,
+} from './store';
 import { concavityOf, topologyOf } from './topologyCache';
 
 // ---------- pimler ----------
+
+/**
+ * X105: elle konan pimler gövde + set bölgesine aittir. Başka bölgeye geçince
+ * buraya kaldırılır, geri dönünce gelir; başka bölgenin kesimine taşınmaz.
+ * Anahtar mesh nesnesi: ölçek, sadeleştirme ya da proje açma mesh'i değiştirince
+ * eski pimler kendiliğinden düşer.
+ */
+const pinStash = new WeakMap<LabeledMesh, Map<number, PinPlacement[]>>();
+const NO_PINS: PinPlacement[] = [];
+
+function stashFor(s: AppState): Map<number, PinPlacement[]> | null {
+  const mesh = s.parts.find((p) => p.id === s.selectedPartId)?.mesh;
+  if (!mesh) return null;
+  let bySlot = pinStash.get(mesh);
+  if (!bySlot) {
+    bySlot = new Map();
+    pinStash.set(mesh, bySlot);
+  }
+  return bySlot;
+}
+
+useStore.subscribe((s, prev) => {
+  if (s.activeSlot === prev.activeSlot && s.selectedPartId === prev.selectedPartId) return;
+  const old = stashFor(prev);
+  if (old && prev.pins.length) old.set(prev.activeSlot, prev.pins);
+  else old?.delete(prev.activeSlot);
+  // aynı güncellemede pimler açıkça verildiyse (geri al, kesim) onlar geçerli
+  if (s.pins !== prev.pins) return;
+  const next = stashFor(s)?.get(s.activeSlot) ?? NO_PINS;
+  if (next !== s.pins && (next.length || s.pins.length)) set({ pins: next, selectedPin: -1 });
+});
 
 let layoutSeq = 0;
 
@@ -126,7 +166,11 @@ export function commitPins(next: PinPlacement[], label: string, selected?: numbe
     set({ undoStack: [...undoStack.slice(0, -1), merged] });
     return;
   }
-  pushHistory({ kind: 'pins', before, after: next, time: now }, label);
+  const { selectedPartId, activeSlot } = get();
+  pushHistory(
+    { kind: 'pins', before, after: next, time: now, partId: selectedPartId, slot: activeSlot },
+    label,
+  );
 }
 
 export function updatePin(index: number, patch: Partial<PinPlacement>, label = 'Pim ayarı'): void {

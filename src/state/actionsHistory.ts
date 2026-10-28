@@ -16,7 +16,12 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
     if (part) onLabelsChanged?.(part.id, entry.tris);
     set((s) => ({ paintVersion: s.paintVersion + 1 }));
   } else if (entry.kind === 'pins') {
-    set({ pins: reverse ? entry.before : entry.after, selectedPin: -1 });
+    // X105: pim değişikliği kendi bölgesinde geri alınır
+    const target =
+      entry.slot === undefined
+        ? {}
+        : { selectedPartId: entry.partId ?? null, activeSlot: entry.slot };
+    set({ ...target, pins: reverse ? entry.before : entry.after, selectedPin: -1 });
   } else if (entry.kind === 'split') {
     if (reverse) replaceMeshArrays(entry.mesh, revertSplit(entry.mesh, entry.diff));
     else replaceMeshArrays(entry.mesh, applySplit(entry.mesh, entry.diff), entry.diff);
@@ -66,12 +71,26 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
     set((s) => ({ paintVersion: s.paintVersion + 1 }));
   } else {
     const parts = reverse ? entry.before : entry.after;
-    set((s) => ({
-      parts,
-      selectedPartId: parts.some((p) => p.id === s.selectedPartId)
-        ? s.selectedPartId
-        : (parts[0]?.id ?? null),
-    }));
+    // X105: kesim geri alınınca kesilen bölgenin pimleri, yönü ve derinlikleri de döner
+    const region = entry.region && (reverse ? entry.region.before : entry.region.after);
+    set((s) => {
+      const keep = region?.partId ?? s.selectedPartId;
+      return {
+        parts,
+        selectedPartId: parts.some((p) => p.id === keep) ? keep : (parts[0]?.id ?? null),
+        ...(region && {
+          activeSlot: region.slot,
+          pins: region.pins,
+          selectedPin: -1,
+          cut: {
+            ...s.cut,
+            direction: region.direction,
+            islandDepths: region.islandDepths,
+            ringProfile: region.ringProfile,
+          },
+        }),
+      };
+    });
   }
 }
 

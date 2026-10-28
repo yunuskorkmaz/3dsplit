@@ -9,13 +9,17 @@ const STEPS: { id: Step; label: string; title: string }[] = [
   { id: 'export', label: 'Aktar', title: "Parçaları slicer'a aktar" },
 ];
 
-/** Bulunulan adım: parça yok → Aç; kesimden yeni parça var → Aktar; boya var → Kes; yoksa Seç. */
+/**
+ * Bulunulan adım: parça yok → Aç; kesimden yeni parça var → Aktar; aktif setin boyası
+ * var → Kes; yoksa Seç. X104: başka setlerin boyası (boyalı 3MF) Kes'e geçirmez.
+ */
 function useStep(): Step {
   return useStore((s) => {
     if (!s.parts.length) return 'open';
     if (s.parts.some((p) => p.badge === 'new')) return 'export';
     const part = s.parts.find((p) => p.id === s.selectedPartId);
-    return part?.mesh.labels.some((l) => l !== 0) ? 'cut' : 'select';
+    const slot = s.activeSlot;
+    return slot !== 0 && part?.mesh.labels.includes(slot) ? 'cut' : 'select';
   });
 }
 

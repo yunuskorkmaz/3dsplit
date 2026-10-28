@@ -343,3 +343,12 @@ Kabul: e2e `undo-base.spec.ts`: açılıştan sonra geçmiş boş ve Cmd+Z model
 Uygulamada: öneri tetiklemesi React effect'inden store aboneliğine taşındı (`startSuggestionWatch`); effect bir kare geç kalıyor, o karede eski öneri ve açık Kes görünüyordu. Bluey'de (500 bin üçgen) Filament 4'e geçince Kes ~10 s kapalı kalıyor; bu, doğru modla kesmenin bedeli.
 
 Kabul: e2e `stale-suggestion.spec.ts`: kol (Pimli kes) ve burun (Tapa) setleri arasında geçişte eski öneri hemen kalkar, bekleme kartı görünür ve o sırada Kes hiç açılmaz; set değiştirilip hemen kesilince kesim yeni setin önerisiyle (Tapa) yapılır. Chrome'da Bluey: Filament 4 seçilip Kes'e basılınca kesim Tapa ile.
+
+## X104 Boyalı 3MF'te kesime hazır renk gelmez
+
+- Boyalı 3MF açılınca aktif set Taban, araç Akıllı seç. Kes kapalı, adım şeridi "Seç"te; durum satırı "Ayıracağın renge tıkla: o set seçilir.", seçim satırı "Renk seçilmedi: ayıracağın renge tıkla ya da bir seçim seti seç."
+- Taban aktifken Akıllı seç ile tıklama boyamaz (eskiden boyayı silerdi): boyalı bölgeye tık o bölgenin setini aktif yapar, boyasız yere tık "Ayıracağın renge tıkla ya da bir seçim seti seç." der. Shift+tık (sil) ve diğer araçlar değişmez. Bu kural yalnız 3MF açılışında değil, Taban her aktif olduğunda geçerli (2026-10-28'de seçildi).
+- 3MF'ten gelen setlerin hepsi "Filament N" adını alır; varsayılan "Seçim N" adı da değişir, kullanıcının verdiği ad korunur. Açılış iletisi: "Boyalı 3MF: N filament rengi seçim seti olarak geldi. Ayıracağın renge tıkla."
+- Adım şeridi "Kes"e ancak aktif setin seçili gövdede boyası varken geçer; başka setlerin boyası (3MF'teki renkler) geçirmez.
+
+Kabul: e2e `painted-open.spec.ts` (Bluey): açılışta aktif set Taban, setler Filament 1–5, Kes kapalı, adım "Seç"; göz bebeğine tık boyamadan Filament 4'ü seçer (boya sayısı ve geçmiş değişmez), adım "Kes", Kes açılır.

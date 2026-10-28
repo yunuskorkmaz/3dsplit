@@ -253,6 +253,14 @@ export function autoSmartScale(): number {
 export function smartFillAt(partId: string, tri: number, erase: boolean): void {
   const part = partById(partId);
   if (!part) return;
+  // X104: Taban aktifken tık boyamaz (boyayı silerdi); tıklanan rengin setini seçer
+  if (!erase && get().activeSlot === BASE_SLOT) {
+    const label = part.mesh.labels[tri];
+    if (label === BASE_SLOT)
+      return notify('info', 'Ayıracağın renge tıkla ya da bir seçim seti seç.');
+    set({ activeSlot: label, selectedPartId: partId });
+    return;
+  }
   const topo = topologyOf(part.mesh);
   beginStroke(partId, erase ? 'Akıllı seç (sil)' : 'Akıllı seç');
   const m = mirrored(part, triCenter(part, tri));

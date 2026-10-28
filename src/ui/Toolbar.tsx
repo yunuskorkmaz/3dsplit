@@ -793,7 +793,14 @@ export function ToolPanel() {
         </span>
       }
     >
-      <StatusLine hint={info?.hint ?? ''} />
+      <StatusLine
+        hint={
+          // X104: Taban aktifken Akıllı seç boyamaz, tıklanan rengi seçer
+          tool === 'smart' && slot?.id === 0
+            ? 'Ayıracağın renge tıkla: o set seçilir.'
+            : (info?.hint ?? '')
+        }
+      />
       <ToolOptions />
     </Panel>
   );

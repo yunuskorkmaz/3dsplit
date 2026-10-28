@@ -84,13 +84,15 @@ export async function simplifyParts(ids: string[], target = SIMPLIFY_TARGET): Pr
 async function addObjects(objects: ImportedObject[]): Promise<void> {
   const added: Part[] = [];
   const sceneBefore = get().parts;
+  let painted = false;
   // X102: boş sahneye açılan dosya geçmişin tabanıdır, geri alınamaz
   const base = !sceneBefore.length;
   // X72: yeni model: mod yine öneriyi izler
   if (base) set({ cutModeManual: false });
   for (const obj of objects) {
     const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
-    if (obj.labels) ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []);
+    if (obj.labels && ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []))
+      painted = true;
     const r = prepared.report;
     const fixes = [
       r.removedDegenerate && `${r.removedDegenerate} dejenere üçgen silindi`,
@@ -138,6 +140,8 @@ async function addObjects(objects: ImportedObject[]): Promise<void> {
       `Aç: ${added[0].name}${more}`,
     );
   }
+  // X104: boyalı 3MF'te hiçbir renk kesime hazır gelmez; kullanıcı ayıracağı rengi seçer
+  if (painted) set({ activeSlot: BASE_SLOT, tool: 'smart' });
   // X80: çok parçalı dosyada son yüklenen değil, en büyük (hacim) parça seçili
   const big = added[largestPart(added.map((p) => p.mesh))];
   if (big) set({ selectedPartId: big.id });
@@ -186,21 +190,37 @@ async function openProject(file: File): Promise<void> {
   });
 }
 
-/** Boyalı 3MF'teki filament numaraları için slot açar; renkleri 3MF'ten alır. */
-function ensurePaintSlots(labels: Uint16Array, colors: string[]): void {
+/**
+ * Boyalı 3MF'teki filament numaraları için seçim seti açar; renkleri 3MF'ten alır.
+ * X104: setler tek biçimde "Filament N" adını alır (kullanıcının verdiği ad korunur).
+ * Boya varsa true.
+ */
+function ensurePaintSlots(labels: Uint16Array, colors: string[]): boolean {
   let max = 0;
   for (let t = 0; t < labels.length; t++) if (labels[t] > max) max = labels[t];
-  if (!max) return;
+  if (!max) return false;
   const slots = [...get().slots];
   for (let id = 1; id <= max; id++) {
     const color = colors[id - 1];
     const existing = slots.findIndex((s) => s.id === id);
-    if (existing < 0) slots.push({ id, name: `Filament ${id}`, color: color ?? nextSlotColor(id) });
-    else if (color) slots[existing] = { ...slots[existing], color };
+    const name = `Filament ${id}`;
+    if (existing < 0) slots.push({ id, name, color: color ?? nextSlotColor(id) });
+    else {
+      const s = slots[existing];
+      slots[existing] = {
+        ...s,
+        name: s.name === `Seçim ${id}` ? name : s.name,
+        color: color ?? s.color,
+      };
+    }
   }
   slots.sort((a, b) => a.id - b.id);
   set({ slots });
-  notify('info', `Boyalı 3MF: ${max} filament rengi slotlara aktarıldı.`);
+  notify(
+    'info',
+    `Boyalı 3MF: ${max} filament rengi seçim seti olarak geldi. Ayıracağın renge tıkla.`,
+  );
+  return true;
 }
 
 function exportObjects(): ExportObject[] {

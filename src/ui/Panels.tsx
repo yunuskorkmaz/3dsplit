@@ -110,11 +110,16 @@ function SelectionRow() {
     return n;
   }, [part, slot, paintVersion]);
   if (!part) return null;
-  if (!slot || slot.id === 0 || count === 0)
+  // X104: Taban aktifken kesilecek renk seçilmemiştir; boyamak değil renge tıklamak gerekir
+  if (!slot || slot.id === 0)
     return (
       <div className="selection-row empty">
-        Seçim yok: önce bir bölge boyayın{slot && slot.id !== 0 ? ` (${slot.name})` : ''}.
+        Renk seçilmedi: ayıracağın renge tıkla ya da bir seçim seti seç.
       </div>
+    );
+  if (count === 0)
+    return (
+      <div className="selection-row empty">Seçim yok: önce bir bölge boyayın ({slot.name}).</div>
     );
   return (
     <div className="selection-row" title="Kesilecek bölge">

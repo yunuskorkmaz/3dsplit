@@ -31,6 +31,7 @@ export default defineConfig({
     'live-preview.spec.ts',
     'bed.spec.ts',
     'onboarding.spec.ts',
+    'filament-colors.spec.ts',
   ],
   timeout: 120_000,
   use: {

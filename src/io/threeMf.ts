@@ -7,6 +7,8 @@ export interface ThreeMfObject {
   indices: Uint32Array;
   /** Üçgen başına filament numarası (0: boyasız). Boya yoksa undefined. */
   paint?: Uint16Array;
+  /** X109: Bambu/Orca nesne filamenti (1'den); boyasız yüzey bununla basılır. */
+  filament?: number;
 }
 
 export interface ThreeMfFile {
@@ -58,12 +60,19 @@ export function parse3mf(bytes: Uint8Array): ThreeMfFile {
     return m;
   };
 
-  // Bambu/Orca nesne adları model_settings.config'te
+  // Bambu/Orca nesne adları ve nesne filamenti model_settings.config'te
   const settingsNames = new Map<string, string>();
+  const settingsFilaments = new Map<string, number>();
   const modelSettings = text('Metadata/model_settings.config');
   if (modelSettings) {
-    const re = /<object id="([^"]+)">[\s\S]*?<metadata key="name" value="([^"]*)"/g;
-    for (const m of modelSettings.matchAll(re)) settingsNames.set(m[1], unescapeXml(m[2]));
+    for (const m of modelSettings.matchAll(/<object id="([^"]+)">([\s\S]*?)<\/object>/g)) {
+      // nesne düzeyi: ilk <part'tan önceki metadata (parça düzeyi ayrı)
+      const head = m[2].split('<part')[0];
+      const name = /<metadata key="name" value="([^"]*)"/.exec(head);
+      if (name) settingsNames.set(m[1], unescapeXml(name[1]));
+      const extruder = Number(/<metadata key="extruder" value="(\d+)"/.exec(head)?.[1]);
+      if (extruder > 0) settingsFilaments.set(m[1], extruder);
+    }
   }
 
   const out: ThreeMfObject[] = [];
@@ -88,6 +97,7 @@ export function parse3mf(bytes: Uint8Array): ThreeMfFile {
       positions: new Float32Array(collected.positions),
       indices: new Uint32Array(collected.indices),
       paint: collected.painted ? Uint16Array.from(collected.paint) : undefined,
+      filament: settingsFilaments.get(id),
     });
   }
   if (!out.length) throw new Error('3MF dosyasında mesh bulunamadı.');

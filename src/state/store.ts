@@ -33,6 +33,8 @@ export interface Slot {
   id: number;
   name: string;
   color: string;
+  /** X109: 3MF'ten gelen setin filament numarası; Bambu 3MF'te bu numarayla yazılır. */
+  filament?: number;
 }
 
 export interface CutSettings {

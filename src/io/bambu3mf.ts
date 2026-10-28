@@ -32,8 +32,7 @@ export function write3mfBambu(
   const bed = opts.bedSize ?? 256;
   const gap = opts.gap ?? 5;
 
-  const colors = filamentColors(objects);
-  const filamentOf = objects.map((o) => colors.indexOf(o.color.toUpperCase()) + 1);
+  const { filamentOf } = assignFilaments(objects);
 
   // X46: plakaya dizme: en küçük izdüşüm için Z dönüşü + raf yerleştirme, taban z=0
   const boxes = objects.map((o) => boundingBox(o.mesh.positions));
@@ -113,6 +112,41 @@ export function write3mfBambu(
     `<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\n <Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>\n</Relationships>\n`,
   );
   return zipSync(files);
+}
+
+/**
+ * Parça başına filament numarası (1'den). X109: 3MF'ten gelen numara (`filament`)
+ * korunur; numarasız parça aynı renkte numaralı parça varsa onun numarasını,
+ * yoksa renk sırasıyla ilk boş numarayı alır. `colors[n - 1]`: n. filamentin rengi
+ * (kullanılmayan numarada boş).
+ */
+export function assignFilaments(objects: ExportObject[]): {
+  filamentOf: number[];
+  colors: string[];
+} {
+  const byColor = new Map<string, number>();
+  const used = new Set<number>();
+  for (const o of objects) {
+    if (!o.filament) continue;
+    used.add(o.filament);
+    const c = o.color.toUpperCase();
+    if (!byColor.has(c)) byColor.set(c, o.filament);
+  }
+  let next = 1;
+  for (const c of filamentColors(objects)) {
+    if (byColor.has(c)) continue;
+    while (used.has(next)) next++;
+    byColor.set(c, next);
+    used.add(next);
+  }
+  const filamentOf = objects.map(
+    (o) => o.filament ?? (byColor.get(o.color.toUpperCase()) as number),
+  );
+  const colors: string[] = Array.from({ length: Math.max(0, ...filamentOf) }, () => '');
+  objects.forEach((o, i) => {
+    if (!colors[filamentOf[i] - 1]) colors[filamentOf[i] - 1] = o.color.toUpperCase();
+  });
+  return { filamentOf, colors };
 }
 
 /** Filament sırası: parçaların renkleri ilk görüldükleri sırayla (filament 1, 2, ...). */

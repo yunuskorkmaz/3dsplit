@@ -35,6 +35,36 @@ describe('3MF okuma', () => {
     expect(Math.min(...zs)).toBeCloseTo(0, 4);
   });
 
+  it('X109: nesne filamenti nesne düzeyinden okunur, parça düzeyi karışmaz', () => {
+    const tri = (id: number) =>
+      `<object id="${id}" type="model"><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/><vertex x="0" y="0" z="1"/></vertices><triangles><triangle v1="0" v2="2" v3="1"/><triangle v1="0" v2="1" v3="3"/><triangle v1="0" v2="3" v3="2"/><triangle v1="1" v2="2" v3="3"/></triangles></mesh></object>`;
+    const model = `<?xml version="1.0"?>
+<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+ <resources>${tri(1)}${tri(2)}${tri(3)}</resources>
+ <build><item objectid="1"/><item objectid="2"/><item objectid="3"/></build>
+</model>`;
+    const settings = `<?xml version="1.0"?>
+<config>
+  <object id="1">
+    <metadata key="name" value="göz"/>
+    <metadata key="extruder" value="3"/>
+    <part id="9" subtype="normal_part"><metadata key="extruder" value="5"/></part>
+  </object>
+  <object id="2">
+    <metadata key="name" value="parça düzeyinde"/>
+    <part id="8" subtype="normal_part"><metadata key="extruder" value="4"/></part>
+  </object>
+</config>`;
+    const file = parse3mf(
+      zipSync({
+        '3D/3dmodel.model': strToU8(model),
+        'Metadata/model_settings.config': strToU8(settings),
+      }),
+    );
+    expect(file.objects.map((o) => o.name)).toEqual(['göz', 'parça düzeyinde', 'Nesne 3']);
+    expect(file.objects.map((o) => o.filament)).toEqual([3, undefined, undefined]);
+  });
+
   it('boyalı üçgenleri ve filament renklerini okur', () => {
     const model = `<?xml version="1.0"?>
 <model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">

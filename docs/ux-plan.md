@@ -399,6 +399,8 @@ Kaynak: `docs/review/00-ozet.md` #4, #5, #6, #7, #12, #17, #19, #24, #25 ve `doc
 
 Karar (seçilen: a): filament numarası (a) kaynaktaki gibi korunur (önerilen; Grogu'da 3, 6, 7 kalır) ya da (b) renklere göre 1'den yeniden sıralanır (bugünkü davranış; Grogu'da 1, 2, 3).
 
+Uygulamada: set `filament` alanını taşır (proje ve oturum kaydına girer); boyalı 3MF'in setleri de numaralarını taşır. Açılış iletisi yalnız birden çok gövdede çıkar; tek gövdede rengi ekranda görmek yeterli. Bluey'de gövde Filament 1'de olduğu için boyasız yüzey beyaz görünür. Yalnız nesne düzeyindeki filament okunur; Bambu'da nesne içindeki parça başına filament (çok parçalı nesne) okunmaz.
+
 Kabul: birim testi `parse3mf` nesne filamentini okur; e2e Grogu: açılışta gövde renkleri 3 farklı, Bambu 3MF'te `extruder` değerleri kaynaktakiyle aynı (3 ×2, 6 ×3, 7 ×7).
 
 ## X110 Dışa aktarmada ne kaybolacağı ve hangi filamentin ne olduğu görünür

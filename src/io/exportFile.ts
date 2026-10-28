@@ -6,6 +6,8 @@ export interface ExportObject {
   mesh: MeshData;
   /** #rrggbb */
   color: string;
+  /** X109: Bambu 3MF'te korunacak filament numarası (3MF'ten gelen set). */
+  filament?: number;
 }
 
 /** İkili STL. */

@@ -1,7 +1,7 @@
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { boundingBox } from '../src/core/geometry';
-import { write3mfBambu } from '../src/io/bambu3mf';
+import { assignFilaments, write3mfBambu } from '../src/io/bambu3mf';
 import { parse3mf } from '../src/io/threeMf';
 import { subdividedCube } from './fixtures';
 
@@ -82,5 +82,24 @@ describe('Bambu 3MF', () => {
     expect(b.max[1] - b.min[1]).toBeCloseTo(4, 2);
     expect(b.min[0]).toBeGreaterThan(0);
     expect(b.max[0]).toBeLessThan(256);
+  });
+
+  it('X109: kaynak filament numarası korunur, kalan renkler boş numaraları alır', () => {
+    const objs = [
+      { name: 'gövde', mesh: cube, color: '#b0b0b0' },
+      { name: 'göz', mesh: cube, color: '#161616', filament: 3 },
+      { name: 'tırnak', mesh: cube, color: '#7c4b00', filament: 7 },
+      { name: 'tapa', mesh: cube, color: '#3498db' },
+      // 3MF'ten gelmeyen ama Filament 3 renginde: o filamente gider
+      { name: 'kopya', mesh: cube, color: '#161616' },
+    ];
+    expect(assignFilaments(objs).filamentOf).toEqual([1, 3, 7, 2, 3]);
+    const cfg = strFromU8(unzipSync(write3mfBambu(objs))['Metadata/model_settings.config']);
+    const extruders = [
+      ...cfg.matchAll(/<object id="\d+">[\s\S]*?key="extruder" value="(\d+)"/g),
+    ].map((m) => Number(m[1]));
+    expect(extruders).toEqual([1, 3, 7, 2, 3]);
+    // geri okununca nesne filamenti aynı
+    expect(parse3mf(write3mfBambu(objs)).objects.map((o) => o.filament)).toEqual([1, 3, 7, 2, 3]);
   });
 });

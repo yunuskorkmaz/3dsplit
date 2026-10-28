@@ -14,6 +14,8 @@ export interface ImportedObject {
   labels?: Uint16Array;
   /** Boyalı 3MF: filament renkleri (filament 1 = [0]). */
   filamentColors?: string[];
+  /** X109: Bambu/Orca nesne filamenti. */
+  filament?: number;
 }
 
 export const ACCEPTED_EXTENSIONS = '.stl,.obj,.3mf,.3dsplit';
@@ -41,6 +43,7 @@ export async function importFile(file: File): Promise<ImportedObject[]> {
         indices: o.indices,
         labels: o.paint,
         filamentColors: parsed.filamentColors,
+        filament: o.filament,
       }));
     } catch (e) {
       console.warn('3MF okuyucu başarısız, three.js yükleyicisi deneniyor', e);

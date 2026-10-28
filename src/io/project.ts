@@ -21,6 +21,7 @@ export interface ProjectSlot {
   id: number;
   name: string;
   color: string;
+  filament?: number;
 }
 
 export interface ProjectData {

@@ -1,6 +1,6 @@
 import { largestPart } from '../core/geometry';
 import { BASE_SLOT } from '../core/types';
-import { filamentColors, write3mfBambu } from '../io/bambu3mf';
+import { assignFilaments, write3mfBambu } from '../io/bambu3mf';
 import {
   downloadBytes,
   type ExportObject,
@@ -31,7 +31,9 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
       await openProject(file);
       continue;
     }
-    await busy(`${file.name} yükleniyor…`, async () => addObjects(await importFile(file)));
+    await busy(`${file.name} yükleniyor…`, async () =>
+      addObjects(await importFile(file), file.name.replace(/\.[^.]+$/, '')),
+    );
   }
 }
 
@@ -82,8 +84,11 @@ export async function simplifyParts(ids: string[], target = SIMPLIFY_TARGET): Pr
 }
 
 /** İçe aktarılan nesneleri onarıp parça olarak ekler. */
-async function addObjects(objects: ImportedObject[]): Promise<void> {
+async function addObjects(objects: ImportedObject[], source?: string): Promise<void> {
   const added: Part[] = [];
+  // X109: nesne filamenti gövde rengi olur
+  const bodyFilaments = new Set<number>();
+  let bodyColorsMissing = false;
   const sceneBefore = get().parts;
   let painted = false;
   // X102: boş sahneye açılan dosya geçmişin tabanıdır, geri alınamaz
@@ -97,6 +102,11 @@ async function addObjects(objects: ImportedObject[]): Promise<void> {
     const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
     if (obj.labels && ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []))
       painted = true;
+    if (obj.filament) {
+      ensureFilamentSlots([obj.filament], obj.filamentColors ?? []);
+      bodyFilaments.add(obj.filament);
+      if (!obj.filamentColors?.[obj.filament - 1]) bodyColorsMissing = true;
+    }
     const r = prepared.report;
     const fixes = [
       r.removedDegenerate && `${r.removedDegenerate} dejenere üçgen silindi`,
@@ -129,7 +139,7 @@ async function addObjects(objects: ImportedObject[]): Promise<void> {
       mesh: prepared.mesh,
       visible: true,
       badge: null,
-      colorSlot: BASE_SLOT,
+      colorSlot: obj.filament ?? BASE_SLOT,
       manifold: prepared.manifold,
     };
     set((s) => ({ parts: [...s.parts, part], selectedPartId: part.id }));
@@ -143,6 +153,21 @@ async function addObjects(objects: ImportedObject[]): Promise<void> {
       { kind: 'parts', before: sceneBefore, after: get().parts },
       `Aç: ${added[0].name}${more}`,
     );
+  }
+  if (bodyFilaments.size) {
+    const ids = [...bodyFilaments].sort((a, b) => a - b);
+    const bodies = added.filter((p) => p.colorSlot).length;
+    // tek gövdede ileti bir şey söylemez (rengi ekranda)
+    if (bodies > 1)
+      notify(
+        'info',
+        `${source ?? added[0].name}: ${bodies} gövde ${ids.length} filamentte (Filament ${ids.join(', ')}).`,
+      );
+    if (bodyColorsMissing)
+      notify(
+        'warn',
+        "Dosyada filament renkleri yok; gövdeler Filament N setlerine ayrıldı, renkleri slicer'daki gibi değil.",
+      );
   }
   // X104: boyalı 3MF'te hiçbir renk kesime hazır gelmez; kullanıcı ayıracağı rengi seçer
   if (painted) set({ activeSlot: BASE_SLOT, tool: 'smart' });
@@ -205,23 +230,10 @@ function ensurePaintSlots(labels: Uint16Array, colors: string[]): boolean {
   let max = 0;
   for (let t = 0; t < labels.length; t++) if (labels[t] > max) max = labels[t];
   if (!max) return false;
-  const slots = [...get().slots];
-  for (let id = 1; id <= max; id++) {
-    const color = colors[id - 1];
-    const existing = slots.findIndex((s) => s.id === id);
-    const name = `Filament ${id}`;
-    if (existing < 0) slots.push({ id, name, color: color ?? nextSlotColor(id) });
-    else {
-      const s = slots[existing];
-      slots[existing] = {
-        ...s,
-        name: s.name === `Seçim ${id}` ? name : s.name,
-        color: color ?? s.color,
-      };
-    }
-  }
-  slots.sort((a, b) => a.id - b.id);
-  set({ slots });
+  ensureFilamentSlots(
+    Array.from({ length: max }, (_, i) => i + 1),
+    colors,
+  );
   notify(
     'info',
     `Boyalı 3MF: ${max} filament rengi seçim seti olarak geldi. Ayıracağın renge tıkla.`,
@@ -229,15 +241,44 @@ function ensurePaintSlots(labels: Uint16Array, colors: string[]): boolean {
   return true;
 }
 
+/**
+ * Filament numarası N için "Filament N" seti (kimlik N) açar ya da günceller; renk
+ * 3MF'ten. X109: set filament numarasını taşır, Bambu 3MF'te aynı numarayla yazılır.
+ */
+function ensureFilamentSlots(ids: number[], colors: string[]): void {
+  const slots = [...get().slots];
+  for (const id of ids) {
+    const color = colors[id - 1];
+    const existing = slots.findIndex((s) => s.id === id);
+    const name = `Filament ${id}`;
+    if (existing < 0) slots.push({ id, name, color: color ?? nextSlotColor(id), filament: id });
+    else {
+      const s = slots[existing];
+      slots[existing] = {
+        ...s,
+        name: s.name === `Seçim ${id}` ? name : s.name,
+        color: color ?? s.color,
+        filament: id,
+      };
+    }
+  }
+  slots.sort((a, b) => a.id - b.id);
+  set({ slots });
+}
+
 function exportObjects(): ExportObject[] {
   const { parts, slots } = get();
   return parts
     .filter((p) => p.visible && p.badge !== 'source')
-    .map((p) => ({
-      name: p.name,
-      mesh: p.mesh,
-      color: slots.find((s) => s.id === p.colorSlot)?.color ?? '#b0b0b0',
-    }));
+    .map((p) => {
+      const slot = slots.find((s) => s.id === p.colorSlot);
+      return {
+        name: p.name,
+        mesh: p.mesh,
+        color: slot?.color ?? '#b0b0b0',
+        filament: slot?.filament,
+      };
+    });
 }
 
 /** A3: Bambu Studio / OrcaSlicer projesi; aynı renkli parçalar aynı filamentte, parçalar plakaya dizili. */
@@ -261,9 +302,11 @@ export function export3mf(): void {
   );
   // renkler dosyaya yazılamıyor (bkz. bambu3mf.ts): eşlemeyi kullanıcıya göster
   const slots = get().slots;
-  const mapping = filamentColors(objs).map((c, i) => {
-    const slot = slots.find((s) => s.color.toUpperCase() === c);
-    return `Filament ${i + 1}: ${slot?.name ?? c}`;
+  const mapping = assignFilaments(objs).colors.flatMap((c, i) => {
+    if (!c) return [];
+    const slot =
+      slots.find((s) => s.filament === i + 1) ?? slots.find((s) => s.color.toUpperCase() === c);
+    return [`Filament ${i + 1}: ${slot?.name ?? c}`];
   });
   notify('info', `3MF hazır. Bambu/Orca'da filamentlere renk ata — ${mapping.join(', ')}.`);
 }

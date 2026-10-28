@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { ACCEPTED_EXTENSIONS } from '../io/importFile';
 import {
   export3mf,
@@ -10,8 +10,10 @@ import {
   saveProject,
   undo,
 } from '../state/actions';
+import { hiddenBodies, uncutColors } from '../state/exportReport';
 import { useKeymap } from '../state/keymap';
 import { get, set, useStore } from '../state/store';
+import { FilamentList } from './FilamentList';
 import { StepBar } from './StepBar';
 
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
@@ -19,6 +21,51 @@ const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
 /** Menüden bir öğe seçilince açılır listeyi kapatır. */
 function closeMenu(e: React.MouseEvent) {
   (e.currentTarget.closest('details') as HTMLDetailsElement | null)?.removeAttribute('open');
+}
+
+/**
+ * X110: menü açıkken dışa aktarmada ne kaybolacağı. Kesilmemiş renk satırına tıklamak
+ * gövdeyi ve ilk kesilmemiş seti seçer. Dışa aktarmayı engellemez.
+ */
+function ExportNotes() {
+  const parts = useStore((s) => s.parts);
+  const slots = useStore((s) => s.slots);
+  const uncut = uncutColors(parts, slots);
+  const hidden = hiddenBodies(parts);
+  if (!uncut.length && !hidden) return null;
+  const name = (id: number) => slots.find((s) => s.id === id)?.name ?? `Set ${id}`;
+  return (
+    <div className="export-notes">
+      {uncut.map((u) => (
+        <button
+          key={u.partId}
+          type="button"
+          className="export-note"
+          onClick={(e) => {
+            closeMenu(e);
+            set({ selectedPartId: u.partId, activeSlot: u.slots[0] });
+          }}
+          title="Gövdeyi ve ilk kesilmemiş seti seç"
+        >
+          {u.partName}: kesilmemiş {u.slots.length} renk ({u.slots.map(name).join(', ')}); dosyada
+          gövde tek renk olur.
+        </button>
+      ))}
+      {hidden > 0 && <div className="export-note">{hidden} gizli gövde dosyaya girmez.</div>}
+    </div>
+  );
+}
+
+/** X110: son Bambu 3MF'in filament eşlemesi. */
+function LastExport() {
+  const last = useStore((s) => s.lastExport);
+  if (!last) return null;
+  return (
+    <div className="last-export">
+      <small>Son dışa aktarma</small>
+      <FilamentList filaments={last} />
+    </div>
+  );
 }
 
 /** X95: oturumun tarayıcıya en son ne zaman yazıldığı. */
@@ -44,6 +91,7 @@ export function Header() {
   const canRedo = useStore((s) => s.redoStack.length > 0);
   const hasParts = useStore((s) => s.parts.length > 0);
   const keys = useKeymap((s) => s.map);
+  const [exportOpen, setExportOpen] = useState(false);
   return (
     <header className="topbar">
       <span className="brand">3dsplit</span>
@@ -74,9 +122,13 @@ export function Header() {
       >
         Kaydet
       </button>
-      <details className="menu">
+      <details
+        className="menu"
+        onToggle={(e) => setExportOpen((e.currentTarget as HTMLDetailsElement).open)}
+      >
         <summary className={hasParts ? '' : 'disabled'}>Dışa aktar ▾</summary>
         <div className="menu-list">
+          {exportOpen && <ExportNotes />}
           <button
             type="button"
             onClick={(e) => {
@@ -117,6 +169,7 @@ export function Header() {
           >
             Seçili parça — STL
           </button>
+          {exportOpen && <LastExport />}
         </div>
       </details>
       <span className="sep" />

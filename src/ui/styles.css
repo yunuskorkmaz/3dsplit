@@ -912,6 +912,49 @@ ul.keymap button {
   color: #888;
   font-size: 11px;
 }
+/* X110: dışa aktarmada kaybolacaklar ve son eşleme */
+.export-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+  max-width: 360px;
+}
+.menu-list .export-note {
+  display: block;
+  background: #a0700033;
+  border-left: 3px solid #d89a1a;
+  border-radius: 0 4px 4px 0;
+  padding: 6px 8px;
+  color: #f1d9a6;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.menu-list button.export-note:hover {
+  background: #a0700055;
+}
+.last-export {
+  border-top: 1px solid #44464d;
+  margin-top: 4px;
+  padding: 6px 8px 2px;
+  max-width: 360px;
+}
+.filament-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.filament-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid #0006;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
 
 /* katlanır paneller */
 .panel-head {

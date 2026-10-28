@@ -11,6 +11,7 @@ import type {
 import type { SplitDiff } from '../core/smooth';
 import type { LabeledMesh, Vec3 } from '../core/types';
 import type { SessionMeta } from '../io/session';
+import type { ExportFilament } from './exportReport';
 
 export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin' | 'line' | 'seam';
 /** source: kesilmiş eski parça (sarı rozet), new: kesimden yeni çıkan parça (mavi rozet). */
@@ -81,6 +82,10 @@ export interface Message {
   id: number;
   kind: 'info' | 'warn' | 'error';
   text: string;
+  /** X110: kendiliğinden kapanmaz. */
+  sticky?: boolean;
+  /** X110: dışa aktarma eşlemesi, renk kutularıyla gösterilir. */
+  filaments?: ExportFilament[];
 }
 
 /**
@@ -252,6 +257,8 @@ export interface AppState {
   busyStage: string | null;
   busyStarted: number;
   messages: Message[];
+  /** X110: son Bambu 3MF'in filament eşlemesi (sayfa yenilenene kadar). */
+  lastExport: ExportFilament[] | null;
   /** Etiketler yerinde değiştiği için yeniden boyamayı tetikleyen sayaç. */
   paintVersion: number;
   undoStack: HistoryEntry[];
@@ -331,6 +338,7 @@ export const useStore = create<AppState>(() => ({
   busyStage: null,
   busyStarted: 0,
   messages: [],
+  lastExport: null,
   paintVersion: 0,
   undoStack: [],
   redoStack: [],
@@ -373,10 +381,14 @@ export const set = useStore.setState;
 export const get = useStore.getState;
 
 let messageId = 0;
-export function notify(kind: Message['kind'], text: string): void {
+export function notify(
+  kind: Message['kind'],
+  text: string,
+  extra: Pick<Message, 'sticky' | 'filaments'> = {},
+): void {
   const id = ++messageId;
-  set((s) => ({ messages: [...s.messages.slice(-4), { id, kind, text }] }));
-  if (kind !== 'error') setTimeout(() => dismiss(id), 8000);
+  set((s) => ({ messages: [...s.messages.slice(-4), { id, kind, text, ...extra }] }));
+  if (kind !== 'error' && !extra.sticky) setTimeout(() => dismiss(id), 8000);
 }
 
 export function dismiss(id: number): void {

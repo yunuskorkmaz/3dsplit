@@ -14,6 +14,7 @@ import {
 import { useKeymap } from '../state/keymap';
 import { type CutSettings, dismiss, get, set, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
+import { FilamentList } from './FilamentList';
 import { NumberField } from './fields';
 import { Group, Panel } from './Panel';
 import { RingEditor } from './RingEditor';
@@ -618,8 +619,14 @@ export function StatusBar() {
     <div className="status">
       <BusyCard />
       {messages.map((m) => (
-        <div key={m.id} className={`msg ${m.kind}`} onClick={() => dismiss(m.id)}>
+        <div
+          key={m.id}
+          className={`msg ${m.kind}`}
+          onClick={() => dismiss(m.id)}
+          title={m.sticky ? 'Kapatmak için tıkla' : undefined}
+        >
           {m.text}
+          {m.filaments && <FilamentList filaments={m.filaments} />}
         </div>
       ))}
     </div>

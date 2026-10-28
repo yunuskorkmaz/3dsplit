@@ -32,6 +32,7 @@ export default defineConfig({
     'bed.spec.ts',
     'onboarding.spec.ts',
     'filament-colors.spec.ts',
+    'export-report.spec.ts',
   ],
   timeout: 120_000,
   use: {

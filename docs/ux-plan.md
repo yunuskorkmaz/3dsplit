@@ -412,6 +412,8 @@ Kabul: birim testi `parse3mf` nesne filamentini okur; e2e Grogu: açılışta g�
 
 Karar (seçilen: a): kesilmemiş renk uyarısı (a) menüde satır, engellemez (önerilen) ya da (b) dışa aktarmadan önce "Yine de aktar / Vazgeç" sorar.
 
+Uygulamada: uyarı satırı gövde adıyla başlar ("figure: kesilmemiş 1 renk (Seçim 2); dosyada gövde tek renk olur."); ad ekle ("'de") çekimlenmez, çünkü gövde adı her şey olabilir. Gövdenin kendi rengindeki boya (aynı set ya da aynı renk) kaybolmadığı için sayılmaz: Bluey'de gövde Filament 1 olduğundan 4 renk sayılır. İletide renk adı yerine set adı ve renk kutusu var ("Filament 1 — Taban: figure"). Kabul testi Bluey yerine figürle yazıldı (hızlı); Bluey Chrome'da elle denendi.
+
 Kabul: e2e Bluey: göz kesildikten sonra Dışa aktar menüsünde kesilmemiş renk satırı ve sayısı; 3MF'ten sonra ileti 8 s sonra hâlâ görünür ve parça adlarını içerir.
 
 ## X111 Seçilen bölgenin rengi doğru gelir

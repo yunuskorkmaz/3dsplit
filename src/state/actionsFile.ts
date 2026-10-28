@@ -14,6 +14,7 @@ import { geometry } from '../worker/client';
 import { busy } from './actionsHooks';
 import { clearPaintSession } from './actionsPaint';
 import { startNewSession } from './actionsSession';
+import { filamentReport } from './exportReport';
 import {
   get,
   newPartId,
@@ -300,15 +301,13 @@ export function export3mf(): void {
     `${title}.3mf`,
     'model/3mf',
   );
-  // renkler dosyaya yazılamıyor (bkz. bambu3mf.ts): eşlemeyi kullanıcıya göster
-  const slots = get().slots;
-  const mapping = assignFilaments(objs).colors.flatMap((c, i) => {
-    if (!c) return [];
-    const slot =
-      slots.find((s) => s.filament === i + 1) ?? slots.find((s) => s.color.toUpperCase() === c);
-    return [`Filament ${i + 1}: ${slot?.name ?? c}`];
+  // X110: renkler dosyaya yazılamıyor (bkz. bambu3mf.ts): eşleme kapanmayan iletide ve menüde
+  const filaments = filamentReport(objs, assignFilaments(objs).filamentOf, get().slots);
+  set({ lastExport: filaments });
+  notify('info', `3MF hazır: ${objs.length} gövde, ${filaments.length} filament.`, {
+    sticky: true,
+    filaments,
   });
-  notify('info', `3MF hazır. Bambu/Orca'da filamentlere renk ata — ${mapping.join(', ')}.`);
 }
 
 /** Herhangi bir slicer için düz çok nesneli 3MF (filament ataması yok). */

@@ -172,6 +172,9 @@ function EmptyStage() {
   );
 }
 
+/** X125: model yokken araçların ipucu ve kısayol iletisi. */
+const NO_MODEL = 'Önce bir model aç.';
+
 function runCommand(cmd: Command): void {
   if (cmd.startsWith('tool.')) set({ tool: cmd.slice(5) as Tool });
   else if (cmd === 'preview') togglePreview();
@@ -280,6 +283,8 @@ function useShortcuts() {
       const cmd = commandFor(keyName(e));
       if (cmd) {
         e.preventDefault();
+        // X125: model yokken araç kısayolları tek ileti verir; yardım açılır
+        if (!get().parts.length && cmd !== 'help') return notify('info', NO_MODEL);
         runCommand(cmd);
         return;
       }
@@ -296,6 +301,7 @@ function useShortcuts() {
 export function App() {
   useShortcuts();
   const coupon = useStore((s) => !!s.coupon);
+  const noModel = useStore((s) => !s.parts.length);
   useEffect(() => startSessionAutosave(), []);
   useEffect(() => startSuggestionWatch(), []);
   return (
@@ -327,7 +333,11 @@ export function App() {
           </div>
         )}
         {!coupon && (
-          <div className="float side-right tool-window">
+          // X125: model yokken araç penceresi soluk ve tıklanmaz
+          <div
+            className={`float side-right tool-window${noModel ? ' no-model' : ''}`}
+            inert={noModel}
+          >
             <ToolPanel />
             <CutPanel />
             <CutActions />

@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-29):** A1–E2 ve X1–X124 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-29):** A1–E2 ve X1–X125 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X125.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X126.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -152,7 +152,7 @@ Kurallar:
 | X122 | Delete yalnız seçili pimi siler; pim seçili değilse seti silmez | İpucu "seçili pimi sil" derken bütün set gidiyor | #18 | S | onaylandı || [x] |
 | X123 | Kesimden sonra yeni parça görünür; geri alınınca eski "kesildi" iletisi kalkar, iletiler yığılmaz; aynı anda iki farklı "İptal" olmaz | Parça görünmüyor; ~150 px ileti yığını | #21, #23 | S | onaylandı || [x] |
 | X124 | Zaten parçalara bölünmüş modelde (Grogu) bunu söyleyen yönlendirme | Kullanıcı olmayan boyayı arıyor | #22 | S | onaylandı || [x] |
-| X125 | Model yokken araçlar soluk; Space "Önce bir model açın" der | Boş sahnede araçlar etkin, ileti yanlış | #26 | S | onaylandı | [ ] |
+| X125 | Model yokken araçlar soluk; Space "Önce bir model açın" der | Boş sahnede araçlar etkin, ileti yanlış | #26 | S | onaylandı || [x] |
 | X126 | Dışa aktarılan dosya adı kaynak dosyadan gelir; deneme parçası kendi adını alır | `quant_1.3mf`, `figure.3mf` | #27 | S | onaylandı | [ ] |
 | X127 | Uzun kesimde kalan süre ya da yüzde | ~11 s'lik kesimde yalnız geçen süre var | #28 | M | onaylandı | [ ] |
 
@@ -455,3 +455,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-29 | X122: Önizleme açıkken ya da Pim aracında Delete/Backspace yalnız seçili pimi siler; pim seçili değilse boya ve pimler aynı kalır, ileti "Silinecek pim seçili değil. Pime tıkla, sonra Delete." (bugün seti temizliyordu). Seti temizleme (Delete, düğme, komut arama) artık iletiyle: "{set} temizlendi (N üçgen). Ctrl+Z geri getirir." e2e `pin-delete.spec.ts` (figür, çizgiyle boyanmış bölge, Pimli kes önizlemesi, iki pim). npm test 135, e2e 56 | — |
 | 2026-10-29 | X123: Kesimden sonra kesilen yeni parça (tapa, Gövde N) seçili ve odaklı (`afterCut`); seçim çerçevesinin arkada kalan kenarı 0,35 yerine 0,7 parlaklıkta. Kesim iletisinde "Ayrık göster" düğmesi Aralıklı'yı açar (`Message.action`). Kesim iletileri ve uyarıları ürettikleri parçaları taşır (`Message.parts`); geri alınca sahnede olmayan parçanın iletisi kapanır (`dismissStaleMessages`). Ekranda en çok 3 ileti (`MAX_MESSAGES`). İş sürerken araç penceresindeki İptal gizli; tek İptal meşgul kartında. e2e `after-cut.spec.ts`; `session.spec.ts` kesimden sonra gövdeyi seçip boyar. npm test 135, e2e 58 | — |
 | 2026-10-29 | X124: Tek dosyadan birden çok gövde gelir ve hiçbiri boyalı değilse kalıcı ileti: "{N} gövde ayrı parça olarak geldi; renkler zaten ayrı. Kesmeden dışa aktarabilirsin; bir gövdenin içinden renk ayırmak için onu seçip boya." Adım şeridinde Aktar mavi çerçeveyle etkin (`ready`) — sahnede birden çok gövde, hiçbiri boyalı ya da kesilmiş değilken. e2e `split-model.spec.ts` (testte üretilen iki kutulu 3MF, figür, Grogu); `getByText('Dışa aktar')` kullanan üç test iletideki "dışa aktar"a takılmasın diye `/^Dışa aktar/`. npm test 135, e2e 61 | — |
+| 2026-10-29 | X125: Model yokken şeridin bütün düğmeleri (araçlar, kesim modları, Mesh, Düzen, Saydam) `disabled`, title "Önce bir model aç."; araç penceresi ve Kes alanı `inert` ve soluk (`no-model`), durum satırı "Önce bir model aç." Deneme parçası ve komut arama açık. Model yokken araç kısayolları (Space, araç harfleri, Delete…) tek ileti verir: "Önce bir model aç."; yardım kısayolu çalışır. e2e `no-model.spec.ts`. npm test 135, e2e 62 | — |

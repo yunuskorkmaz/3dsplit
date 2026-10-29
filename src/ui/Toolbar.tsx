@@ -269,28 +269,31 @@ export function ToolBar() {
       onClick: () => set({ xray: !xray }),
     },
   ];
+  // X125: model yokken şeridin bütün araçları kapalı
+  const gate = (it: RibbonItem): RibbonItem =>
+    hasParts ? it : { ...it, disabled: true, active: false, title: 'Önce bir model aç.' };
   return (
     <div className="ribbon" role="toolbar" aria-label="Araçlar">
       <RibbonGroup name="Seç">
         {select.map((it) => (
-          <RibbonButton key={it.id} item={it} />
+          <RibbonButton key={it.id} item={gate(it)} />
         ))}
       </RibbonGroup>
       <RibbonGroup name="Kes">
         {cut.map((it) => (
-          <RibbonButton key={it.id} item={it} />
+          <RibbonButton key={it.id} item={gate(it)} />
         ))}
       </RibbonGroup>
       <RibbonGroup name="Mesh">
         {mesh.map((it) => (
-          <RibbonButton key={it.id} item={it} />
+          <RibbonButton key={it.id} item={gate(it)} />
         ))}
         <RefineButton disabled={!hasParts} />
       </RibbonGroup>
       <RibbonGroup name="Düzen">
         <PrintSizeButton disabled={!hasParts} />
         {arrange.map((it) => (
-          <RibbonButton key={it.id} item={it} />
+          <RibbonButton key={it.id} item={gate(it)} />
         ))}
       </RibbonGroup>
     </div>
@@ -824,6 +827,7 @@ export function ToolPanel() {
   const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
   const keys = useKeymap((s) => s.map);
   const info = TOOLS.find((t) => t.id === tool);
+  const hasParts = useStore((s) => s.parts.length > 0);
   return (
     <Panel
       id="tool"
@@ -845,10 +849,12 @@ export function ToolPanel() {
     >
       <StatusLine
         hint={
-          // X104: Taban aktifken Akıllı seç boyamaz, tıklanan rengi seçer
-          tool === 'smart' && slot?.id === 0
-            ? 'Ayıracağın renge tıkla: o set seçilir.'
-            : (info?.hint ?? '')
+          !hasParts
+            ? 'Önce bir model aç.'
+            : // X104: Taban aktifken Akıllı seç boyamaz, tıklanan rengi seçer
+              tool === 'smart' && slot?.id === 0
+              ? 'Ayıracağın renge tıkla: o set seçilir.'
+              : (info?.hint ?? '')
         }
       />
       <ToolOptions />

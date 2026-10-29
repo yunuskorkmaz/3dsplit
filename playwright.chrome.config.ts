@@ -47,6 +47,7 @@ export default defineConfig({
     'pin-delete.spec.ts',
     'after-cut.spec.ts',
     'split-model.spec.ts',
+    'no-model.spec.ts',
   ],
   timeout: 120_000,
   use: {

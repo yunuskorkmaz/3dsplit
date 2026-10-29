@@ -1929,3 +1929,7 @@ fieldset.edge-smoothing {
   outline: 2px solid #ffd400;
   outline-offset: 1px;
 }
+/* X125: model yokken araç penceresi soluk, tıklanmaz (inert) */
+.tool-window.no-model {
+  opacity: 0.5;
+}

@@ -25,7 +25,7 @@ import {
   undo,
 } from '../state/actions';
 import { type Command, commandFor, keyName, shortcutCapture } from '../state/keymap';
-import { get, set, type Tool, useStore } from '../state/store';
+import { get, notify, set, type Tool, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
 import { CommandPalette } from './CommandPalette';
 import { CouponBar } from './CouponBar';
@@ -250,15 +250,15 @@ function useShortcuts() {
         }
         if (e.key === 'Escape') return lineCancel();
       }
-      // X74: seçili pim Delete ile silinir (önizlemede her araçta)
+      // X74, X122: önizlemede ve Pim aracında Delete yalnız seçili pimi siler, boyaya dokunmaz
       if (
         (e.key === 'Delete' || e.key === 'Backspace') &&
-        get().selectedPin >= 0 &&
-        get().pins.length &&
         (get().tool === 'pin' || get().previewActive)
       ) {
         e.preventDefault();
-        removePin(get().selectedPin);
+        if (get().selectedPin >= 0 && get().selectedPin < get().pins.length)
+          removePin(get().selectedPin);
+        else notify('info', 'Silinecek pim seçili değil. Pime tıkla, sonra Delete.');
         return;
       }
       // pim aracında Esc: pim seçimini bırak

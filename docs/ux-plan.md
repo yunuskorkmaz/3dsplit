@@ -589,6 +589,8 @@ Uygulamada: Plaka aralığı nesnelerin sınır kutuları arasındadır (plaka k
 
 Kabul: e2e figür kolu Pimli kes önizlemesi: pim seçiliyken Delete pim sayısını 1 azaltır, seçili değilken boya ve pimler aynı, ileti çıkar.
 
+Uygulamada: Kural Tapa önizlemesinde de geçerli (pim yokken de Delete boyayı silmez, aynı ileti); önizleme açıkken boya kazara gitmesin diye. Temizleme iletisi düğme ve komut aramada da çıkar.
+
 ## X123 Kesimden sonra parça görünür, iletiler yığılmaz, tek İptal
 
 - Kesimden sonra yeni parça seçili olur (turuncu çerçeve, gövdenin içindeyse de görünür). Kesim iletisinde "Ayrık göster" düğmesi Aralıklı görünümü açar (Karar a).

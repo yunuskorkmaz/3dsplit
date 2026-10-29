@@ -585,4 +585,7 @@ export function clearSlotPaint(slot: number): void {
   });
   onLabelsChanged?.(part.id, tris);
   set((s) => ({ paintVersion: s.paintVersion + 1 }));
+  // X122: Delete kazara basılınca boyanın nereye gittiği söylenir
+  const name = get().slots.find((s) => s.id === slot)?.name ?? `Set ${slot}`;
+  notify('info', `${name} temizlendi (${formatNumber(tris.length)} üçgen). Ctrl+Z geri getirir.`);
 }

@@ -44,6 +44,7 @@ export default defineConfig({
     'contrast.spec.ts',
     'cube-flip.spec.ts',
     'open-ask.spec.ts',
+    'pin-delete.spec.ts',
   ],
   timeout: 120_000,
   use: {

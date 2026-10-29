@@ -14,7 +14,12 @@ test('X115: deneme parçası boş ekrandan açılır, ayrı indirilir, sahneye g
   await page.getByRole('button', { name: 'Tolerans deneme parçası' }).click();
   const bar = page.getByRole('toolbar', { name: 'Tolerans deneme parçası' });
   await expect(bar).toBeVisible({ timeout: 30_000 });
-  await expect(bar).toContainText('boşluklar 0,1 / 0,2 / 0,3 mm (soldan 1, 2, 3 çentik)');
+  await expect(bar).toContainText('boşluklar 0,1 / 0,2 / 0,3 mm');
+  await expect(bar.locator('.coupon-picker button')).toHaveText([
+    '1 çentik 0,1',
+    '2 çentik 0,2',
+    '3 çentik 0,3',
+  ]);
   await expect(bar).toContainText('Pim: silindir Ø8 × 6 mm');
   await expect(page.locator('.side-left')).toHaveCount(0);
   expect((await state(page)).coupon.parts.length).toBe(4);

@@ -1850,3 +1850,17 @@ fieldset.edge-smoothing {
 .contents[inert] > * {
   opacity: 0.4;
 }
+/* X116: son deneme parçasından tolerans seçimi */
+.coupon-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0;
+  font-size: 12px;
+  color: #bbb;
+}
+.coupon-bar .coupon-picker {
+  flex-direction: row;
+  align-items: center;
+  margin: 0;
+}

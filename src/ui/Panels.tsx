@@ -17,6 +17,7 @@ import { innerMessages } from '../state/innerMessages';
 import { useKeymap } from '../state/keymap';
 import { type CutSettings, dismiss, get, set, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
+import { CouponPicker } from './CouponPicker';
 import { FilamentList } from './FilamentList';
 import { NumberField } from './fields';
 import { Group, Panel } from './Panel';
@@ -448,13 +449,14 @@ export function CutPanel() {
                   onClick={() => update({ clearance: t.value })}
                   title={t.hint}
                 >
-                  {t.label}
+                  {t.label} {t.value.toLocaleString('tr-TR')}
                 </button>
               ))}
             </div>
+            <CouponPicker />
             <p className="hint">
-              {mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arası {cut.clearance} mm. Emin
-              değilsen önce deneme parçası bas.
+              {mode === 'socket' ? 'Tapa ile yuva' : 'Pim ile delik'} arası{' '}
+              {cut.clearance.toLocaleString('tr-TR')} mm. Emin değilsen önce deneme parçası bas.
             </p>
             <button
               type="button"

@@ -1,3 +1,4 @@
+import { couponClearances } from '../core/coupon';
 import type { PinShape } from '../core/cut';
 import { write3mfBambu } from '../io/bambu3mf';
 import { downloadBytes, type ExportObject, write3mf, writeStlZip } from '../io/exportFile';
@@ -15,11 +16,6 @@ const SHAPE_NAMES: Record<PinShape, string> = {
 };
 
 const mm = (v: number) => v.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
-
-/** Boşluğun −0,1, kendisi ve +0,1 mm'si (tekrarsız). */
-export function couponClearances(c: number): number[] {
-  return [...new Set([Math.max(0, c - 0.1), c, c + 0.1].map((x) => Math.round(x * 100) / 100))];
-}
 
 let couponCounter = 0;
 
@@ -68,7 +64,13 @@ export async function openCoupon(mode?: 'socket' | 'keys'): Promise<void> {
         })),
       ],
     };
-    set({ coupon: view, previewActive: false, preview: null });
+    set({
+      coupon: view,
+      previewActive: false,
+      preview: null,
+      // X116: basılı parçadaki çentikten değer seçilebilsin diye eşleme kalır
+      lastCoupon: { mode: m, pinText: view.pinText, clearances },
+    });
   });
 }
 

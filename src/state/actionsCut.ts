@@ -415,8 +415,9 @@ export async function runCut(): Promise<void> {
       return;
     }
     set({ errorLoops: null });
-    for (const w of innerMessages(r.inner, get().slots, opts.mode, true)) notify('warn', w);
+    // X113: iç renk iletisi uyarılardan sonra: ekranda en çok 5 ileti kalır, en önemlisi düşmesin
     for (const w of r.warnings) notify('warn', w);
+    for (const w of innerMessages(r.inner, get().slots, opts.mode, true)) notify('warn', w);
     const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Slot ${opts.slot}`;
     const modeName =
       opts.mode === 'socket' ? 'Tapa' : opts.mode === 'keys' ? 'Pimli kes' : 'Yapıştır';

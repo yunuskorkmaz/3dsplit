@@ -510,3 +510,5 @@ Karar (seçilen: a): tolerans 0 iken (a) üç delik yukarı kayar: 0 / 0,1 / 0,2
 Karar (seçilen: a): kalıcı olan (a) yalnız tolerans (önerilen; roadmap maddesi) ya da (b) tolerans + pim şekli, ölçüsü ve boy boşluğu (deneme parçası pimle basıldıysa pim de aynı kalmalı; ama pim ölçüsü modele göre değişir).
 
 Kabul: birim testi tolerans 0'da 3 boşluk; e2e: Gevşek seçilir, sayfa yenilenip "Yok say" denince Gevşek seçili; deneme parçası üretilince eşleme satırı görünür, "3 çentik" düğmesi toleransı değiştirir, yenilemeden sonra eşleme durur.
+
+Uygulamada: tolerans 0'ın altına düşen her değerde (ör. 0,05) üç delik yukarı kayar: 0,05 / 0,15 / 0,25. Deneme şeridinde eşleme "Oturan delik: 1 çentik 0,1 · …" olarak durur; ayrı "soldan 1, 2, 3 çentik" yazısı kalktı. Paneldeki "Tapa ile yuva arası 0,2 mm" yazısı da virgülle.

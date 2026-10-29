@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { toleranceCoupon } from '../src/core/coupon';
+import { couponClearances, toleranceCoupon } from '../src/core/coupon';
 import { signedVolume } from '../src/core/geometry';
 import { initKernel } from '../src/core/kernel';
 import { buildAdjacency } from '../src/core/topology';
@@ -33,5 +33,14 @@ describe('X35 tolerans deneme parçası', () => {
     );
     expect(c.pins.length).toBe(2);
     expect(signedVolume(c.plate)).toBeGreaterThan(0);
+  });
+});
+
+describe('X116: deneme parçası boşlukları', () => {
+  it('hep üç delik; alt değer 0 altına düşerse yukarı kayar', () => {
+    expect(couponClearances(0.2)).toEqual([0.1, 0.2, 0.3]);
+    expect(couponClearances(0.1)).toEqual([0, 0.1, 0.2]);
+    expect(couponClearances(0)).toEqual([0, 0.1, 0.2]);
+    expect(couponClearances(0.05)).toEqual([0.05, 0.15, 0.25]);
   });
 });

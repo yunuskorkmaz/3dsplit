@@ -26,14 +26,25 @@ test('X113: bölgenin içindeki renk adıyla söylenir, tapadan ayrıca kesilir'
   await expect(note).toBeVisible({ timeout: 120_000 });
   await page.screenshot({ path: 'test-results/inner-paint-preview.png' });
 
+  // iletiler 8 s sonra kapanır; yük altında ana thread meşgulken kaçmasın diye gelen her ileti kaydedilir
+  await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    const w = window as any;
+    w.seenMessages = [];
+    w.app.store.useStore.subscribe((st: { messages: { text: string }[] }) => {
+      for (const m of st.messages)
+        if (!w.seenMessages.includes(m.text)) w.seenMessages.push(m.text);
+    });
+  });
+  // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+  const seen = () => page.evaluate(() => (window as any).seenMessages as string[]);
   await page.getByRole('button', { name: 'Kes', exact: true }).click();
-  await expect(page.locator('.msg', { hasText: /^Kes 1: / })).toBeVisible({ timeout: 300_000 });
-  await expect(
-    page.locator('.msg', {
-      hasText:
-        'Bölgenin içinde Filament 4 var (9.102 üçgen); tapaya katıldı. Ayrı basmak için kesimden sonra tapayı seçip Filament 4 setini kes.',
-    }),
-  ).toBeVisible();
+  await expect
+    .poll(async () => (await seen()).some((t) => t.startsWith('Kes 1: ')), { timeout: 300_000 })
+    .toBe(true);
+  expect(await seen()).toContain(
+    'Bölgenin içinde Filament 4 var (9.102 üçgen); tapaya katıldı. Ayrı basmak için kesimden sonra tapayı seçip Filament 4 setini kes.',
+  );
 
   // tapa siyahı taşır: seçip Filament 4'ü kes
   const plug = await page.evaluate(() => {
@@ -50,7 +61,9 @@ test('X113: bölgenin içindeki renk adıyla söylenir, tapadan ayrıca kesilir'
   await page.locator('ul.slots li').nth(4).locator('.key').click();
   await page.locator('.ribbon').getByRole('button', { name: 'Tapa', exact: true }).click();
   await page.getByRole('button', { name: 'Kes', exact: true }).click();
-  await expect(page.locator('.msg', { hasText: /^Kes 2: / })).toBeVisible({ timeout: 300_000 });
+  await expect
+    .poll(async () => (await seen()).some((t) => t.startsWith('Kes 2: ')), { timeout: 300_000 })
+    .toBe(true);
   // kesilen tapa: eski hali kaynak olur, siyah ayrı parçalar olarak çıkar
   const after = await state(page);
   expect(
@@ -58,6 +71,6 @@ test('X113: bölgenin içindeki renk adıyla söylenir, tapadan ayrıca kesilir'
     after.parts.some((p: any) => p.name === plug && p.badge === 'source'),
   ).toBe(true);
   expect(after.parts.length).toBeGreaterThanOrEqual(before + 2);
-  await expect(page.locator('.msg', { hasText: /^Kes 2: .*\(Tapa · Filament 4\)/ })).toBeVisible();
+  expect((await seen()).some((t) => /^Kes 2: .*\(Tapa · Filament 4\)/.test(t))).toBe(true);
   expect(errors).toEqual([]);
 });

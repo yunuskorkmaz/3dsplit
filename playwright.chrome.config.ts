@@ -38,6 +38,7 @@ export default defineConfig({
     'inner-paint.spec.ts',
     'cut-blocked.spec.ts',
     'coupon.spec.ts',
+    'tolerance-prefs.spec.ts',
   ],
   timeout: 120_000,
   use: {

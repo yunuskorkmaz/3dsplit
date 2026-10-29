@@ -1,5 +1,6 @@
 import { closeCoupon, exportCoupon, openCoupon } from '../state/actions';
 import { useStore } from '../state/store';
+import { CouponPicker } from './CouponPicker';
 
 const mm = (v: number) => v.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
 
@@ -8,7 +9,6 @@ export function CouponBar() {
   const coupon = useStore((s) => s.coupon);
   const busy = useStore((s) => !!s.busy);
   if (!coupon) return null;
-  const notches = coupon.clearances.map((_, i) => i + 1).join(', ');
   return (
     <div className="coupon-bar" role="toolbar" aria-label="Tolerans deneme parçası">
       <b>Tolerans deneme parçası</b>
@@ -31,9 +31,9 @@ export function CouponBar() {
         ))}
       </div>
       <span className="coupon-info">
-        Pim: {coupon.pinText} · boşluklar {coupon.clearances.map(mm).join(' / ')} mm (soldan{' '}
-        {notches} çentik)
+        Pim: {coupon.pinText} · boşluklar {coupon.clearances.map(mm).join(' / ')} mm
       </span>
+      <CouponPicker label="Oturan delik:" />
       <details className="menu">
         <summary>İndir ▾</summary>
         <div className="menu-list">

@@ -10,6 +10,15 @@ export interface Coupon {
 }
 
 /**
+ * X116: deneme parçasının boşlukları, soldan sağa: −0,1, kendisi, +0,1 mm. Alt değer
+ * 0'ın altına düşerse üçü yukarı kayar (0 → 0 / 0,1 / 0,2); hep üç delik.
+ */
+export function couponClearances(c: number): number[] {
+  const lo = c - 0.1 < -1e-9 ? c : c - 0.1;
+  return [lo, lo + 0.1, lo + 0.2].map((x) => Math.round(x * 100) / 100);
+}
+
+/**
  * X35: tolerans deneme parçası. Seçili pim şekli ve boyutuyla, her
  * `clearances[i]` boşluğu için bir delik açılmış plaka ve aynı sayıda pim.
  * Deliğin önündeki (i+1) çentik hangi boşluk olduğunu gösterir (soldan

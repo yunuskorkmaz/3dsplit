@@ -277,11 +277,52 @@ export interface AppState {
   messages: Message[];
   /** X110: son Bambu 3MF'in filament eşlemesi (sayfa yenilenene kadar). */
   lastExport: ExportFilament[] | null;
+  /** X116: son üretilen deneme parçasının çentik → boşluk eşlemesi (tarayıcıda kalır). */
+  lastCoupon: LastCoupon | null;
   /** Etiketler yerinde değiştiği için yeniden boyamayı tetikleyen sayaç. */
   paintVersion: number;
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
 }
+
+/** X116: son deneme parçası: hangi modla, hangi pimle, soldan sağa boşluklar. */
+export interface LastCoupon {
+  mode: 'socket' | 'keys';
+  pinText: string;
+  clearances: number[];
+}
+
+const PREFS_KEY = '3dsplit.tool';
+
+/** X116: tarayıcıda kalan kesim tercihleri (Tabla ayarı gibi). */
+function loadToolPrefs(): { clearance?: number; lastCoupon: LastCoupon | null } {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (raw) {
+      const v = JSON.parse(raw);
+      const c = v.lastCoupon;
+      return {
+        clearance:
+          typeof v.clearance === 'number' && v.clearance >= 0 && v.clearance <= 1
+            ? v.clearance
+            : undefined,
+        lastCoupon:
+          c && (c.mode === 'socket' || c.mode === 'keys') && Array.isArray(c.clearances)
+            ? {
+                mode: c.mode,
+                pinText: String(c.pinText ?? ''),
+                clearances: c.clearances.map(Number),
+              }
+            : null,
+      };
+    }
+  } catch {
+    // depolama kapalı olabilir: varsayılan
+  }
+  return { lastCoupon: null };
+}
+
+const toolPrefs = loadToolPrefs();
 
 export const useStore = create<AppState>(() => ({
   parts: [],
@@ -307,7 +348,7 @@ export const useStore = create<AppState>(() => ({
   cut: {
     mode: 'socket',
     depth: 3,
-    clearance: 0.2,
+    clearance: toolPrefs.clearance ?? 0.2,
     squeeze: 0,
     minWall: 0.8,
     inset: 0,
@@ -359,6 +400,7 @@ export const useStore = create<AppState>(() => ({
   busyStarted: 0,
   messages: [],
   lastExport: null,
+  lastCoupon: toolPrefs.lastCoupon,
   paintVersion: 0,
   undoStack: [],
   redoStack: [],
@@ -398,6 +440,20 @@ export function setCameraPrefs(camera: CameraPrefs): void {
 }
 
 export const set = useStore.setState;
+
+// X116: tolerans ve son deneme parçası değişince tarayıcıya yazılır. "Devam et" ile
+// gelen oturumun toleransı da böylece yeni tercih olur.
+useStore.subscribe((s, prev) => {
+  if (s.cut.clearance === prev.cut.clearance && s.lastCoupon === prev.lastCoupon) return;
+  try {
+    localStorage.setItem(
+      PREFS_KEY,
+      JSON.stringify({ clearance: s.cut.clearance, lastCoupon: s.lastCoupon }),
+    );
+  } catch {
+    // depolama kapalı: sadece bu oturum
+  }
+});
 export const get = useStore.getState;
 
 let messageId = 0;

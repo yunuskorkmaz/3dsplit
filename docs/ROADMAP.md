@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-29):** A1–E2 ve X1–X115 bitti (Sprint 8–13: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-29):** A1–E2 ve X1–X116 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 davranışları onaylandı. Sıradaki: X116.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sıradaki: Sprint 15 (X117–X127) davranışlarının yazılıp onaylanması.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -138,7 +138,7 @@ Kurallar:
 | ID | İş | Neden | Kaynak | Emek | Onay | Durum |
 | --- | --- | --- | --- | --- | --- | --- |
 | X115 | Deneme parçasına model olmadan (boş ekran) ve komut aramadan ulaşılır. Üretilen parça modele karışmadan ayrı indirilir; adım şeridini etkilemez | Bulmak 6 boşa eylem; parça modelin yanına düşüyor, her gövde elle gizleniyor | #8, 02b-3 | M | onaylandı || [x] |
-| X116 | Seçilen tolerans tarayıcıda kalıcı (Tabla ayarı gibi). Sıkı/Normal/Gevşek mm ve çentik sayısını yazar; çentik → değer eşlemesi kalıcı görünür; boşluk 0 iken ileti doğru delik sayısını söyler | Deneme baskısının sonucu sonraki modelde 0,2'ye dönüyor | #8, 02b-1, 02b-2 | S | onaylandı | [ ] |
+| X116 | Seçilen tolerans tarayıcıda kalıcı (Tabla ayarı gibi). Sıkı/Normal/Gevşek mm ve çentik sayısını yazar; çentik → değer eşlemesi kalıcı görünür; boşluk 0 iken ileti doğru delik sayısını söyler | Deneme baskısının sonucu sonraki modelde 0,2'ye dönüyor | #8, 02b-1, 02b-2 | S | onaylandı || [x] |
 
 ### Sprint 15 — metin, klavye, erişilebilirlik, pürüzler
 
@@ -446,3 +446,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-29 | X113: Bölgenin içinde kalıp tapaya katılan başka renk adıyla ve üçgen sayısıyla söylenir, sonraki adım verilir; boyasız delik "N boyasız alan" olarak. Çekirdek bilgiyi `CutResult.inner` / `CutPreview.inner` olarak verir, metni `src/state/innerMessages.ts` kurar. Önizleme açıkken aynı bilgi panelde. 1 mm²'den küçük başka renk kırıntısı ileti olmaz. Birim `core.test.ts`, `innerMessages.test.ts`; e2e `inner-paint.spec.ts` (Bluey). npm test 127, Chrome e2e 42, e2e 45 | — |
 | 2026-10-29 | X114: Önizleme kesim hatası bulursa Kes kapanır, neden seçim satırının altında yazar; ileti bir kez çıkar. Parça, set, boya, mod, ayar ya da pim değişince Kes açılır (`previewError` + `previewKey`). Aynı metinli ileti ekranda varsa yenisi eklenmez, süresi yenilenir. Seçimin en büyük boyutu 3 mm'den azsa "Seçim N mm; basılamayabilir." Kesim hata ve uyarı metinleri sonraki adımı söyler. Birim `core.test.ts`, `notify.test.ts`; e2e `cut-blocked.spec.ts`. npm test 129, Chrome e2e 43, e2e 46 | — |
 | 2026-10-29 | X115: Deneme parçası boş ekrandaki düğmeden, komut aramadan ("tolerans", "deneme") ve kesim panelinden açılır; ayrı deneme görünümünde gösterilir (`store.coupon`, `src/state/actionsCoupon.ts`, `src/ui/CouponBar.tsx`). Şerit: Tapa / Pimli kes, pim tarifi, boşluklar ve çentikler, İndir (Bambu 3MF, genel 3MF, STL ZIP; `tolerans-deneme.*`), Kapat (Esc). Sahneye, geçmişe, oturuma ve modelin dışa aktarmasına girmez; açıkken araçlar, geçmiş ve paneller kapalı, komut arama açık. Model açılınca görünüm kapanır. e2e `coupon.spec.ts`; `tools.spec.ts` yeni davranışa göre. npm test 129, Chrome e2e 45, e2e 48 | — |
+| 2026-10-29 | X116: Tolerans tarayıcıda kalır (`3dsplit.tool`); yeni model, Yok say ve yenileme son değeri kullanır, Devam et'in değeri yeni tercih olur. Düğmeler "Sıkı 0,1 · Normal 0,2 · Gevşek 0,3". Son deneme parçasının çentik → boşluk eşlemesi kalır ve düğme olarak Tolerans grubunda ve deneme şeridinde görünür (`CouponPicker`). Tolerans 0'da boşluklar 0 / 0,1 / 0,2 (`couponClearances`, hep üç delik). Ek: kesim iletilerinde X113 iç renk iletisi uyarılardan sonra (5 ileti sınırında düşmesin); `inner-paint.spec.ts` iletileri gelirken kaydeder (yük altında 8 s'de kapanıyordu). Birim `coupon.test.ts`, e2e `tolerance-prefs.spec.ts`. npm test 130, Chrome e2e 47, e2e 50 | — |

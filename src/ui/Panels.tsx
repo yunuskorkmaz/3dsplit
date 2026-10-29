@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CutMode, EdgeSmoothing, PinShape } from '../core/cut';
 import { PIN_THIN_HINT } from '../core/cutPins';
+import { formatNumber } from '../core/format';
 import {
   activeIslands,
   activePaintCount,
@@ -354,7 +355,7 @@ export function CutPanel() {
                   max={30}
                   step={0.1}
                   unit="mm"
-                  title={`~${isl.area.toFixed(0)} mm² — derinlik`}
+                  title={`~${formatNumber(isl.area, 0)} mm² — derinlik`}
                   onChange={(v) => update({ islandDepths: { ...cut.islandDepths, [isl.key]: v } })}
                 />
               ))}
@@ -461,7 +462,7 @@ export function CutPanel() {
             <button
               type="button"
               onClick={() => openCoupon(mode === 'keys' ? 'keys' : 'socket')}
-              title="Seçili pim/tapa ile boşluğun −0.1, kendisi ve +0.1 mm'si için delikli küçük plaka ve pimler üretir; önce bunu basıp en iyi oturanı seçin"
+              title="Seçili pim/tapa ile boşluğun −0,1, kendisi ve +0,1 mm'si için delikli küçük plaka ve pimler üretir; önce bunu basıp en iyi oturanı seçin"
             >
               Deneme parçası üret
             </button>
@@ -507,7 +508,7 @@ export function CutPanel() {
                 <RingEditor value={cut.ringProfile} onChange={(v) => update({ ringProfile: v })} />
               )}
               <NumberField
-                label="Sıkıştır"
+                label="Tapayı daralt"
                 value={Math.round(cut.squeeze * 100)}
                 min={0}
                 max={90}
@@ -553,7 +554,7 @@ export function CutPanel() {
                 </>
               )}
               <NumberField
-                label="Gövdede pay"
+                label="Pimin gövdeye giren kısmı"
                 value={Math.round(cut.pinBodyRatio * 100)}
                 min={5}
                 max={95}
@@ -564,7 +565,7 @@ export function CutPanel() {
               />
               {cut.pinShape !== 'snap' && (
                 <NumberField
-                  label="Uç pahı"
+                  label="Pim ucu eğimi"
                   value={cut.pinChamfer}
                   min={0}
                   max={3}
@@ -612,7 +613,7 @@ export function CutPanel() {
                 />
               )}
               <NumberField
-                label="Duvar"
+                label="Delik çevresinde en az et"
                 value={cut.minWall}
                 min={0}
                 max={5}

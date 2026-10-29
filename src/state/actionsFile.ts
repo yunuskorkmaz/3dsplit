@@ -1,3 +1,4 @@
+import { formatNumber } from '../core/format';
 import { largestPart } from '../core/geometry';
 import { BASE_SLOT } from '../core/types';
 import { assignFilaments, write3mfBambu } from '../io/bambu3mf';
@@ -83,7 +84,7 @@ export async function simplifyParts(ids: string[], target = SIMPLIFY_TARGET): Pr
       .reduce((n, p) => n + p.mesh.labels.length, 0);
     notify(
       'info',
-      `Sadeleştirildi: ${total.toLocaleString('tr-TR')} → ${now.toLocaleString('tr-TR')} üçgen; yüzey en çok ${tol.toFixed(2)} mm oynadı. Ctrl+Z geri alır.`,
+      `Sadeleştirildi: ${total.toLocaleString('tr-TR')} → ${now.toLocaleString('tr-TR')} üçgen; yüzey en çok ${formatNumber(tol, 2)} mm oynadı. Ctrl+Z geri alır.`,
     );
   });
 }
@@ -116,7 +117,7 @@ async function addObjects(objects: ImportedObject[], source?: string): Promise<v
     const fixes = [
       r.removedDegenerate && `${r.removedDegenerate} dejenere üçgen silindi`,
       r.removedDuplicate && `${r.removedDuplicate} tekrarlı üçgen silindi`,
-      r.flippedTriangles && `${r.flippedTriangles} üçgenin yönü düzeltildi`,
+      r.flippedTriangles && `${formatNumber(r.flippedTriangles)} üçgenin yönü düzeltildi`,
       r.filledHoles && `${r.filledHoles} delik kapatıldı`,
     ].filter(Boolean);
     if (fixes.length) notify('info', `${obj.name}: ${fixes.join(', ')}.`);
@@ -129,7 +130,7 @@ async function addObjects(objects: ImportedObject[], source?: string): Promise<v
     if (prepared.voxel) {
       notify(
         'warn',
-        `${obj.name}: mesh bozuk olduğu için voxel onarım yapıldı (voksel ${prepared.voxel.voxelSize.toFixed(2)} mm; ${prepared.voxel.closedGap.toFixed(1)} mm'den küçük delikler kapandı, ince ayrıntı yumuşamış olabilir).`,
+        `${obj.name}: mesh bozuk olduğu için voxel onarım yapıldı (voksel ${formatNumber(prepared.voxel.voxelSize, 2)} mm; ${formatNumber(prepared.voxel.closedGap)} mm'den küçük delikler kapandı, ince ayrıntı yumuşamış olabilir).`,
       );
     }
     if (!prepared.manifold) {

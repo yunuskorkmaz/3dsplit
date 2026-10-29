@@ -19,7 +19,7 @@ export function innerMessages(
   const shown = (inner ?? []).filter((p) => p.slot === BASE_SLOT || p.area >= 1);
   return shown.map((p) => {
     if (p.slot === BASE_SLOT) return `Bölgenin içindeki ${p.regions} boyasız alan ${joined}.`;
-    const name = slots.find((s) => s.id === p.slot)?.name ?? `Slot ${p.slot}`;
+    const name = slots.find((s) => s.id === p.slot)?.name ?? `Set ${p.slot}`;
     return `Bölgenin içinde ${name} var (${p.tris.toLocaleString('tr-TR')} üçgen); ${joined}. Ayrı basmak için kesimden sonra ${piece}yı seçip ${name} setini kes.`;
   });
 }

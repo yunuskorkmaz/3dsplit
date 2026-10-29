@@ -1,4 +1,5 @@
 import { CutError, seamSeparates } from '../core/cut';
+import { formatNumber } from '../core/format';
 import { loopSelfIntersects, regionInsideLoop, surfacePath, vertexNeighbors } from '../core/lasso';
 import { smoothStrokeSplit } from '../core/smooth';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
@@ -123,7 +124,7 @@ export function lineClose(): void {
   if (!part || line.anchors.length < 3) return notify('warn', 'Halka için en az 3 nokta gerekli.');
   if (get().tool === 'seam') return finishSeam(part, line);
   const slot = get().activeSlot;
-  if (slot === BASE_SLOT) return notify('warn', 'Boyanacak slotu seçin (taban değil).');
+  if (slot === BASE_SLOT) return notify('warn', 'Boyanacak seti seç (Taban değil).');
   const mesh = part.mesh;
   const nbr = neighborsOf(mesh);
   const closeLoop = (anchors: number[], path: number[]) => [
@@ -215,7 +216,7 @@ export function lineClose(): void {
   else set((s) => ({ paintVersion: s.paintVersion + 1 }));
   notify(
     'info',
-    `Çizgi kapatıldı: ${painted} üçgen boyandı${loops.length > 1 ? ' (aynayla iki halka)' : ''}.`,
+    `Çizgi kapatıldı: ${formatNumber(painted)} üçgen boyandı${loops.length > 1 ? ' (aynayla iki halka)' : ''}.`,
   );
 }
 

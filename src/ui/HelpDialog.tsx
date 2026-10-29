@@ -18,14 +18,14 @@ const TOOL_DETAILS: Record<string, string> = {
   smart:
     'Çıkıntıya (göz, burun, kaş) tıkla: çevresindeki kıvrıma kadar seçer. Taşarsa sağdaki pencerede açıyı düşür ya da Shift+sağ sürükle. Shift+tık seçimi siler.',
   brush:
-    'Smart Fill eksik bıraktıysa sürükleyerek ekle. Yarıçap: Alt+tekerlek veya [ ]. Shift basılıyken siler.',
+    'Akıllı seç eksik bıraktıysa sürükleyerek ekle. Yarıçap: Alt+tekerlek veya [ ]. Shift basılıyken siler.',
   erase: 'Fazla seçilen yeri sürükleyerek geri al. Shift basılıyken boyar.',
   smooth:
     'Seçimin kenarında gezdir: tırtıklı sınırı düzgün bir eğriye çeker. Güç arttıkça daha çok düzeltir. Sağdaki penceredeki "Tüm sınırı yumuşat" bütün sınırı bir kerede düzeltir.',
-  bucket: 'Tıklanan aynı renkli bağlı bölgeyi aktif slota boyar.',
-  line: 'Doğal kıvrımı olmayan bölgeler için: yüzeye noktalar tıkla, yol yüzey üzerinden en kısa yoldan geçer. İlk noktaya tıklayınca ya da Enter ile halka kapanır, içi aktif slota boyanır ve kenar çizgi boyunca düzeltilip üçgenlerin içinden geçirilir. Backspace son noktayı siler, Esc iptal eder.',
+  bucket: 'Tıklanan aynı renkli bağlı bölgeyi aktif sete boyar.',
+  line: 'Doğal kıvrımı olmayan bölgeler için: yüzeye noktalar tıkla, yol yüzey üzerinden en kısa yoldan geçer. İlk noktaya tıklayınca ya da Enter ile halka kapanır, içi aktif sete boyanır ve kenar çizgi boyunca düzeltilip üçgenlerin içinden geçirilir. Backspace son noktayı siler, Esc iptal eder.',
   seam: 'Kol ve bacak için: yüzeye kapalı bir halka çiz. İçi boyanmaz. Kes, halkanın düzleminden iki parça ayırır. Pimli kes seçiliyse kesite pim konur; değilse yapıştırmalık kalır (Dikiş Tapa kullanmaz). Halka düz değilse Kes çizilen halkayı izler. Halka modeli ikiye ayırmıyorsa (kolun çevresini dolanmıyorsa) halka kırmızı çizilir ve Kes kapalı kalır.',
-  pin: 'Keys modunda pimleri düzenler. Pimler kesim yüzeyinde gerçek boyutlarıyla yarı saydam görünür. Pime tıkla: seçilir; W ile taşıma okları (kesim düzleminde), R ile döndürme halkaları çıkar, sürüklerken pim anlık hareket eder. Pimi yüzeyde sürükleyerek de taşıyabilirsin. Seçiliyken boş yere tıklamak ya da Esc seçimi bırakır; seçili pim yokken boş yere tıklamak yeni pim ekler. Shift+tık siler. Otomatik pime tıklayınca pimler o yerlerde elle düzenlenebilir hale gelir.',
+  pin: "Pimli kes'te pimleri düzenler. Pimler kesim yüzeyinde gerçek boyutlarıyla yarı saydam görünür. Pime tıkla: seçilir; W ile taşıma okları (kesim düzleminde), R ile döndürme halkaları çıkar, sürüklerken pim anlık hareket eder. Pimi yüzeyde sürükleyerek de taşıyabilirsin. Seçiliyken boş yere tıklamak ya da Esc seçimi bırakır; seçili pim yokken boş yere tıklamak yeni pim ekler. Shift+tık siler. Otomatik pime tıklayınca pimler o yerlerde elle düzenlenebilir hale gelir.",
 };
 
 export function HelpDialog() {
@@ -80,7 +80,7 @@ function Workflow() {
         durur; birine tıklamak gövdeyi ve seti seçer.
       </li>
       <li>
-        <b>Bölgeyi seç.</b> Smart Fill (F) ile çıkıntıya tıkla, Fırça (B) / Silgi (E) ile düzelt,
+        <b>Bölgeyi seç.</b> Akıllı seç (F) ile çıkıntıya tıkla, Fırça (B) / Silgi (E) ile düzelt,
         Yumuşat (S) ile kenarı düzgünleştir. Çift özelliklerde (iki göz) sağdaki pencerede Ayna'yı
         aç. Set satırındaki göz boyayı yalnız görüntüde gizler. Satırdaki ⋯ ya da sağ tık: yeniden
         adlandır, “Seçili parçada temizle”, “Bu seti kes”, “Seti kaldır”. Tek bir yeri silmek için
@@ -100,9 +100,9 @@ function Workflow() {
       <li>
         <b>Önizle (Space), sonra Kes.</b> Önizleme açıkken ayar değiştirip pim ekleyip
         sürükleyebilirsin; önizleme kapanmaz, kendini yeniler. Pimin gövdeye ne kadar gireceği
-        “Gövdede pay” ile (pim aracında tek pim için de) ayarlanır. Kırmızı alanlar incelen
-        duvardır. Kesilen set yeni bir gövde olur (“Gövde N”, setin renginde); İşlemler'de “Kes K”
-        olarak durur. Sonraki bölge için seti değiştirip devam et.
+        “Pimin gövdeye giren kısmı” ile (pim aracında tek pim için de) ayarlanır. Kırmızı alanlar
+        incelen duvardır. Kesilen set yeni bir gövde olur (“Gövde N”, setin renginde); İşlemler'de
+        “Kes K” olarak durur. Sonraki bölge için seti değiştirip devam et.
       </li>
       <li>
         <b>İncele.</b> Parça listesinde göz simgesi gizler/gösterir, Alt+tık (veya Shift+H) yalnız o
@@ -153,9 +153,9 @@ function Mouse() {
   const common: [string, string][] = [
     ['Tekerlek', 'İmlecin altına yakınlaştır'],
     ['Model üstünde sol tık / sürükle', 'Etkin araç'],
-    ['Shift + sol', 'Aracın tersi (Smart Fill/Fırça: sil, Silgi: boya)'],
+    ['Shift + sol', 'Aracın tersi (Akıllı seç/Fırça: sil, Silgi: boya)'],
     ['Alt + tekerlek', 'Fırça yarıçapı'],
-    ['Shift + sağ sürükle', 'Smart Fill açı eşiği'],
+    ['Shift + sağ sürükle', 'Akıllı seç açı eşiği'],
     ['Boşluğa çift tık', 'Görünümü sığdır (model kaybolursa)'],
     ['Başka parçaya çift tık / Alt + çift tık', 'O parçayı sığdır'],
     ['Döndürme', 'Seçili parçanın ortası etrafında'],
@@ -188,8 +188,8 @@ function Keys() {
     <>
       <KeymapEditor />
       <p className="hint">
-        Sabit: Ctrl/Cmd+Z geri al, Ctrl/Cmd+Shift+Z yinele, 0–9 slot seç, Esc pencereyi kapat.
-        Toplam {COMMANDS.length} komutun tuşu değiştirilebilir.
+        Sabit: Ctrl/Cmd+Z geri al, Ctrl/Cmd+Shift+Z yinele, 0–9 set seç, Esc pencereyi kapat. Toplam{' '}
+        {COMMANDS.length} komutun tuşu değiştirilebilir.
       </p>
     </>
   );

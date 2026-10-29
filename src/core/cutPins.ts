@@ -4,6 +4,7 @@ import { type PinFit, type Section, sectionOf, settlePin } from './cutPinFit';
 import { findIslands } from './cutRun';
 import { withFaceId } from './cutSocket';
 import type { CutOptions, Island, PinOptions, PinPlacement, PinShape } from './cutTypes';
+import { formatNumber } from './format';
 import { CUT_FACE_ID, kernel, Scope } from './kernel';
 import type { LabeledMesh, MeshData, Vec3 } from './types';
 import { add, cross, dot, normalize, orthoBasis, scale, sub, vertexAt } from './vec';
@@ -193,7 +194,7 @@ export function pinCenters(
   const bare = out.length ? 0 : thin.size;
   if (bare)
     warnings?.push(
-      `${bare > 1 ? `${bare} bölgede ` : ''}kesit pin için çok ince; pin konmadı (en küçük pim ${MIN_PIN_RADIUS} mm yarıçap + tolerans + duvar sığmıyor). ${PIN_THIN_HINT}`,
+      `${bare > 1 ? `${bare} bölgede ` : ''}kesit pin için çok ince; pin konmadı (en küçük pim ${formatNumber(MIN_PIN_RADIUS)} mm yarıçap + tolerans + duvar sığmıyor). ${PIN_THIN_HINT}`,
     );
   return out;
 }

@@ -28,7 +28,7 @@ export function beginSmoothStroke(partId: string): boolean {
   if (!part) return false;
   const slot = get().activeSlot;
   if (slot === BASE_SLOT) {
-    notify('warn', 'Yumuşatmak için sınırı düzeltilecek slotu seçin.');
+    notify('warn', 'Yumuşatmak için sınırı düzeltilecek seti seç.');
     return false;
   }
   clearLastSmart();

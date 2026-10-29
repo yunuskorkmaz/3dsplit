@@ -20,9 +20,29 @@ export interface ImportedObject {
 
 export const ACCEPTED_EXTENSIONS = '.stl,.obj,.3mf,.3dsplit';
 
+/** X117: dosya açılamadı; metin kullanıcıya gösterilir, asıl hata konsolda. */
+export class ImportError extends Error {}
+
 /** STL, OBJ veya 3MF dosyasını ham geometriye çevirir. 3MF'teki her nesne ayrı döner. */
 export async function importFile(file: File): Promise<ImportedObject[]> {
   const ext = file.name.split('.').pop()?.toLowerCase();
+  if (ext !== 'stl' && ext !== 'obj' && ext !== '3mf')
+    throw new ImportError(
+      `${ext ? `.${ext}` : file.name} açılamaz. STL, OBJ, 3MF ya da .3dsplit dosyası seç.`,
+    );
+  try {
+    const out = await readModel(file, ext);
+    if (!out.length || out.every((o) => !o.positions.length)) throw new Error('boş geometri');
+    return out;
+  } catch (e) {
+    console.error(e);
+    throw new ImportError(
+      `Dosya okunamadı: ${file.name}. Bozuk ya da başka bir biçimde olabilir. Slicer'dan yeniden STL ya da 3MF olarak kaydedip dene.`,
+    );
+  }
+}
+
+async function readModel(file: File, ext: 'stl' | 'obj' | '3mf'): Promise<ImportedObject[]> {
   const base = file.name.replace(/\.[^.]+$/, '');
   if (ext === 'stl') {
     const geom = new STLLoader().parse(await file.arrayBuffer());
@@ -58,10 +78,9 @@ export async function importFile(file: File): Promise<ImportedObject[]> {
         out.push(fromGeometry(obj.name || `${base} ${i}`, obj.geometry, obj.matrixWorld));
       }
     });
-    if (!out.length) throw new Error('3MF dosyasında mesh bulunamadı.');
     return out;
   }
-  throw new Error(`Desteklenmeyen dosya türü: .${ext}`);
+  return [];
 }
 
 function fromGeometry(

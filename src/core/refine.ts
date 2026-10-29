@@ -1,3 +1,4 @@
+import { formatNumber } from './format';
 import { faceNormalsAndAreas } from './geometry';
 import { fromManifold, toManifold } from './kernel';
 import { BASE_SLOT, type LabeledMesh } from './types';
@@ -23,7 +24,7 @@ export function refineMesh(mesh: LabeledMesh, edgeLength: number): LabeledMesh {
   const estimate = estimateRefinedTriangles(mesh, edgeLength);
   if (estimate > MAX_REFINED_TRIANGLES) {
     throw new Error(
-      `Bu kenar uzunluğu yaklaşık ${(estimate / 1e6).toFixed(1)}M üçgen üretir (sınır ${MAX_REFINED_TRIANGLES / 1e6}M). Daha büyük bir değer seçin.`,
+      `Bu kenar uzunluğu yaklaşık ${formatNumber(estimate / 1e6)} milyon üçgen üretir (sınır ${formatNumber(MAX_REFINED_TRIANGLES / 1e6)} milyon). Daha büyük bir değer seçin.`,
     );
   }
   const man = toManifold(mesh, mesh.labels);

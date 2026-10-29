@@ -533,6 +533,8 @@ Kaynak: `docs/review/00-ozet.md` #11, #13–16, #18, #20–23, #26–30; `docs/r
 
 Kabul: e2e: rastgele baytlı `.stl` ve `.txt` bırakılınca yeni metinler; birim testi `formatNumber`; arayüz metinlerinde (`src/ui`, `src/state` iletileri) "slot", "Smart Fill", "Keys" geçmez (grep testi).
 
+Uygulamada: İnce ayar etiketlerinde birim alanın yanında yazdığı için "(%)" eklenmedi. Gövde ve set adları zaten `title` ile tam görünüyordu. Metin taraması `src/ui`, `src/state`, `src/core`'da yorum dışı satırlara bakar. "Mesh" şerit grubu ve "Snap" pim adı bu maddede değişmedi (listede yoktu). `.3dsplit` hata metinleri zaten Türkçeydi.
+
 ## X118 Klavye ve ekran okuyucu
 
 - Araç penceresinde odak alan öğe yapışkan Önizleme / İptal / Kes alanının altında kalmaz: kaydırma alanına `scroll-padding-bottom` (alt alanın yüksekliği).

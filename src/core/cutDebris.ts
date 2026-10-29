@@ -3,6 +3,8 @@
  * (kayış, göz) ayrı parça olmaz, kutusu içinde kaldığı büyük parçaya katılır;
  * hacmi çok küçük kırıntılar atılır.
  */
+
+import { formatNumber } from './format';
 import { boundingBox, signedVolume } from './geometry';
 import type { LabeledMesh } from './types';
 
@@ -41,7 +43,9 @@ export function mergeNestedParts(parts: LabeledMesh[], warnings: string[]): Labe
   }));
   const kept = info.filter((p) => p.volume >= DEBRIS_VOLUME);
   if (kept.length && kept.length < info.length)
-    warnings.push(`${info.length - kept.length} kırıntı parça atıldı (${DEBRIS_VOLUME} mm³ altı).`);
+    warnings.push(
+      `${info.length - kept.length} kırıntı parça atıldı (${formatNumber(DEBRIS_VOLUME)} mm³ altı).`,
+    );
   // hepsi kırıntıysa kesim anlamsız değil: en azından en büyüğü kalır
   const pool = kept.length
     ? kept

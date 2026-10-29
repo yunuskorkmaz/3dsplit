@@ -39,6 +39,7 @@ export default defineConfig({
     'cut-blocked.spec.ts',
     'coupon.spec.ts',
     'tolerance-prefs.spec.ts',
+    'text-unity.spec.ts',
   ],
   timeout: 120_000,
   use: {

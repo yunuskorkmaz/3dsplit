@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-29):** A1–E2 ve X1–X116 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-29):** A1–E2 ve X1–X117 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X117.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X118.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -144,7 +144,7 @@ Kurallar:
 
 | ID | İş | Neden | Kaynak | Emek | Onay | Durum |
 | --- | --- | --- | --- | --- | --- | --- |
-| X117 | Metin birliği: ham İngilizce hata yerine Türkçe ve eylemli ileti; "slot", "Smart Fill", "Keys" arayüzden çıkar; desteklenmeyen dosyada desteklenenler sayılır; ondalık virgül tek biçim | "Invalid typed array length"; aynı kavrama dört ad | #11, #20, #29, #30, 02b-10 | M | onaylandı | [ ] |
+| X117 | Metin birliği: ham İngilizce hata yerine Türkçe ve eylemli ileti; "slot", "Smart Fill", "Keys" arayüzden çıkar; desteklenmeyen dosyada desteklenenler sayılır; ondalık virgül tek biçim | "Invalid typed array length"; aynı kavrama dört ad | #11, #20, #29, #30, 02b-10 | M | onaylandı || [x] |
 | X118 | Klavye ve ekran okuyucu: odaklanan öğe yapışkan Kes alanının altında kalmaz; Yardım odağı tutar; kesimden sonra odak kaybolmaz; bildirimler ve panel başlıkları düğme; bildirim alanında `aria-live` | WCAG 2.4.11, 2.1.1, 4.1.2 | #14, 02b-11 | M | onaylandı | [ ] |
 | X119 | Kontrast: Kes düğmesi metni, set rengiyle yazılan rozet ve durum satırı en az 4,5:1, seçili segment en az 3:1 | 2,51:1 ve 1,11–1,21:1 (WCAG 1.4.3, 1.4.11) | #13 | S | onaylandı | [ ] |
 | X120 | Görünüş küpünden arka ve alt görünüşe geçilir | Arkaya yalnız ⌘K ile dönülüyor | #15 | S | onaylandı | [ ] |
@@ -447,3 +447,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-29 | X114: Önizleme kesim hatası bulursa Kes kapanır, neden seçim satırının altında yazar; ileti bir kez çıkar. Parça, set, boya, mod, ayar ya da pim değişince Kes açılır (`previewError` + `previewKey`). Aynı metinli ileti ekranda varsa yenisi eklenmez, süresi yenilenir. Seçimin en büyük boyutu 3 mm'den azsa "Seçim N mm; basılamayabilir." Kesim hata ve uyarı metinleri sonraki adımı söyler. Birim `core.test.ts`, `notify.test.ts`; e2e `cut-blocked.spec.ts`. npm test 129, Chrome e2e 43, e2e 46 | — |
 | 2026-10-29 | X115: Deneme parçası boş ekrandaki düğmeden, komut aramadan ("tolerans", "deneme") ve kesim panelinden açılır; ayrı deneme görünümünde gösterilir (`store.coupon`, `src/state/actionsCoupon.ts`, `src/ui/CouponBar.tsx`). Şerit: Tapa / Pimli kes, pim tarifi, boşluklar ve çentikler, İndir (Bambu 3MF, genel 3MF, STL ZIP; `tolerans-deneme.*`), Kapat (Esc). Sahneye, geçmişe, oturuma ve modelin dışa aktarmasına girmez; açıkken araçlar, geçmiş ve paneller kapalı, komut arama açık. Model açılınca görünüm kapanır. e2e `coupon.spec.ts`; `tools.spec.ts` yeni davranışa göre. npm test 129, Chrome e2e 45, e2e 48 | — |
 | 2026-10-29 | X116: Tolerans tarayıcıda kalır (`3dsplit.tool`); yeni model, Yok say ve yenileme son değeri kullanır, Devam et'in değeri yeni tercih olur. Düğmeler "Sıkı 0,1 · Normal 0,2 · Gevşek 0,3". Son deneme parçasının çentik → boşluk eşlemesi kalır ve düğme olarak Tolerans grubunda ve deneme şeridinde görünür (`CouponPicker`). Tolerans 0'da boşluklar 0 / 0,1 / 0,2 (`couponClearances`, hep üç delik). Ek: kesim iletilerinde X113 iç renk iletisi uyarılardan sonra (5 ileti sınırında düşmesin); `inner-paint.spec.ts` iletileri gelirken kaydeder (yük altında 8 s'de kapanıyordu). Birim `coupon.test.ts`, e2e `tolerance-prefs.spec.ts`. npm test 130, Chrome e2e 47, e2e 50 | — |
+| 2026-10-29 | X117: Açılamayan dosyada Türkçe ve eylemli ileti, ham hata konsolda (`ImportError`); desteklenmeyen türde desteklenenler sayılır. İletilerde, Yardım'da ve Kısayollar'da "slot" → set, "Smart Fill" → Akıllı seç, "Keys" → Pimli kes. İnce ayar etiketleri: Pimin gövdeye giren kısmı, Pim ucu eğimi, Delik çevresinde en az et, Tapayı daralt. Görünen sayılar `formatNumber` ile (`src/core/format.ts`). Birim `uiText.test.ts` (metin taraması + biçim), e2e `text-unity.spec.ts`. npm test 132, Chrome e2e 48, e2e 51 | — |

@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { formatNumber } from '../core/format';
 import { longestExtent, PRINT_SIZE_MAX, PRINT_SIZE_MIN, sizeWarning } from '../core/geometry';
 import {
   addSlot,
@@ -122,8 +123,10 @@ function ContextMenu({ menu, onClose }: { menu: MenuState; onClose: () => void }
 
 function partSizeTitle(size: number): string {
   const w = sizeWarning(size);
-  if (w === 'large') return `En uzun kenar. ${PRINT_SIZE_MAX} mm'den büyük: tablaya sığmayabilir`;
-  if (w === 'small') return `En uzun kenar. ${PRINT_SIZE_MIN} mm'den küçük: pim ve tapa sığmaz`;
+  if (w === 'large')
+    return `En uzun kenar. ${formatNumber(PRINT_SIZE_MAX)} mm'den büyük: tablaya sığmayabilir`;
+  if (w === 'small')
+    return `En uzun kenar. ${formatNumber(PRINT_SIZE_MIN)} mm'den küçük: pim ve tapa sığmaz`;
   return 'En uzun kenar';
 }
 
@@ -518,8 +521,8 @@ export function ModelPanel() {
                 <p>
                   {parts.length > 1 ? 'En büyük parça' : 'Model'} {formatMm(extent)}:{' '}
                   {warning === 'large'
-                    ? `${PRINT_SIZE_MAX} mm'den büyük, birimi inç ya da metre olabilir.`
-                    : `${PRINT_SIZE_MIN} mm'den küçük; pim ve tolerans bu boyda anlamsız.`}{' '}
+                    ? `${formatNumber(PRINT_SIZE_MAX)} mm'den büyük, birimi inç ya da metre olabilir.`
+                    : `${formatNumber(PRINT_SIZE_MIN)} mm'den küçük; pim ve tolerans bu boyda anlamsız.`}{' '}
                   Şeritte Düzen › Baskı boyu ile düzeltin.
                 </p>
               </div>

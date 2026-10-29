@@ -24,7 +24,7 @@ export type Command =
   | 'pin.rotate';
 
 export const COMMANDS: { id: Command; label: string }[] = [
-  { id: 'tool.smart', label: 'Smart Fill' },
+  { id: 'tool.smart', label: 'Akıllı seç' },
   { id: 'tool.brush', label: 'Fırça' },
   { id: 'tool.erase', label: 'Silgi' },
   { id: 'tool.smooth', label: 'Yumuşat' },
@@ -41,7 +41,7 @@ export const COMMANDS: { id: Command; label: string }[] = [
   { id: 'part.showAll', label: 'Tüm parçaları göster' },
   { id: 'view.explode', label: 'Ayrık görünüm aç/kapa' },
   { id: 'help', label: 'Yardım' },
-  { id: 'slot.clear', label: 'Aktif slotun seçimini temizle' },
+  { id: 'slot.clear', label: 'Aktif setin seçimini temizle' },
   { id: 'pin.move', label: 'Pim: taşıma tutamağı' },
   { id: 'pin.rotate', label: 'Pim: döndürme tutamağı' },
 ];

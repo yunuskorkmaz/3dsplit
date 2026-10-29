@@ -1,3 +1,4 @@
+import { formatNumber } from '../core/format';
 import { largestExtent, scaleMeshes } from '../core/geometry';
 import { get, notify, type Part, pushHistory, set } from './store';
 
@@ -94,9 +95,9 @@ export function scaleToPrintSize(target: number): void {
     suggestion: null,
     smartAutoScale: 0,
   });
-  pushHistory({ kind: 'parts', before, after }, `Baskı boyu ${target} mm`);
+  pushHistory({ kind: 'parts', before, after }, `Baskı boyu ${formatNumber(target)} mm`);
   notify(
     'info',
-    `${before.length > 1 ? 'En büyük parça' : 'Model'} ${extent.toFixed(1)} mm → ${target} mm ölçeklendi (×${factor.toFixed(3)}).`,
+    `${before.length > 1 ? 'En büyük parça' : 'Model'} ${formatNumber(extent)} mm → ${formatNumber(target)} mm ölçeklendi (×${formatNumber(factor, 3)}).`,
   );
 }

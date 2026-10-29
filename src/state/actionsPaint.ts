@@ -1,3 +1,4 @@
+import { formatNumber } from '../core/format';
 import { boundingBox } from '../core/geometry';
 import {
   brushSelect,
@@ -374,7 +375,7 @@ export function gapFillSelected(): void {
   beginStroke(part.id, 'Adaları birleştir');
   for (const [label, list] of byLabel) applyLabels(part, list, label);
   endStroke();
-  notify('info', `${tris.length} üçgen komşu renge çevrildi.`);
+  notify('info', `${formatNumber(tris.length)} üçgen komşu renge çevrildi.`);
 }
 
 /**
@@ -388,9 +389,9 @@ export function smoothActiveRegion(): void {
   const part = selectedPart();
   if (!part) return notify('warn', 'Önce bir parça seçin.');
   const slot = get().activeSlot;
-  if (slot === BASE_SLOT) return notify('warn', 'Yumuşatmak için boyalı bir slot seçin.');
+  if (slot === BASE_SLOT) return notify('warn', 'Yumuşatmak için boyalı bir set seç.');
   const labels = part.mesh.labels;
-  if (!labels.includes(slot)) return notify('warn', 'Bu slotta boyalı üçgen yok.');
+  if (!labels.includes(slot)) return notify('warn', 'Bu sette boyalı üçgen yok.');
   const topo = topologyOf(part.mesh);
   const { smoothRadius, smoothExact } = get();
   const radius = smoothRadius > 0 ? smoothRadius : smartOptions(topo).scale;
@@ -571,7 +572,7 @@ export function clearSlotPaint(slot: number): void {
   const labels = part.mesh.labels;
   const tris: number[] = [];
   for (let t = 0; t < labels.length; t++) if (labels[t] === slot) tris.push(t);
-  if (!tris.length) return notify('info', 'Bu slotta boyalı üçgen yok.');
+  if (!tris.length) return notify('info', 'Bu sette boyalı üçgen yok.');
   for (const t of tris) labels[t] = BASE_SLOT;
   lastSmart = null;
   pushHistory({

@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { formatNumber } from '../core/format';
 
 /**
  * C6: tapa alt halkasının 8 yönlü profili. Tutamaçlar sürüklenerek o yönde
@@ -63,7 +64,7 @@ export function RingEditor(props: {
               x={c + Math.cos(p.a) * (base + range * perMm + 8)}
               y={c - Math.sin(p.a) * (base + range * perMm + 8) + 3}
             >
-              {props.value[i] ? props.value[i].toFixed(1) : i + 1}
+              {props.value[i] ? formatNumber(props.value[i]) : i + 1}
             </text>
           </g>
         ))}

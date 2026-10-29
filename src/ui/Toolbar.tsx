@@ -556,7 +556,7 @@ export function ToolOptions() {
           <button
             type="button"
             onClick={smoothActiveRegion}
-            title="Aktif slotun tüm sınırını tek seferde düzgün bir eğriye oturtur; alanı korur"
+            title="Aktif setin tüm sınırını tek seferde düzgün bir eğriye oturtur; alanı korur"
           >
             Tüm sınırı yumuşat
           </button>
@@ -682,7 +682,7 @@ export function ToolOptions() {
             onChange={(v) => updatePin(selectedPin, { length: v }, 'Pim boyu')}
           />
           <NumberField
-            label="Gövdede pay"
+            label="Pimin gövdeye giren kısmı"
             value={Math.round((pin.bodyRatio ?? cut.pinBodyRatio) * 100)}
             min={5}
             max={95}

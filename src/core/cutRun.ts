@@ -26,6 +26,7 @@ import {
   modelOf,
   withModel,
 } from './cutTypes';
+import { formatNumber } from './format';
 import { signedVolume } from './geometry';
 import { CUT_FACE_ID, fromManifoldMapped, KernelError, Scope, toManifold } from './kernel';
 import { meshTopology } from './meshTopology';
@@ -54,7 +55,7 @@ export function findIslands(
       selected++;
     }
   }
-  if (selected === 0) throw new CutError('Bu slotta boyalı üçgen yok.');
+  if (selected === 0) throw new CutError('Bu sette boyalı üçgen yok.');
   if (selected === triCount)
     throw new CutError(
       'Bölge bütün gövdeyi kaplıyor; kesilecek sınır yok. Bir kısmını Silgi ile çıkar.',
@@ -319,7 +320,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
           if (out.volume() > 1e-3) {
             thin.push(manifoldMesh(out));
             warnings.push(
-              `${c.name} çevresinde duvar ${minWall} mm'den ince (kırmızı). Derinliği/pimi küçültün veya yerini değiştirin.`,
+              `${c.name} çevresinde duvar ${formatNumber(minWall, 2)} mm'den ince (kırmızı). Derinliği/pimi küçültün veya yerini değiştirin.`,
             );
           }
         } catch (e) {
@@ -534,7 +535,7 @@ export function suggestCutMode(mesh: LabeledMesh, slot: number): CutSuggestion |
   const thickness = (3 * volume) / surface;
   const protrusion = cap < surface * PROTRUSION_CAP_RATIO;
   const keys = protrusion && thickness >= MIN_KEYS_THICKNESS;
-  const t = thickness.toFixed(1);
+  const t = formatNumber(thickness);
   return {
     mode: keys ? 'keys' : 'socket',
     surface: !protrusion,
@@ -545,6 +546,6 @@ export function suggestCutMode(mesh: LabeledMesh, slot: number): CutSuggestion |
       ? `kalın çıkıntı (kalınlık ~${t} mm): düz kesim + pim`
       : protrusion
         ? `ince çıkıntı (kalınlık ~${t} mm, pim sığmaz): tapa + yuva`
-        : `yüzeysel bölge (yükseklik ~${height.toFixed(1)} mm): tapa + yuva`,
+        : `yüzeysel bölge (yükseklik ~${formatNumber(height)} mm): tapa + yuva`,
   };
 }

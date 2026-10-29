@@ -1,4 +1,5 @@
 import type { CutMode, CutOptions } from '../core/cut';
+import { formatNumber } from '../core/format';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { GeometryAbort, geometry } from '../worker/client';
 import { busy, geomKey } from './actionsHooks';
@@ -101,7 +102,7 @@ function cutTarget(): Part | null {
     return null;
   }
   if (get().activeSlot === BASE_SLOT) {
-    notify('warn', 'Taban slotu kesilemez; kesilecek bölgenin slotunu seçin.');
+    notify('warn', 'Taban kesilemez; kesilecek seti seç.');
     return null;
   }
   return part;
@@ -418,7 +419,7 @@ export async function runCut(): Promise<void> {
     // X113: iç renk iletisi uyarılardan sonra: ekranda en çok 5 ileti kalır, en önemlisi düşmesin
     for (const w of r.warnings) notify('warn', w);
     for (const w of innerMessages(r.inner, get().slots, opts.mode, true)) notify('warn', w);
-    const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Slot ${opts.slot}`;
+    const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Set ${opts.slot}`;
     const modeName =
       opts.mode === 'socket' ? 'Tapa' : opts.mode === 'keys' ? 'Pimli kes' : 'Yapıştır';
     const n = nextNumbers(get().parts);
@@ -557,7 +558,10 @@ export async function refineSelected(): Promise<void> {
     const after = before.map((p) => (p.id === part.id ? { ...p, mesh } : p));
     set({ parts: after });
     pushHistory({ kind: 'parts', before, after }, 'İncelt');
-    notify('info', `${part.name}: ${part.mesh.labels.length} → ${mesh.labels.length} üçgen.`);
+    notify(
+      'info',
+      `${part.name}: ${formatNumber(part.mesh.labels.length)} → ${formatNumber(mesh.labels.length)} üçgen.`,
+    );
   });
 }
 
@@ -575,7 +579,7 @@ export async function voxelRepairSelected(resolution = 200): Promise<void> {
     pushHistory({ kind: 'parts', before, after }, 'Voxel onar');
     notify(
       'info',
-      `${part.name}: voxel onarım (voksel ${r.voxelSize.toFixed(2)} mm), ${r.mesh.labels.length} üçgen.`,
+      `${part.name}: voxel onarım (voksel ${formatNumber(r.voxelSize, 2)} mm), ${formatNumber(r.mesh.labels.length)} üçgen.`,
     );
   });
 }

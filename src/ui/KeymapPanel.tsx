@@ -31,7 +31,7 @@ export function KeymapEditor() {
       if (e.key === 'Escape') return;
       const altLetter = e.altKey && (e.key.length !== 1 || /[\p{L}\p{N}]/u.test(e.key));
       if (isReservedKey(key) || e.metaKey || e.ctrlKey || altLetter) {
-        notify('warn', `${key} atanamaz (0–9 slotlar, değiştirici tuşlar ve Esc ayrılmış).`);
+        notify('warn', `${key} atanamaz (0–9 set tuşları, değiştirici tuşlar ve Esc ayrılmış).`);
         return;
       }
       const swapped = assignKey(cmd, key);

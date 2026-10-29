@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-29):** A1–E2 ve X1–X110 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-29):** A1–E2 ve X1–X111 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 davranışları onaylandı. Sıradaki: X111.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 davranışları onaylandı. Sıradaki: X112.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -128,7 +128,7 @@ Kurallar:
 | --- | --- | --- | --- | --- | --- | --- |
 | X109 | 3MF'teki nesne başına filament gövde rengi olarak okunur, dışa aktarmada geri yazılır; okunamazsa açılışta söylenir | Grogu'da 3 renk → çıktıda hepsi Filament 1; açıp kaydetmek rengi siliyor | #4 | M | onaylandı | [x] |
 | X110 | Dışa aktarmadan önce kesilmemiş renkler söylenir ("gövdede kesilmemiş 4 renk var"). Filament eşlemesi parça ve renk adıyla, kapanmayan bir yerde görünür; "hazır" iletisi parça sayısını yazar | Kesilmemiş renkler sessizce düşüyor; eşleme 8 s'de kayboluyor | #6, 02b-4 | S | onaylandı | [x] |
-| X111 | Boyalı bölgeden seçilen set o bölgenin rengini alır; yeni set modelde olmayan bir renk alır | Beyaz göz tapası turuncu filamente gidiyor | #7 | S | onaylandı | [ ] |
+| X111 | Boyalı bölgeden seçilen set o bölgenin rengini alır; yeni set modelde olmayan bir renk alır | Beyaz göz tapası turuncu filamente gidiyor | #7 | S | onaylandı | [x] |
 | X112 | Çizgi: boyanan alan sıfırsa ya da yumuşatmadan sonra kalmadıysa başarı iletisi yok, neden söylenir. Halka tek yüzü sardıysa ve mod Pimli kes ise kolun etrafından geçmek ya da Dikiş önerilir. Kapatma yalnız ilk noktanın üstünde; örtülen noktalar soluk | "16 üçgen boyandı" deyip boş; kol görevinde 2,5 dk takılma | #5, #24, #25 | M | onaylandı | [ ] |
 | X113 | Bölge içindeki başka renkli alan "boyanmamış delik" diye tapaya katılmaz | Siyah göz bebeği beyaz göz tapasına giriyor | #17 | M | onaylandı | [ ] |
 | X114 | Kesim olmayacağı bilinirken Kes kapalı ve nedeni yazılı. Basılamayacak kadar küçük seçim uyarılır. Kesim hataları ne yapılacağını söyler (Kenarı düzelt, Yumuşat, Düzlemle kes) | Aynı hata 3 kez; 1 üçgenden 2,6 mm tapa; "kapak düzleminde çökük" gibi iletiler | #12, #19, 02b-10 | S | onaylandı | [ ] |
@@ -441,3 +441,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-28 | X108: Yardım iş akışı listesinin sınıfı `help-steps`; adım şeridinin flex kuralı artık ona uygulanmıyor, liste tam genişlikte okunuyor. `e2e/smoke.spec.ts` X108. npm test 117, Chrome e2e 36 (views.spec yük altında bir kez düştü, tek başına geçti, #15/X120), e2e 39 | — |
 | 2026-10-28 | X109: 3MF'te nesne filamenti (`model_settings.config`, nesne düzeyi `extruder`) okunur; gövde "Filament N" setini gövde rengi olarak alır (set açılır, renk dosyadan). Set filament numarasını taşır (`Slot.filament`); Bambu 3MF'te bu numarayla yazılır, numarasız renkler boş numaraları alır (`assignFilaments`). Grogu açıp kaydedince 3/6/7 korunur. Çok gövdeli dosyada açılış iletisi; renk yoksa uyarı. Birim: threemf, bambu3mf; e2e `filament-colors.spec.ts`. npm test 119, Chrome e2e 37, e2e 39 (bluey-smoke bir kez 127 s sınırına takıldı, yeniden çalıştırınca geçti) | — |
 | 2026-10-29 | X110: Dışa aktar menüsü açılınca görünen gövdelerde kesilmemiş renkler (gövdenin kendi rengi sayılmaz) ve gizli gövde sayısı uyarı satırında; satır gövdeyi ve ilk kesilmemiş seti seçer, engellemez. Bambu 3MF iletisi kapanmaz, eşlemeyi renk kutusu, set adı ve gövde adlarıyla yazar; aynısı menüde "Son dışa aktarma". `src/state/exportReport.ts`, `test/exportReport.test.ts`, e2e `export-report.spec.ts`. npm test 121, Chrome e2e 38, e2e 41 | — |
+| 2026-10-29 | X111: Boş sete ilk boya (fırça, Akıllı seç, kova, Çizgi) bölgenin rengini verir: başka setin boyası üzerindeyse o setin rengi, boyasız yüzeyse gövde rengi (taban grisi verilmez). Elle renk seçilen (`Slot.customColor`) ve 3MF'ten gelen setlere dokunulmaz. "+ Seçim seti" set ve gövde renklerine en uzak rengi alır (`src/state/slotColor.ts`). Birim `slotColor.test.ts`, e2e `region-color.spec.ts`. npm test 124, Chrome e2e 40, e2e 43 | — |

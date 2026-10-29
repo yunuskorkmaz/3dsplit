@@ -422,6 +422,8 @@ Kabul: e2e Bluey: göz kesildikten sonra Dışa aktar menüsünde kesilmemiş re
 - "+ Seçim seti" yeni sete paletten, mevcut setlerin ve gövde renklerinin hiçbirine yakın olmayan bir renk verir; palet tükenirse ton açısı en uzak renk üretilir.
 - Kesimden çıkan gövde setin rengini taşır (X98); böylece beyaz göz tapası beyaz görünür ve 3MF'te beyaz setin filamentine gider.
 
+Uygulamada: renk geçmişe girmez; ilk boyayı geri almak seti eski rengine döndürmez. Bölge çevresiyle aynı renge dönse de aktif setin sınır çizgisi ve ad etiketi onu gösterir. Renk karşılaştırması "redmean" uzaklığıyla; 90'ın altı karışık sayılır.
+
 Kabul: birim testi renk seçici (mevcut renklere en uzak); e2e Bluey: yeni set beyaz bölgeye ilk tıkta beyaz olur; "+ Seçim seti" rengi dosyadaki turuncuya yakın değil.
 
 ## X112 Çizgi ne olduğunu doğru söyler

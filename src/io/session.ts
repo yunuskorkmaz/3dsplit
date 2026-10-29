@@ -29,7 +29,7 @@ export interface SessionPart {
 
 export interface SessionData {
   parts: SessionPart[];
-  slots: { id: number; name: string; color: string; filament?: number }[];
+  slots: { id: number; name: string; color: string; filament?: number; customColor?: boolean }[];
   activeSlot: number;
   selectedPartId: string | null;
   /** Kesim ayarları ve pimler: biçimi store'da; burada olduğu gibi saklanır. */

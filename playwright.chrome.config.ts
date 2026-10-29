@@ -33,6 +33,7 @@ export default defineConfig({
     'onboarding.spec.ts',
     'filament-colors.spec.ts',
     'export-report.spec.ts',
+    'region-color.spec.ts',
   ],
   timeout: 120_000,
   use: {

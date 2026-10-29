@@ -16,13 +16,14 @@ import { connectedComponents } from '../core/topology';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { onLabelsChanged } from './actionsHooks';
 import { applyMeshSplit } from './actionsSmooth';
+import { pickSlotColor } from './slotColor';
 import {
   get,
   type HistoryEntry,
-  nextSlotColor,
   notify,
   type Part,
   pushHistory,
+  SLOT_PALETTE,
   selectedPart,
   set,
 } from './store';
@@ -121,7 +122,46 @@ export function endStroke(): Extract<HistoryEntry, { kind: 'paint' }> | null {
     label: describeStroke(s.label, after),
   };
   pushHistory(entry);
+  adoptRegionColor(part, tris, before, after);
   return entry;
+}
+
+/**
+ * X111: boş sete ilk boya, boyandığı bölgenin rengini verir: başka setin boyası
+ * üzerineyse o setin rengi, boyasız yüzeyse gövde rengi (taban grisi verilmez, bölge
+ * görünmez olur). Elle renk seçilmiş ve 3MF'ten gelen (filamentli) setlere dokunulmaz.
+ */
+export function adoptRegionColor(
+  part: Part,
+  tris: ArrayLike<number>,
+  before: ArrayLike<number>,
+  after: ArrayLike<number>,
+): void {
+  const id = Array.prototype.find.call(after, (l: number) => l !== BASE_SLOT) as number | undefined;
+  if (id === undefined) return;
+  const { slots, parts } = get();
+  const slot = slots.find((s) => s.id === id);
+  if (!slot || slot.customColor || slot.filament) return;
+  // set bu boyadan önce boş muydu: boyanan üçgenler dışında hiçbir gövdede yok
+  for (let i = 0; i < before.length; i++) if (before[i] === id) return;
+  const painted = new Set(Array.from(tris));
+  for (const p of parts) {
+    const labels = p.mesh.labels;
+    for (let t = 0; t < labels.length; t++)
+      if (labels[t] === id && !(p.id === part.id && painted.has(t))) return;
+  }
+  // boyanan üçgenlerin önceki baskın etiketi
+  const counts = new Map<number, number>();
+  for (let i = 0; i < before.length; i++)
+    if (after[i] === id) counts.set(before[i], (counts.get(before[i]) ?? 0) + 1);
+  let under = BASE_SLOT;
+  let most = -1;
+  for (const [l, n] of counts) if (n > most) [under, most] = [l, n];
+  const source = under === BASE_SLOT ? part.colorSlot : under;
+  const color = source === BASE_SLOT ? null : slots.find((s) => s.id === source)?.color;
+  if (!color || color === slot.color) return;
+  set((s) => ({ slots: s.slots.map((x) => (x.id === id ? { ...x, color } : x)) }));
+  for (const p of parts) onLabelsChanged?.(p.id);
 }
 
 /** X97: geçmişte adımın sonucu da okunsun: "Akıllı seç · Seçim 1 · 1.240 üçgen". */
@@ -453,13 +493,21 @@ export function activeIslands(): IslandInfo[] {
 // ---------- slotlar ----------
 
 export function addSlot(): void {
-  const slots = get().slots;
+  const { slots, parts } = get();
   const id = Math.max(...slots.map((s) => s.id)) + 1;
-  set({ slots: [...slots, { id, name: `Seçim ${id}`, color: nextSlotColor(id) }], activeSlot: id });
+  // X111: modeldeki renklerden (setler ve gövde renkleri) ayırt edilen renk
+  const used = [
+    ...slots.map((s) => s.color),
+    ...parts.flatMap((p) => slots.filter((s) => s.id === p.colorSlot).map((s) => s.color)),
+  ];
+  const color = pickSlotColor(SLOT_PALETTE, used);
+  set({ slots: [...slots, { id, name: `Seçim ${id}`, color }], activeSlot: id });
 }
 
 export function updateSlot(id: number, patch: { name?: string; color?: string }): void {
-  set((s) => ({ slots: s.slots.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+  // X111: elle seçilen renk, boyanan bölgenin rengiyle değişmez
+  const custom = patch.color ? { customColor: true } : {};
+  set((s) => ({ slots: s.slots.map((x) => (x.id === id ? { ...x, ...patch, ...custom } : x)) }));
   for (const p of get().parts) onLabelsChanged?.(p.id);
 }
 

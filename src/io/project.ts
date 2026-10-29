@@ -22,6 +22,7 @@ export interface ProjectSlot {
   name: string;
   color: string;
   filament?: number;
+  customColor?: boolean;
 }
 
 export interface ProjectData {

@@ -3,7 +3,7 @@ import { regionInsideLoop, surfacePath, vertexNeighbors } from '../core/lasso';
 import { smoothStrokeSplit } from '../core/smooth';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { onLabelsChanged } from './actionsHooks';
-import { mirrored, neighborLabel, partById } from './actionsPaint';
+import { adoptRegionColor, mirrored, neighborLabel, partById } from './actionsPaint';
 import { applyMeshSplit } from './actionsSmooth';
 import { get, notify, type Part, pushHistory, set } from './store';
 import { topologyOf } from './topologyCache';
@@ -170,6 +170,7 @@ export function lineClose(): void {
     after: new Uint16Array(unique.length).fill(slot),
     label: 'Çizgi',
   });
+  adoptRegionColor(part, unique, before, new Uint16Array(unique.length).fill(slot));
   onLabelsChanged?.(part.id, unique);
   lineCancel();
   // zikzakı düzelt: çizgi boyunca yumuşatıp üçgenlerin içinden geçir

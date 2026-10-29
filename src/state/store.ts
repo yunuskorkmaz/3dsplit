@@ -36,6 +36,8 @@ export interface Slot {
   color: string;
   /** X109: 3MF'ten gelen setin filament numarası; Bambu 3MF'te bu numarayla yazılır. */
   filament?: number;
+  /** X111: renk kullanıcı tarafından seçildi; boyanan bölgenin rengi alınmaz. */
+  customColor?: boolean;
 }
 
 export interface CutSettings {
@@ -394,6 +396,9 @@ export function notify(
 export function dismiss(id: number): void {
   set((s) => ({ messages: s.messages.filter((m) => m.id !== id) }));
 }
+
+/** X111: yeni set rengi bu paletten (tabanın grisi hariç). */
+export const SLOT_PALETTE = DEFAULT_COLORS.slice(1);
 
 /** Slot rengi; tabanın grisi (paletin ilk rengi) boyalı slotlara verilmez, yoksa bölge görünmez. */
 export function nextSlotColor(index: number): string {

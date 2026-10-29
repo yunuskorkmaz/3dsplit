@@ -77,10 +77,10 @@ test('X112: kendini kesen halka boyamaz, halka yalnız ilk noktada kapanır', as
     .toBe(true);
   await page.screenshot({ path: 'test-results/line-first-hot.png' });
   await page.mouse.click(at.x, at.y);
-  const msg = page.locator('.msg', { hasText: /^Çizgi kapatıldı: \d+ üçgen boyandı\.$/ });
+  const msg = page.locator('.msg', { hasText: /^Çizgi kapatıldı: [\d.]+ üçgen boyandı\./ });
   await expect(msg).toBeVisible();
   // ileti yumuşatmadan sonraki sayıyı yazar
-  const n = Number((await msg.textContent())?.match(/(\d+) üçgen/)?.[1]);
+  const n = Number((await msg.textContent())?.match(/([\d.]+) üçgen/)?.[1].replace(/\./g, ''));
   expect(n).toBe(await painted(page));
   expect(n).toBeGreaterThan(50);
   expect(errors).toEqual([]);

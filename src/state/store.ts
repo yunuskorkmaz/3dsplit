@@ -233,6 +233,8 @@ export interface AppState {
   };
   /** X27: patlatılmış görünüm çarpanı (0: kapalı). Sadece görüntü. */
   explode: number;
+  /** X118: kesimden sonra odağın gideceği gövde satırı (Model ağacı alır, sonra temizler). */
+  focusPartId: string | null;
   /**
    * X115: deneme görünümü. Plaka ve pimler sahneye, geçmişe ve oturuma girmez;
    * açıkken görünümde yalnız bunlar çizilir.
@@ -381,6 +383,7 @@ export const useStore = create<AppState>(() => ({
   hiddenSlots: [],
   line: { partId: null, anchors: [], path: [] },
   explode: 0,
+  focusPartId: null,
   coupon: null,
   helpOpen: false,
   session: { saving: false, savedAt: null, offer: null },

@@ -470,7 +470,8 @@ export async function runCut(): Promise<void> {
       { kind: 'parts', before, after, region: { before: regionBefore, after: regionState() } },
       `${origin.feature} · ${origin.detail} → ${made.join(', ')}`,
     );
-    set({ previewActive: false, preview: null });
+    // X118: Kes düğmesi kapanınca odak kaybolmasın: kesilen parçanın satırına gider
+    set({ previewActive: false, preview: null, focusPartId: newParts[1]?.id ?? newParts[0].id });
     notify(
       'info',
       `${origin.feature}: ${made.join(', ')} ayrıldı (${origin.detail}). Kesilmeden önceki hal Önceki haller'de gizli.`,
@@ -539,7 +540,8 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
       { kind: 'parts', before, after, region: { before: regionBefore, after: regionState() } },
       `${origin.feature} · Dikiş → ${made.join(', ')}`,
     );
-    set({ previewActive: false, preview: null });
+    // X118: Kes düğmesi kapanınca odak kaybolmasın: kesilen parçanın satırına gider
+    set({ previewActive: false, preview: null, focusPartId: newParts[1]?.id ?? newParts[0].id });
     notify(
       'info',
       `${origin.feature}: ${made.join(', ')} ayrıldı (dikiş${opts.mode === 'keys' ? ', kesite pim kondu' : ', yapıştırmalık'}). Kesilmeden önceki hal Önceki haller'de gizli.`,

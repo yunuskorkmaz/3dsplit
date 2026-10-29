@@ -1864,3 +1864,37 @@ fieldset.edge-smoothing {
   align-items: center;
   margin: 0;
 }
+/* X118: panel başlığı düğme ama başlık gibi görünür */
+.panel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.panel-toggle:disabled {
+  cursor: default;
+}
+/* X118: iletiyi klavyeyle kapatma */
+.msg-close {
+  margin-left: 8px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  opacity: 0.7;
+}
+.msg-close:hover,
+.msg-close:focus-visible {
+  opacity: 1;
+}
+/* X118: odak alan öğe yapışkan Önizleme / İptal / Kes alanının altında kalmaz */
+.float.side-right {
+  scroll-padding-bottom: 130px;
+}

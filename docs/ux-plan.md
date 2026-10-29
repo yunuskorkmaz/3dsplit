@@ -545,6 +545,8 @@ Uygulamada: İnce ayar etiketlerinde birim alanın yanında yazdığı için "(%
 
 Kabul: e2e klavye: Tolerans düğmesine Tab ile gelinince düğme görünür alanda (`elementFromPoint` kendisi); `?` ile Yardım açılınca odak içeride, 40 Tab sonra hâlâ içeride; Kes'e Enter sonrası `document.activeElement` yeni parça satırı; bildirim Enter ile kapanır.
 
+Uygulamada: iletinin kendisi düğme değil; içinde filament listesi olabildiği için (düğmeye liste konamaz) her iletiye "İletiyi kapat" adlı küçük × düğmesi eklendi. Fareyle iletiye tıklamak eskisi gibi kapatır. Kaydırma payı sabit 130 px (Kes alanının yüksekliği). Odak kesimden sonra ilk kesilen parçanın satırına gider.
+
 ## X119 Kontrast
 
 - Metin en az 4,5:1, seçili segment ve odak halkası en az 3:1 (03-arayuz C1–C11):

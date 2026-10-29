@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { COMMANDS, useKeymap } from '../state/keymap';
 import { set, useStore } from '../state/store';
 import { KeymapEditor } from './KeymapPanel';
 import { TOOLS } from './Toolbar';
+import { useModalFocus } from './useModalFocus';
 
 type Tab = 'start' | 'tools' | 'mouse' | 'keys';
 
@@ -31,11 +32,21 @@ const TOOL_DETAILS: Record<string, string> = {
 export function HelpDialog() {
   const open = useStore((s) => s.helpOpen);
   const [tab, setTab] = useState<Tab>('start');
+  const box = useRef<HTMLDivElement>(null);
+  const trap = useModalFocus(open, box);
   if (!open) return null;
   const close = () => set({ helpOpen: false });
   return (
     <div className="modal-backdrop" onClick={close}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Yardım">
+      <div
+        ref={box}
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDownCapture={trap}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Yardım"
+      >
         <header className="modal-head">
           <nav className="tabs">
             {TABS.map((t) => (

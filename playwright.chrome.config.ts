@@ -40,6 +40,7 @@ export default defineConfig({
     'coupon.spec.ts',
     'tolerance-prefs.spec.ts',
     'text-unity.spec.ts',
+    'keyboard.spec.ts',
   ],
   timeout: 120_000,
   use: {

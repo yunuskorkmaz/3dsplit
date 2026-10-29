@@ -38,9 +38,18 @@ export function Panel(props: {
       className={`panel${props.grow && shown ? ' grow' : ''}${props.disabled ? ' disabled' : ''}`}
     >
       <header className="panel-head">
-        <h3 onClick={toggle}>
-          <span className="caret">{shown ? '▾' : '▸'}</span>
-          {props.title}
+        <h3>
+          {/* X118: başlık düğme: klavyeyle açılıp kapanır */}
+          <button
+            type="button"
+            className="panel-toggle"
+            aria-expanded={shown}
+            disabled={props.disabled}
+            onClick={toggle}
+          >
+            <span className="caret">{shown ? '▾' : '▸'}</span>
+            {props.title}
+          </button>
         </h3>
         {props.extra && <div className="panel-extra">{props.extra}</div>}
       </header>

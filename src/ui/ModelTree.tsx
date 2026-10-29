@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatNumber } from '../core/format';
 import { longestExtent, PRINT_SIZE_MAX, PRINT_SIZE_MIN, sizeWarning } from '../core/geometry';
@@ -168,8 +168,18 @@ function PartRow(props: {
   const keys = useKeymap((s) => s.map);
   const [expanded, setExpanded] = useState(true);
   const painted = slots.filter((s) => (colors?.get(s.id) ?? 0) > 0);
+  const row = useRef<HTMLLIElement>(null);
+  const focusMe = useStore((s) => s.focusPartId === p.id);
+  useEffect(() => {
+    if (!focusMe) return;
+    row.current?.focus();
+    set({ focusPartId: null });
+  }, [focusMe]);
   return (
     <li
+      ref={row}
+      tabIndex={-1}
+      data-part={p.id}
       className={`${selected ? 'selected' : ''}${p.visible ? '' : ' hidden-part'}${
         p.badge !== 'source' && sizeWarning(props.size) ? ' size-warn' : ''
       }`}

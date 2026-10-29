@@ -35,6 +35,7 @@ import {
 } from '../state/store';
 import { Icon, type IconName } from './icons';
 import { TOOLS } from './Toolbar';
+import { useModalFocus } from './useModalFocus';
 import { fitAll, fitPart, fitView, viewToward } from './ViewportHost';
 
 const RECENT_KEY = '3dsplit.recentCommands';
@@ -413,6 +414,8 @@ export function CommandPalette() {
   const [index, setIndex] = useState(0);
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLUListElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const trap = useModalFocus(open, box);
   const shown = useMemo(() => (open ? filter(items, query) : []), [open, items, query]);
   useEffect(() => {
     if (!open) return;
@@ -435,10 +438,13 @@ export function CommandPalette() {
   return (
     <div className="palette-backdrop" onPointerDown={close}>
       <div
+        ref={box}
         className="palette"
         role="dialog"
+        aria-modal="true"
         aria-label="Komut ara"
         onPointerDown={(e) => e.stopPropagation()}
+        onKeyDownCapture={trap}
       >
         <input
           ref={input}

@@ -678,17 +678,30 @@ function BusyCard() {
 export function StatusBar() {
   const messages = useStore((s) => s.messages);
   return (
-    <div className="status">
+    // X118: ekran okuyucu iletileri okur; hata hemen (alert), diğerleri sırası gelince
+    <div className="status" aria-live="polite">
       <BusyCard />
       {messages.map((m) => (
         <div
           key={m.id}
           className={`msg ${m.kind}`}
+          role={m.kind === 'error' ? 'alert' : undefined}
           onClick={() => dismiss(m.id)}
           title={m.sticky ? 'Kapatmak için tıkla' : undefined}
         >
           {m.text}
           {m.filaments && <FilamentList filaments={m.filaments} />}
+          <button
+            type="button"
+            className="msg-close"
+            aria-label="İletiyi kapat"
+            onClick={(e) => {
+              e.stopPropagation();
+              dismiss(m.id);
+            }}
+          >
+            ×
+          </button>
         </div>
       ))}
     </div>

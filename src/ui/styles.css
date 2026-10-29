@@ -37,10 +37,14 @@ button:disabled {
 button.active {
   background: #2f6fd6;
   border-color: #2f6fd6;
+  /* X119: mavi zeminde beyaz 4,8:1 (#ddd 3,5:1 idi) */
+  color: #fff;
 }
 button.primary {
-  background: #2e9e5b;
-  border-color: #2e9e5b;
+  /* X119: koyu yeşil + beyaz 5,3:1 */
+  background: #1f7a45;
+  border-color: #1f7a45;
+  color: #fff;
 }
 input[type="number"],
 input.name,
@@ -506,7 +510,7 @@ ul.parts li.size-warn {
   background: #f5c54214;
 }
 ul.parts li .size {
-  color: #777;
+  color: #aab3c0;
   font-size: 11px;
 }
 ul.parts li .size {
@@ -547,7 +551,7 @@ ul.parts li .size {
   background: none;
 }
 .key {
-  color: #777;
+  color: #a0a6ae;
   width: 12px;
 }
 .row .label {
@@ -717,7 +721,6 @@ section .scrub .scrub-label {
 .slot-chip {
   font-weight: 400;
   font-size: 11px;
-  color: #111;
   padding: 1px 6px;
   border-radius: 8px;
 }
@@ -917,7 +920,7 @@ ul.keymap button {
   background: #3a3c42;
 }
 .menu-list small {
-  color: #888;
+  color: #a9adb4;
   font-size: 11px;
 }
 /* X110: dışa aktarmada kaybolacaklar ve son eşleme */
@@ -981,7 +984,7 @@ ul.keymap button {
 }
 .panel-head .caret {
   width: 10px;
-  color: #777;
+  color: #a0a6ae;
 }
 .panel-extra button {
   padding: 1px 6px;
@@ -1271,7 +1274,7 @@ details.advanced[open] summary {
   align-items: center;
 }
 .step-bar button {
-  color: #888;
+  color: #b5b8be;
 }
 .step-bar li.done button {
   color: #6fbf73;
@@ -1343,10 +1346,10 @@ ul.parts > li:hover:not(.selected) {
 }
 .folder-toggle .caret {
   width: 10px;
-  color: #777;
+  color: #a0a6ae;
 }
 .folder-toggle .count {
-  color: #7d8592;
+  color: #b4bcc8;
   font-weight: 400;
 }
 .folder-action {
@@ -1422,7 +1425,7 @@ ul.slots li.selected .more,
   white-space: nowrap;
 }
 .color-row .tris {
-  color: #7d8592;
+  color: #b4bcc8;
   font-size: 11px;
 }
 ul.slots li .eye {
@@ -1897,4 +1900,19 @@ fieldset.edge-smoothing {
 /* X118: odak alan öğe yapışkan Önizleme / İptal / Kes alanının altında kalmaz */
 .float.side-right {
   scroll-padding-bottom: 130px;
+}
+/* X119: durum satırında set rengi metne değil kutuya */
+.swatch-inline {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin: 0 3px 0 2px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #fff6;
+  vertical-align: baseline;
+}
+/* X119: uygulamanın odak halkası; her zeminde 3:1 üstü */
+:focus-visible {
+  outline: 2px solid #ffd400;
+  outline-offset: 1px;
 }

@@ -21,6 +21,7 @@ import {
   voxelRepairSelected,
 } from '../state/actions';
 import { useKeymap } from '../state/keymap';
+import { textOn } from '../state/slotColor';
 import { set, type Tool, useStore } from '../state/store';
 import { NumberField, Toggle } from './fields';
 import { Icon, type IconName } from './icons';
@@ -114,6 +115,8 @@ function PrintSizeButton({ disabled }: { disabled: boolean }) {
     <details className="ribbon-pop print-size-pop">
       <summary
         className={disabled ? 'disabled' : ''}
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : undefined}
         title="En büyük parçanın en uzun kenarını verilen boya getirir"
       >
         <Icon name="printSize" />
@@ -301,6 +304,8 @@ function RefineButton({ disabled }: { disabled: boolean }) {
     <details className="ribbon-pop">
       <summary
         className={disabled ? 'disabled' : ''}
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : undefined}
         title="Seçili parçayı küçük üçgenlere böler; ince sınırlar için"
       >
         <Icon name="refine" />
@@ -765,7 +770,8 @@ function StatusLine({ hint }: { hint: string }) {
           {set && set.id !== 0 && (
             <>
               {' '}
-              · Set: <b style={{ color: set.color }}>{set.name}</b>
+              · Set: <span className="swatch-inline" style={{ background: set.color }} />
+              <b className="set-name">{set.name}</b>
             </>
           )}
         </>
@@ -793,7 +799,10 @@ export function ToolPanel() {
           {info?.label}
           <kbd>{keys[`tool.${tool}`]}</kbd>
           {slot && tool !== 'seam' && tool !== 'pin' && (
-            <span className="slot-chip" style={{ background: slot.color }}>
+            <span
+              className="slot-chip"
+              style={{ background: slot.color, color: textOn(slot.color) }}
+            >
               {slot.name}
             </span>
           )}

@@ -41,6 +41,7 @@ export default defineConfig({
     'tolerance-prefs.spec.ts',
     'text-unity.spec.ts',
     'keyboard.spec.ts',
+    'contrast.spec.ts',
   ],
   timeout: 120_000,
   use: {

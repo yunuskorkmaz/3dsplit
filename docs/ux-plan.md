@@ -558,6 +558,8 @@ Uygulamada: iletinin kendisi düğme değil; içinde filament listesi olabildiğ
 
 Kabul: e2e: listelenen 11 öğe için `getComputedStyle` renklerinden WCAG oranı hesaplanır, eşiğin üstünde.
 
+Uygulamada: seçili segmentin mavisi (`#2f6fd6`) kaldı, metni beyaz oldu; önerilen `#2558b0` dolgu çevresine 3:1'i tutmuyordu (2,7:1). C10 (soluk Dışa aktar, İncelt, Baskı boyu) renk değiştirilerek değil, öğeler gerçekten kapatılarak çözüldü: kapalı öğe kontrast eşiğinden muaf. C12 (kırmızı set adı) C2 ile birlikte çözüldü. C13 (model yokken katlanmış panel başlığı) kapalı öğe, değişmedi. Test 9 metin öğesini ölçer; C6 C5 ile aynı kuralı paylaşır.
+
 ## X120 Görünüş küpünden arka ve alt
 
 - Küpte o an bakılan yüze tıklamak karşı yüze çevirir: Ön'deyken Ön → Arka, Üst'teyken Üst → Alt (Karar a). Yüzün `title`'ı bunu söyler ("Ön · tekrar tıkla: Arka").

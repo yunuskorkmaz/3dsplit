@@ -46,3 +46,23 @@ export function pickSlotColor(palette: string[], used: string[]): string {
   const fromWheel = best(wheel);
   return score(fromWheel) > score(fromPalette) ? fromWheel : fromPalette;
 }
+
+/** WCAG göreli parlaklık (sRGB). */
+export function luminance(hex: string): number {
+  const m = /^#?([0-9a-f]{6})/i.exec(hex);
+  if (!m) return 0;
+  const n = Number.parseInt(m[1], 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+}
+
+/** X119: renkli zemin üstünde okunur metin rengi: siyah ya da beyaz, hangisi daha karşıtsa. */
+export function textOn(bg: string): '#111111' | '#ffffff' {
+  const l = luminance(bg);
+  const dark = (l + 0.05) / (luminance('#111111') + 0.05);
+  const light = 1.05 / (l + 0.05);
+  return dark >= light ? '#111111' : '#ffffff';
+}

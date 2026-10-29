@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { colorDistance, MIN_COLOR_DISTANCE, pickSlotColor } from '../src/state/slotColor';
+import {
+  colorDistance,
+  luminance,
+  MIN_COLOR_DISTANCE,
+  pickSlotColor,
+  textOn,
+} from '../src/state/slotColor';
 
 const PALETTE = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22'];
 
@@ -23,5 +29,27 @@ describe('X111: yeni set rengi', () => {
 
   it('hiç renk yoksa paletin ilki', () => {
     expect(pickSlotColor(PALETTE, [])).toBe('#e74c3c');
+  });
+});
+
+describe('X119: renkli zeminde okunur metin', () => {
+  it('siyah ve koyu zeminde beyaz, açık zeminde siyah; ikisi de 4,5:1 üstü', () => {
+    const ratio = (a: string, b: string) => {
+      const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    };
+    for (const bg of [
+      '#000000',
+      '#003384',
+      '#ffffff',
+      '#cf7929',
+      '#e74c3c',
+      '#2ecc71',
+      '#808080',
+    ]) {
+      expect(ratio(textOn(bg), bg)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(textOn('#000000')).toBe('#ffffff');
+    expect(textOn('#ffffff')).toBe('#111111');
   });
 });

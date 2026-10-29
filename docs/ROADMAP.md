@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-29):** A1–E2 ve X1–X118 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-29):** A1–E2 ve X1–X119 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X119.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X120.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -146,7 +146,7 @@ Kurallar:
 | --- | --- | --- | --- | --- | --- | --- |
 | X117 | Metin birliği: ham İngilizce hata yerine Türkçe ve eylemli ileti; "slot", "Smart Fill", "Keys" arayüzden çıkar; desteklenmeyen dosyada desteklenenler sayılır; ondalık virgül tek biçim | "Invalid typed array length"; aynı kavrama dört ad | #11, #20, #29, #30, 02b-10 | M | onaylandı || [x] |
 | X118 | Klavye ve ekran okuyucu: odaklanan öğe yapışkan Kes alanının altında kalmaz; Yardım odağı tutar; kesimden sonra odak kaybolmaz; bildirimler ve panel başlıkları düğme; bildirim alanında `aria-live` | WCAG 2.4.11, 2.1.1, 4.1.2 | #14, 02b-11 | M | onaylandı || [x] |
-| X119 | Kontrast: Kes düğmesi metni, set rengiyle yazılan rozet ve durum satırı en az 4,5:1, seçili segment en az 3:1 | 2,51:1 ve 1,11–1,21:1 (WCAG 1.4.3, 1.4.11) | #13 | S | onaylandı | [ ] |
+| X119 | Kontrast: Kes düğmesi metni, set rengiyle yazılan rozet ve durum satırı en az 4,5:1, seçili segment en az 3:1 | 2,51:1 ve 1,11–1,21:1 (WCAG 1.4.3, 1.4.11) | #13 | S | onaylandı || [x] |
 | X120 | Görünüş küpünden arka ve alt görünüşe geçilir | Arkaya yalnız ⌘K ile dönülüyor | #15 | S | onaylandı | [ ] |
 | X121 | Model açıkken ikinci "Aç" ne yapacağını sorar (değiştir / ekle); çok plakalı 3MF plakaları yığılmaz | İki figür üst üste; Grogu'nun 3 plakası tek sahnede | #16 | M | onaylandı | [ ] |
 | X122 | Delete yalnız seçili pimi siler; pim seçili değilse seti silmez | İpucu "seçili pimi sil" derken bütün set gidiyor | #18 | S | onaylandı | [ ] |
@@ -449,3 +449,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-29 | X116: Tolerans tarayıcıda kalır (`3dsplit.tool`); yeni model, Yok say ve yenileme son değeri kullanır, Devam et'in değeri yeni tercih olur. Düğmeler "Sıkı 0,1 · Normal 0,2 · Gevşek 0,3". Son deneme parçasının çentik → boşluk eşlemesi kalır ve düğme olarak Tolerans grubunda ve deneme şeridinde görünür (`CouponPicker`). Tolerans 0'da boşluklar 0 / 0,1 / 0,2 (`couponClearances`, hep üç delik). Ek: kesim iletilerinde X113 iç renk iletisi uyarılardan sonra (5 ileti sınırında düşmesin); `inner-paint.spec.ts` iletileri gelirken kaydeder (yük altında 8 s'de kapanıyordu). Birim `coupon.test.ts`, e2e `tolerance-prefs.spec.ts`. npm test 130, Chrome e2e 47, e2e 50 | — |
 | 2026-10-29 | X117: Açılamayan dosyada Türkçe ve eylemli ileti, ham hata konsolda (`ImportError`); desteklenmeyen türde desteklenenler sayılır. İletilerde, Yardım'da ve Kısayollar'da "slot" → set, "Smart Fill" → Akıllı seç, "Keys" → Pimli kes. İnce ayar etiketleri: Pimin gövdeye giren kısmı, Pim ucu eğimi, Delik çevresinde en az et, Tapayı daralt. Görünen sayılar `formatNumber` ile (`src/core/format.ts`). Birim `uiText.test.ts` (metin taraması + biçim), e2e `text-unity.spec.ts`. npm test 132, Chrome e2e 48, e2e 51 | — |
 | 2026-10-29 | X118: Araç penceresinde `scroll-padding-bottom`: odak alan öğe Kes alanının altında kalmaz. Yardım ve komut arama `aria-modal`, odak içeri girer, Tab içeride döner, kapanınca açan öğeye döner (`useModalFocus`). Kesimden sonra odak kesilen parçanın satırına gider (`focusPartId`). Bildirim alanı `aria-live`, hata `role="alert"`, her iletide klavyeyle kapatma düğmesi (×). Panel başlıkları `aria-expanded` taşıyan düğme. e2e `keyboard.spec.ts`; `line-feedback.spec.ts` binlik noktaya göre. npm test 132, Chrome e2e 49, e2e 52 | — |
+| 2026-10-29 | X119: Kes koyu yeşil + beyaz (5,3:1); seçili segment ve etkin düğme beyaz metin (4,8:1, dolgu çevresine 3,9:1); set rozeti metni zemine göre siyah/beyaz (`textOn`); durum satırında set rengi metinden renk kutusuna; gri metinler açıldı (boy, üçgen sayısı, gelecek adım, menü açıklaması, set numarası, oklar). Uygulama odak halkası 2 px sarı. Soluk görünüp klavyeyle açılabilen Dışa aktar, İncelt, Baskı boyu artık gerçekten kapalı (`aria-disabled`, odak almaz). Birim `slotColor.test.ts`, e2e `contrast.spec.ts` (değişiklik olmadan review'daki oranları ölçer). npm test 133, Chrome e2e 50, e2e 53 | — |

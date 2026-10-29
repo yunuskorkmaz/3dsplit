@@ -126,7 +126,14 @@ export function Header() {
         className="menu"
         onToggle={(e) => setExportOpen((e.currentTarget as HTMLDetailsElement).open)}
       >
-        <summary className={hasParts ? '' : 'disabled'}>Dışa aktar ▾</summary>
+        {/* X119: model yokken gerçekten kapalı (klavye de açamaz) */}
+        <summary
+          className={hasParts ? '' : 'disabled'}
+          aria-disabled={!hasParts}
+          tabIndex={hasParts ? undefined : -1}
+        >
+          Dışa aktar ▾
+        </summary>
         <div className="menu-list">
           {exportOpen && <ExportNotes />}
           <button

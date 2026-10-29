@@ -32,6 +32,8 @@ test('X54: küp arkaya, köşeye ve üste bakar', async ({ page }) => {
     });
   };
 
+  // açılış görünüşü Ön; Ön'e tekrar tık Arka'ya çevirir (X120), köşeden başla
+  await shot('Ön sağ üst');
   const front = await shot('Ön');
   expect(front.y).toBeLessThan(0);
   const top = await shot('Üst');

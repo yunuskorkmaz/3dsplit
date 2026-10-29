@@ -26,7 +26,7 @@ import { set, type Tool, useStore } from '../state/store';
 import { NumberField, Toggle } from './fields';
 import { Icon, type IconName } from './icons';
 import { Panel } from './Panel';
-import { cameraCssMatrix, fitView, viewToward, watchCamera } from './ViewportHost';
+import { cameraCssMatrix, cameraDirection, fitView, viewToward, watchCamera } from './ViewportHost';
 
 export const TOOLS: { id: Tool; icon: string; label: string; key: string; hint: string }[] = [
   {
@@ -389,6 +389,28 @@ function solidTransform(
   return `matrix3d(${xx},${xy},${xz},0,${yx},${yy},${yz},0,${nx},${ny},${nz},0,${px},${py},${pz},1)`;
 }
 
+/** Bakılan yüz sayılmak için kamera yönüyle yüz normali arasındaki en küçük kosinüs. */
+const FACING = 0.8;
+
+/** Yüzü bundan dar görünen düğme kapalıdır: arkada kalan ya da kenardan görünen yüzlere tıklanmaz. */
+const VISIBLE = 0.2;
+
+function dot(a: readonly number[], b: readonly number[]): number {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+/** Kameranın dik baktığı yüzün adı; köşe bakışında yok. */
+function facingFace(dir: readonly number[]): string | null {
+  let best: (typeof FACES)[number] | null = null;
+  for (const f of FACES) if (!best || dot(f.n, dir) > dot(best.n, dir)) best = f;
+  return best && dot(best.n, dir) > FACING ? best.name : null;
+}
+
+function oppositeFace(name: string): (typeof FACES)[number] {
+  const f = FACES.find((x) => x.name === name) ?? FACES[0];
+  return FACES.find((x) => dot(x.n, f.n) < -0.5) ?? f;
+}
+
 function cornerName(x: number, y: number, z: number): string {
   return `${y < 0 ? 'Ön' : 'Arka'} ${x > 0 ? 'sağ' : 'sol'} ${z > 0 ? 'üst' : 'alt'}`;
 }
@@ -396,9 +418,14 @@ function cornerName(x: number, y: number, z: number): string {
 /** Modelin sağ üstünde yüzen görünüş küpü. Yüz yana, köşe çapraz bakışa gider. */
 export function ViewCube() {
   const [orient, setOrient] = useState('none');
+  const [dir, setDir] = useState<readonly number[]>([0, -1, 0]);
   const [spin, setSpin] = useState(false);
   useEffect(() => {
-    const pull = () => setOrient(cameraCssMatrix());
+    const pull = () => {
+      setOrient(cameraCssMatrix());
+      const d = cameraDirection();
+      if (d) setDir(d);
+    };
     pull();
     return watchCamera(pull);
   }, []);
@@ -407,34 +434,41 @@ export function ViewCube() {
     go();
     window.setTimeout(() => setSpin(false), 320);
   };
+  const facing = facingFace(dir);
   return (
     <fieldset className="viewcube">
       <legend>Görünüş</legend>
       <div className="cube-scene">
         <div className={spin ? 'cube spin' : 'cube'} style={{ transform: orient }}>
-          {FACES.map((f) => (
-            <button
-              key={f.name}
-              type="button"
-              className="face"
-              style={{
-                transform: solidTransform(
-                  ...f.n,
-                  f.n[0] * (CUBE / 2),
-                  f.n[1] * (CUBE / 2),
-                  f.n[2] * (CUBE / 2),
-                ),
-              }}
-              onClick={() => turn(() => viewToward(...f.view))}
-            >
-              {f.name}
-            </button>
-          ))}
+          {FACES.map((f) => {
+            const target = f.name === facing ? oppositeFace(f.name) : f;
+            return (
+              <button
+                key={f.name}
+                type="button"
+                className="face"
+                inert={dot(f.n, dir) < VISIBLE}
+                title={f.name === facing ? `${f.name} · tekrar tıkla: ${target.name}` : f.name}
+                style={{
+                  transform: solidTransform(
+                    ...f.n,
+                    f.n[0] * (CUBE / 2),
+                    f.n[1] * (CUBE / 2),
+                    f.n[2] * (CUBE / 2),
+                  ),
+                }}
+                onClick={() => turn(() => viewToward(...target.view))}
+              >
+                {f.name}
+              </button>
+            );
+          })}
           {CORNERS.map(([x, y, z]) => (
             <button
               key={`${x}${y}${z}`}
               type="button"
               className="corner"
+              inert={dot([x, y, z], dir) / Math.sqrt(3) < VISIBLE}
               aria-label={cornerName(x, y, z)}
               title={cornerName(x, y, z)}
               style={{

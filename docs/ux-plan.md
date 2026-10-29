@@ -569,6 +569,8 @@ Karar (seçilen: a): (a) bakılan yüze tekrar tık karşı yüz (önerilen; kü
 
 Kabul: e2e: Ön görünüşte küpün Ön yüzüne tık kamerayı arkaya çevirir; ikinci tık öne döner.
 
+Uygulamada: "bakılan yüz" kamera yönüyle normali arasındaki kosinüsü 0,8'i geçen yüzdür; köşe bakışında yoktur, tık o yüze gider. Açılış görünüşü Ön olduğundan ilk Ön tıkı Arka'yı açar. Kenardan görünen yüzler (kosinüs < 0,2) de kapalıdır; 4 px genişlikte kalıp köşenin altına giriyorlardı.
+
 ## X121 İkinci "Aç" ne yapacağını sorar; çok plakalı 3MF dağılmaz
 
 - Model açıkken yeni dosya açılınca (Aç ya da sürükle bırak) kart sorar: "{dosya} açılıyor. [Yerine aç] [Sahneye ekle] [Vazgeç]". Yerine aç bugünkü sahneyi "Önceki oturum"a bırakır (X106 gibi) ve yeni oturum başlatır; Sahneye ekle bugünkü davranış. `.3dsplit` açarken yalnız Yerine aç ve Vazgeç.

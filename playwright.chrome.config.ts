@@ -42,6 +42,7 @@ export default defineConfig({
     'text-unity.spec.ts',
     'keyboard.spec.ts',
     'contrast.spec.ts',
+    'cube-flip.spec.ts',
   ],
   timeout: 120_000,
   use: {

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import {
+  answerOpenAsk,
   clearActiveSlot,
   closeCoupon,
   discardSession,
@@ -73,6 +74,36 @@ function SessionOffer() {
           title="Kayıt silinmez; yeni model açınca Komut ara › Önceki oturumu aç ile geri gelir"
         >
           Yok say
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** X121: model açıkken yeni dosya açılınca ne yapılacağını sorar. */
+function OpenAsk() {
+  const ask = useStore((s) => s.openAsk);
+  if (!ask) return null;
+  const label = ask.files.length > 1 ? `${ask.files.length} dosya` : ask.files[0].name;
+  return (
+    <section className="notice-card" aria-label="Dosya açma">
+      <p>
+        <b>{label}</b> açılıyor.{' '}
+        {ask.project
+          ? 'Proje sahnenin yerine açılır; bugünkü çalışma "Önceki oturum" olarak saklanır.'
+          : 'Yerine açarsan bugünkü çalışma "Önceki oturum" olarak saklanır.'}
+      </p>
+      <div className="row">
+        <button type="button" className="primary" onClick={() => answerOpenAsk('replace')}>
+          Yerine aç
+        </button>
+        {!ask.project && (
+          <button type="button" onClick={() => answerOpenAsk('add')}>
+            Sahneye ekle
+          </button>
+        )}
+        <button type="button" onClick={() => answerOpenAsk('cancel')}>
+          Vazgeç
         </button>
       </div>
     </section>
@@ -286,6 +317,7 @@ export function App() {
         <EmptyStage />
         <CouponBar />
         {!coupon && <SimplifyOffer />}
+        <OpenAsk />
         <ViewCube />
         <NavBar />
         {!coupon && <ValueTags />}

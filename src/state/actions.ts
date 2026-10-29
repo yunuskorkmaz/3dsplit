@@ -14,6 +14,7 @@ export {
   voxelRepairSelected,
 } from './actionsCut';
 export {
+  answerOpenAsk,
   export3mf,
   export3mfGeneric,
   exportPartStl,

@@ -15,7 +15,7 @@ import { geometry } from '../worker/client';
 import { closeCoupon } from './actionsCoupon';
 import { busy } from './actionsHooks';
 import { clearPaintSession } from './actionsPaint';
-import { startNewSession } from './actionsSession';
+import { flushSession, startNewSession } from './actionsSession';
 import { filamentReport } from './exportReport';
 import {
   get,
@@ -26,18 +26,70 @@ import {
   pushHistory,
   reservePartIds,
   set,
+  useStore,
 } from './store';
 
 export async function importFiles(files: FileList | File[]): Promise<void> {
+  const list = Array.from(files);
+  if (!list.length) return;
+  // X121: model açıkken yeni dosya: önce ne yapılacağı sorulur
+  if (get().parts.length) {
+    const project = list.some((f) => f.name.toLowerCase().endsWith(PROJECT_EXTENSION));
+    set({ openAsk: { files: list, project } });
+    return;
+  }
+  await openFiles(list);
+}
+
+/**
+ * X121: soru kartının cevabı. `replace`: bugünkü sahne "Önceki oturum" olarak
+ * saklanır, dosya boş sahneye açılır. `add`: sahneye eklenir (proje dosyasında yok).
+ */
+export async function answerOpenAsk(answer: 'replace' | 'add' | 'cancel'): Promise<void> {
+  const ask = get().openAsk;
+  set({ openAsk: null });
+  if (!ask || answer === 'cancel') return;
+  if (answer === 'add' && !ask.project) return openFiles(ask.files);
+  await flushSession();
+  clearScene();
+  await openFiles(ask.files, true);
+}
+
+/** X121: sahneyi açılıştaki boş hale getirir (araç ayarları kalır). */
+function clearScene(): void {
+  const initial = useStore.getInitialState();
+  clearPaintSession();
+  set({
+    parts: [],
+    selectedPartId: null,
+    slots: initial.slots,
+    activeSlot: initial.activeSlot,
+    pins: [],
+    selectedPin: -1,
+    preview: null,
+    previewError: null,
+    previewActive: false,
+    line: initial.line,
+    explode: 0,
+    hiddenSlots: [],
+    focusPartId: null,
+    suggestion: null,
+    simplifyOffer: null,
+    undoStack: [],
+    redoStack: [],
+  });
+}
+
+async function openFiles(list: File[], replaced = false): Promise<void> {
   // X115: model açılınca deneme görünümü kapanır
   closeCoupon();
-  for (const file of Array.from(files)) {
+  for (const [i, file] of list.entries()) {
     if (file.name.toLowerCase().endsWith(PROJECT_EXTENSION)) {
       await openProject(file);
       continue;
     }
     await busy(`${file.name} yükleniyor…`, async () =>
-      addObjects(await importFile(file), file.name.replace(/\.[^.]+$/, '')),
+      addObjects(await importFile(file), file.name.replace(/\.[^.]+$/, ''), replaced && i === 0),
     );
   }
 }
@@ -90,7 +142,11 @@ export async function simplifyParts(ids: string[], target = SIMPLIFY_TARGET): Pr
 }
 
 /** İçe aktarılan nesneleri onarıp parça olarak ekler. */
-async function addObjects(objects: ImportedObject[], source?: string): Promise<void> {
+async function addObjects(
+  objects: ImportedObject[],
+  source?: string,
+  replaced = false,
+): Promise<void> {
   const added: Part[] = [];
   // X109: nesne filamenti gövde rengi olur
   const bodyFilaments = new Set<number>();
@@ -103,7 +159,8 @@ async function addObjects(objects: ImportedObject[], source?: string): Promise<v
   if (base) set({ cutModeManual: false });
   // X106: boş sahneye açılan model yeni oturumdur; kayıttaki eski oturum saklanır
   // kart açıkken (kayıt önerilirken) açılan model: kaydın saklandığı söylenir
-  if (base) startNewSession(!!get().session.offer);
+  // X121: "Yerine aç": ekrandaki sahne saklandı
+  if (base) startNewSession(replaced || !!get().session.offer);
   for (const obj of objects) {
     const prepared = await geometry.prepare(obj.positions, obj.indices, obj.labels);
     if (obj.labels && ensurePaintSlots(prepared.mesh.labels, obj.filamentColors ?? []))

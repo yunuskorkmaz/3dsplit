@@ -43,6 +43,7 @@ export default defineConfig({
     'keyboard.spec.ts',
     'contrast.spec.ts',
     'cube-flip.spec.ts',
+    'open-ask.spec.ts',
   ],
   timeout: 120_000,
   use: {

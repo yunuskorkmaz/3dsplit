@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-29):** A1–E2 ve X1–X120 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-29):** A1–E2 ve X1–X121 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X121.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X122.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -148,7 +148,7 @@ Kurallar:
 | X118 | Klavye ve ekran okuyucu: odaklanan öğe yapışkan Kes alanının altında kalmaz; Yardım odağı tutar; kesimden sonra odak kaybolmaz; bildirimler ve panel başlıkları düğme; bildirim alanında `aria-live` | WCAG 2.4.11, 2.1.1, 4.1.2 | #14, 02b-11 | M | onaylandı || [x] |
 | X119 | Kontrast: Kes düğmesi metni, set rengiyle yazılan rozet ve durum satırı en az 4,5:1, seçili segment en az 3:1 | 2,51:1 ve 1,11–1,21:1 (WCAG 1.4.3, 1.4.11) | #13 | S | onaylandı | [x] |
 | X120 | Görünüş küpünden arka ve alt görünüşe geçilir | Arkaya yalnız ⌘K ile dönülüyor | #15 | S | onaylandı | [x] |
-| X121 | Model açıkken ikinci "Aç" ne yapacağını sorar (değiştir / ekle); çok plakalı 3MF plakaları yığılmaz | İki figür üst üste; Grogu'nun 3 plakası tek sahnede | #16 | M | onaylandı | [ ] |
+| X121 | Model açıkken ikinci "Aç" ne yapacağını sorar (değiştir / ekle); çok plakalı 3MF plakaları yığılmaz | İki figür üst üste; Grogu'nun 3 plakası tek sahnede | #16 | M | onaylandı || [x] |
 | X122 | Delete yalnız seçili pimi siler; pim seçili değilse seti silmez | İpucu "seçili pimi sil" derken bütün set gidiyor | #18 | S | onaylandı | [ ] |
 | X123 | Kesimden sonra yeni parça görünür; geri alınınca eski "kesildi" iletisi kalkar, iletiler yığılmaz; aynı anda iki farklı "İptal" olmaz | Parça görünmüyor; ~150 px ileti yığını | #21, #23 | S | onaylandı | [ ] |
 | X124 | Zaten parçalara bölünmüş modelde (Grogu) bunu söyleyen yönlendirme | Kullanıcı olmayan boyayı arıyor | #22 | S | onaylandı | [ ] |
@@ -451,3 +451,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-29 | X118: Araç penceresinde `scroll-padding-bottom`: odak alan öğe Kes alanının altında kalmaz. Yardım ve komut arama `aria-modal`, odak içeri girer, Tab içeride döner, kapanınca açan öğeye döner (`useModalFocus`). Kesimden sonra odak kesilen parçanın satırına gider (`focusPartId`). Bildirim alanı `aria-live`, hata `role="alert"`, her iletide klavyeyle kapatma düğmesi (×). Panel başlıkları `aria-expanded` taşıyan düğme. e2e `keyboard.spec.ts`; `line-feedback.spec.ts` binlik noktaya göre. npm test 132, Chrome e2e 49, e2e 52 | — |
 | 2026-10-29 | X119: Kes koyu yeşil + beyaz (5,3:1); seçili segment ve etkin düğme beyaz metin (4,8:1, dolgu çevresine 3,9:1); set rozeti metni zemine göre siyah/beyaz (`textOn`); durum satırında set rengi metinden renk kutusuna; gri metinler açıldı (boy, üçgen sayısı, gelecek adım, menü açıklaması, set numarası, oklar). Uygulama odak halkası 2 px sarı. Soluk görünüp klavyeyle açılabilen Dışa aktar, İncelt, Baskı boyu artık gerçekten kapalı (`aria-disabled`, odak almaz). Birim `slotColor.test.ts`, e2e `contrast.spec.ts` (değişiklik olmadan review'daki oranları ölçer). npm test 133, Chrome e2e 50, e2e 53 | — |
 | 2026-10-29 | X120: Görünüş küpünde kameranın dik baktığı yüze (kosinüs > 0,8) tıklamak karşı yüze çevirir; yüzün `title`'ı "Ön · tekrar tıkla: Arka". Arkada kalan ya da kenardan görünen (kosinüs < 0,2) yüz ve köşe düğmeleri `inert`: tıklanmaz, odak almaz. e2e `cube-flip.spec.ts` (Ön → Arka → Ön, Üst → Alt, etkin her düğmenin üstte bir noktası var); `views.spec.ts` açılış Ön olduğu için köşeden başlar. npm test 133, Chrome e2e 51, e2e 54 | — |
+| 2026-10-29 | X121: Model açıkken açılan dosya (Aç, sürükle bırak) kart açar: Yerine aç / Sahneye ekle / Vazgeç (`openAsk`, `answerOpenAsk`). Yerine aç bekleyen oturum kaydını hemen yazar (`flushSession`), sahneyi boşaltır, yeni oturum başlatır; eski sahne "Önceki oturum" olur. `.3dsplit` için yalnız Yerine aç ve Vazgeç. Bambu plakaları `model_settings.config`'ten okunur; çok plakalı dosyada plakalar X'te yan yana 20 mm arayla, Y'de ilk plakaya hizalı, plaka içi yerleşim korunur, ad "Plaka N · …" (plaka adı varsa o). Birim `threemf.test.ts` (3 plaka, tek plaka), e2e `open-ask.spec.ts`; `undo-base.spec.ts` ikinci açılışta Sahneye ekle. Chrome'da Grogu: plaka 1 67–189, plaka 2 209–252, plaka 3 272–420 mm. npm test 135, e2e 55 | — |

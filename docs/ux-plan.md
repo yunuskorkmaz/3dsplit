@@ -580,6 +580,8 @@ Karar (seçilen: a): çok plakalı dosyada (a) bütün plakalar yan yana açıl�
 
 Kabul: e2e figür açıkken ikinci figür: kart çıkar, Yerine aç sonrası 1 gövde, "Önceki oturumu aç" ilk sahneyi getirir; Sahneye ekle sonrası 2 gövde. Birim testi Grogu benzeri iki plakalı 3MF'te nesnelerin plakalara göre ayrı X aralıklarında olması.
 
+Uygulamada: Plaka aralığı nesnelerin sınır kutuları arasındadır (plaka kenarı değil). Plakasız nesne (çok plakalı dosyada) "Plakasız" grubunda ilk sırada. Örnek modelin açılışı soru sormaz (yalnız Aç ve sürükle bırak).
+
 ## X122 Delete yalnız seçili pimi siler
 
 - Önizleme açıkken ya da Pim aracında Delete/Backspace yalnız seçili pimi siler; pim seçili değilse hiçbir şey yapmaz ve ileti: "Silinecek pim seçili değil. Pime tıkla, sonra Delete."

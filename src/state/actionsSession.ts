@@ -32,6 +32,13 @@ export function startNewSession(replaced = false): void {
     notify('info', 'Önceki çalışma saklandı: Komut ara › "Önceki oturumu aç" geri getirir.');
 }
 
+/** X121: bekleyen kaydı hemen yazar; sahne değişmeden önce eski çalışma kayıtta olsun. */
+export async function flushSession(): Promise<void> {
+  if (timer) clearTimeout(timer);
+  timer = null;
+  await write();
+}
+
 function snapshot(s: AppState): SessionData {
   return {
     parts: s.parts.map((p) => ({

@@ -73,6 +73,8 @@ test('X102: dolu sahneye açılan dosya tek adımda geri alınır', async ({ pag
   await page.locator('input[type=file]').setInputFiles('samples/figure.stl');
   await expect(page.locator('ul.parts li')).toHaveCount(1, { timeout: 30_000 });
   await page.locator('input[type=file]').setInputFiles('samples/figure.stl');
+  // X121: model açıkken dosya açılınca sorulur
+  await page.getByRole('button', { name: 'Sahneye ekle' }).click();
   await expect(page.locator('ul.parts li')).toHaveCount(2, { timeout: 30_000 });
   const labels = (await state(page)).undoStack.map((e: { label?: string }) => e.label);
   expect(labels).toEqual(['Aç: figure']);

@@ -244,6 +244,8 @@ export interface AppState {
   helpOpen: boolean;
   /** X96: 1M üçgeni aşan model açılınca sadeleştirme önerisi (parçalar ve toplam üçgen). */
   simplifyOffer: { partIds: string[]; triangles: number } | null;
+  /** X121: model açıkken yeni dosya açılıyor: yerine mi açılsın, sahneye mi eklensin. */
+  openAsk: { files: File[]; project: boolean } | null;
   /** X95: oturum kaydı durumu (üst çubukta) ve açılışta önerilen kayıtlı oturum. */
   session: { saving: boolean; savedAt: number | null; offer: SessionMeta | null };
   /** X90: komut arama açık. */
@@ -388,6 +390,7 @@ export const useStore = create<AppState>(() => ({
   helpOpen: false,
   session: { saving: false, savedAt: null, offer: null },
   simplifyOffer: null,
+  openAsk: null,
   paletteOpen: false,
   directionGizmo: false,
   preview: null,

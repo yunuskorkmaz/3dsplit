@@ -9,6 +9,50 @@ export interface ThreeMfObject {
   paint?: Uint16Array;
   /** X109: Bambu/Orca nesne filamenti (1'den); boyasız yüzey bununla basılır. */
   filament?: number;
+  /** X121: Bambu plakası (1'den) ve adı. */
+  plate?: { id: number; name: string };
+}
+
+/** X121: yan yana dizilen plakaların arasındaki boşluk, mm. */
+export const PLATE_GAP = 20;
+
+/**
+ * X121: Bambu plakaları dünyada ızgara halinde durur (2. sütun, alt satır…). Çok
+ * plakalı dosyada her plaka kendi yerleşimini korur, plakalar X'te yan yana
+ * `PLATE_GAP` arayla dizilir, Y'de ilk plakaya hizalanır. Ad plakayı taşır.
+ */
+function placePlatesSideBySide(objects: ThreeMfObject[]): void {
+  const ids = [...new Set(objects.map((o) => o.plate?.id ?? 0))].sort((a, b) => a - b);
+  if (ids.length < 2) return;
+  let cursor = 0;
+  let baseY = 0;
+  ids.forEach((id, i) => {
+    const group = objects.filter((o) => (o.plate?.id ?? 0) === id);
+    const min = [Infinity, Infinity];
+    const max = [-Infinity, -Infinity];
+    for (const o of group)
+      for (let k = 0; k < o.positions.length; k += 3)
+        for (let a = 0; a < 2; a++) {
+          const v = o.positions[k + a];
+          if (v < min[a]) min[a] = v;
+          if (v > max[a]) max[a] = v;
+        }
+    if (i === 0) {
+      cursor = min[0];
+      baseY = min[1];
+    }
+    const dx = cursor - min[0];
+    const dy = baseY - min[1];
+    for (const o of group) {
+      for (let k = 0; k < o.positions.length; k += 3) {
+        o.positions[k] += dx;
+        o.positions[k + 1] += dy;
+      }
+      const label = o.plate ? o.plate.name || `Plaka ${o.plate.id}` : 'Plakasız';
+      o.name = `${label} · ${o.name}`;
+    }
+    cursor = max[0] + dx + PLATE_GAP;
+  });
 }
 
 export interface ThreeMfFile {
@@ -74,6 +118,17 @@ export function parse3mf(bytes: Uint8Array): ThreeMfFile {
       if (extruder > 0) settingsFilaments.set(m[1], extruder);
     }
   }
+  // X121: Bambu plakaları: nesne kimliği -> plaka
+  const plateOf = new Map<string, { id: number; name: string }>();
+  if (modelSettings) {
+    for (const m of modelSettings.matchAll(/<plate>([\s\S]*?)<\/plate>/g)) {
+      const id = Number(/<metadata key="plater_id" value="(\d+)"/.exec(m[1])?.[1]);
+      if (!(id > 0)) continue;
+      const name = unescapeXml(/<metadata key="plater_name" value="([^"]*)"/.exec(m[1])?.[1] ?? '');
+      for (const o of m[1].matchAll(/<metadata key="object_id" value="([^"]+)"/g))
+        plateOf.set(o[1], { id, name });
+    }
+  }
 
   const out: ThreeMfObject[] = [];
   for (const item of tags(rootXml, 'item')) {
@@ -98,9 +153,11 @@ export function parse3mf(bytes: Uint8Array): ThreeMfFile {
       indices: new Uint32Array(collected.indices),
       paint: collected.painted ? Uint16Array.from(collected.paint) : undefined,
       filament: settingsFilaments.get(id),
+      plate: plateOf.get(id),
     });
   }
   if (!out.length) throw new Error('3MF dosyasında mesh bulunamadı.');
+  placePlatesSideBySide(out);
 
   let filamentColors: string[] = [];
   const settings = text('Metadata/project_settings.config');

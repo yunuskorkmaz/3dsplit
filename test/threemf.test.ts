@@ -65,6 +65,69 @@ describe('3MF okuma', () => {
     expect(file.objects.map((o) => o.filament)).toEqual([3, undefined, undefined]);
   });
 
+  it("X121: çok plakalı dosyada plakalar X'te yan yana, plaka içi yerleşim korunur", () => {
+    const tri = (id: number) =>
+      `<object id="${id}" type="model"><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="10" y="0" z="0"/><vertex x="0" y="10" z="0"/><vertex x="0" y="0" z="10"/></vertices><triangles><triangle v1="0" v2="2" v3="1"/><triangle v1="0" v2="1" v3="3"/><triangle v1="0" v2="3" v3="2"/><triangle v1="1" v2="2" v3="3"/></triangles></mesh></object>`;
+    const at = (x: number, y: number) => `transform="1 0 0 0 1 0 0 0 1 ${x} ${y} 0"`;
+    // Bambu ızgarası: plaka 1 (100,100) ve (130,100); plaka 2 sağda (407,100); plaka 3 altta (100,-207)
+    const model = `<?xml version="1.0"?>
+<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+ <resources>${tri(1)}${tri(2)}${tri(3)}${tri(4)}</resources>
+ <build><item objectid="1" ${at(100, 100)}/><item objectid="2" ${at(130, 100)}/><item objectid="3" ${at(407, 100)}/><item objectid="4" ${at(100, -207)}/></build>
+</model>`;
+    const obj = (id: number, name: string) =>
+      `<object id="${id}"><metadata key="name" value="${name}"/></object>`;
+    const plate = (id: number, name: string, objects: number[]) =>
+      `<plate><metadata key="plater_id" value="${id}"/><metadata key="plater_name" value="${name}"/>${objects.map((o) => `<model_instance><metadata key="object_id" value="${o}"/></model_instance>`).join('')}</plate>`;
+    const settings = `<?xml version="1.0"?><config>${obj(1, 'Kafa')}${obj(2, 'Kol')}${obj(3, 'Gövde')}${obj(4, 'Ayak')}${plate(1, '', [1, 2])}${plate(2, '', [3])}${plate(3, 'Küçükler', [4])}</config>`;
+    const file = parse3mf(
+      zipSync({
+        '3D/3dmodel.model': strToU8(model),
+        'Metadata/model_settings.config': strToU8(settings),
+      }),
+    );
+    const range = (i: number) => {
+      const p = file.objects[i].positions;
+      const xs = [];
+      const ys = [];
+      for (let k = 0; k < p.length; k += 3) {
+        xs.push(p[k]);
+        ys.push(p[k + 1]);
+      }
+      return { x: [Math.min(...xs), Math.max(...xs)], y: Math.min(...ys) };
+    };
+    expect(file.objects.map((o) => o.name)).toEqual([
+      'Plaka 1 · Kafa',
+      'Plaka 1 · Kol',
+      'Plaka 2 · Gövde',
+      'Küçükler · Ayak',
+    ]);
+    // plaka 1 yerinde, iç yerleşimi aynı
+    expect(range(0).x).toEqual([100, 110]);
+    expect(range(1).x).toEqual([130, 140]);
+    // plaka 2, plaka 1'in 20 mm sağında; plaka 3 onun 20 mm sağında; hepsi aynı Y'de
+    expect(range(2).x).toEqual([160, 170]);
+    expect(range(3).x).toEqual([190, 200]);
+    expect([range(2).y, range(3).y]).toEqual([100, 100]);
+  });
+
+  it('tek plakalı dosyada ad ve konum değişmez', () => {
+    const model = `<?xml version="1.0"?>
+<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+ <resources><object id="1" name="tek" type="model"><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/><vertex x="0" y="0" z="1"/></vertices><triangles><triangle v1="0" v2="2" v3="1"/><triangle v1="0" v2="1" v3="3"/><triangle v1="0" v2="3" v3="2"/><triangle v1="1" v2="2" v3="3"/></triangles></mesh></object></resources>
+ <build><item objectid="1" transform="1 0 0 0 1 0 0 0 1 50 60 0"/></build>
+</model>`;
+    const settings = `<config><plate><metadata key="plater_id" value="1"/><model_instance><metadata key="object_id" value="1"/></model_instance></plate></config>`;
+    const file = parse3mf(
+      zipSync({
+        '3D/3dmodel.model': strToU8(model),
+        'Metadata/model_settings.config': strToU8(settings),
+      }),
+    );
+    expect(file.objects[0].name).toBe('tek');
+    expect([file.objects[0].positions[0], file.objects[0].positions[1]]).toEqual([50, 60]);
+  });
+
   it('boyalı üçgenleri ve filament renklerini okur', () => {
     const model = `<?xml version="1.0"?>
 <model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">

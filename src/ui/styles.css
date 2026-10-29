@@ -1284,6 +1284,12 @@ details.advanced[open] summary {
   color: #fff;
   font-weight: 600;
 }
+/* X124: gövdeler zaten ayrı: Aktar da etkin */
+.step-bar li.ready button {
+  box-shadow: inset 0 0 0 1px #2f6fd6;
+  color: #fff;
+  font-weight: 600;
+}
 .empty-stage .row {
   display: flex;
   gap: 8px;

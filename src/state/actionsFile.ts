@@ -232,6 +232,13 @@ async function addObjects(
         "Dosyada filament renkleri yok; gövdeler Filament N setlerine ayrıldı, renkleri slicer'daki gibi değil.",
       );
   }
+  // X124: parçalara bölünmüş model (Grogu): kesmeden aktarılabilir
+  if (added.length > 1 && !painted)
+    notify(
+      'info',
+      `${added.length} gövde ayrı parça olarak geldi; renkler zaten ayrı. Kesmeden dışa aktarabilirsin; bir gövdenin içinden renk ayırmak için onu seçip boya.`,
+      { sticky: true },
+    );
   // X104: boyalı 3MF'te hiçbir renk kesime hazır gelmez; kullanıcı ayıracağı rengi seçer
   if (painted) set({ activeSlot: BASE_SLOT, tool: 'smart' });
   // X80: çok parçalı dosyada son yüklenen değil, en büyük (hacim) parça seçili

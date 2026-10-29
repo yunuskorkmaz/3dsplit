@@ -74,7 +74,7 @@ test('yükle → Smart Fill → Socket kes → 3MF', async ({ page }) => {
   await expect(page.locator('ul.parts li.hidden-part')).toHaveCount(1);
 
   const download = page.waitForEvent('download');
-  await page.getByText('Dışa aktar').click();
+  await page.getByText(/^Dışa aktar/).click();
   await page.getByRole('button', { name: /3MF — Bambu/ }).click();
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/\.3mf$/);

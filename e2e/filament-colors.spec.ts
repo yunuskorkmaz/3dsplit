@@ -53,7 +53,7 @@ test('X109: 3MF nesne filamenti gövde rengi olur ve aynı numarayla geri yazıl
   // hiçbir şey değiştirmeden Bambu 3MF: numaralar kaynaktakiyle aynı
   const source = extruders(readFileSync(GROGU));
   const download = page.waitForEvent('download');
-  await page.getByText('Dışa aktar').click();
+  await page.getByText(/^Dışa aktar/).click();
   await page.getByRole('button', { name: /3MF — Bambu/ }).click();
   const out = extruders(readFileSync((await (await download).path()) as string));
   expect(count(out)).toEqual(count(source));

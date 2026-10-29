@@ -101,7 +101,7 @@ test('Bluey boyalı modeli basılabilir parçalara ayır', async ({ page }) => {
   }
 
   const download = page.waitForEvent('download', { timeout: 120_000 });
-  await page.getByText('Dışa aktar').click();
+  await page.getByText(/^Dışa aktar/).click();
   await page.getByRole('button', { name: /3MF — Bambu/ }).click();
   const file = await download;
   await file.saveAs('test-results/bluey-parcalar.3mf');

@@ -503,8 +503,7 @@ export function dismiss(id: number): void {
 /** X123: sahnede olmayan parçaları anlatan iletiler kapanır (kesim geri alındı). */
 export function dismissStaleMessages(): void {
   const ids = new Set(get().parts.map((p) => p.id));
-  for (const m of get().messages)
-    if (m.parts?.some((id) => !ids.has(id))) dismiss(m.id);
+  for (const m of get().messages) if (m.parts?.some((id) => !ids.has(id))) dismiss(m.id);
 }
 
 /** X111: yeni set rengi bu paletten (tabanın grisi hariç). */

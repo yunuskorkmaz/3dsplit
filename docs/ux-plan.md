@@ -610,6 +610,8 @@ Uygulamada: Kesimden sonra boyaya devam etmek için gövdeyi seçmek gerekir (ö
 
 Kabul: e2e Grogu (dosya varsa): ileti çıkar; figürde çıkmaz.
 
+Uygulamada: İleti kendiliğinden kapanmaz (sticky); kullanıcı okuyup kapatır. Aynı anda açılan birden çok STL (her biri tek gövde) bu iletiyi vermez; Aktar yine `ready` görünür.
+
 ## X125 Model yokken araçlar kapalı
 
 - Model yokken şerit araçları, araç penceresi ve Kes alanı soluk ve tıklanmaz (`disabled`); ipucu "Önce bir model aç." Deneme parçası (X115) ve komut arama açık.

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { set, useStore } from '../state/store';
 
 type Step = 'open' | 'select' | 'cut' | 'export';
@@ -23,6 +24,20 @@ function useStep(): Step {
   });
 }
 
+/**
+ * X124: sahne birden çok gövdeden oluşuyor, hiçbiri boyalı ya da kesilmiş değil:
+ * gövdeler zaten ayrı parça, Aktar da hazır.
+ */
+function useSplitModel(): boolean {
+  const parts = useStore((s) => s.parts);
+  const paintVersion = useStore((s) => s.paintVersion);
+  return useMemo(() => {
+    void paintVersion;
+    if (parts.length < 2 || parts.some((p) => p.badge)) return false;
+    return parts.every((p) => !p.mesh.labels.some((l) => l !== 0));
+  }, [parts, paintVersion]);
+}
+
 /** Adımın düğmesini gösterir: dosya penceresi, Akıllı seç, Kes düğmesi, Dışa aktar menüsü. */
 function goTo(step: Step): void {
   if (step === 'open') document.getElementById('open-model')?.click();
@@ -46,13 +61,23 @@ function flash(el: HTMLElement | null): void {
 export function StepBar() {
   const current = useStep();
   const at = STEPS.findIndex((s) => s.id === current);
+  const split = useSplitModel();
   return (
     <ol className="step-bar" aria-label="Adımlar">
       {STEPS.map((s, i) => (
-        <li key={s.id} className={i < at ? 'done' : i === at ? 'current' : ''}>
+        <li
+          key={s.id}
+          className={
+            i < at ? 'done' : i === at ? 'current' : s.id === 'export' && split ? 'ready' : ''
+          }
+        >
           <button
             type="button"
-            title={s.title}
+            title={
+              s.id === 'export' && split
+                ? 'Gövdeler zaten ayrı parça: kesmeden aktarabilirsin'
+                : s.title
+            }
             aria-label={`Adım: ${s.label}`}
             aria-current={i === at ? 'step' : undefined}
             onClick={() => goTo(s.id)}

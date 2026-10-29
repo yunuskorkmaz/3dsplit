@@ -1777,6 +1777,7 @@ ul.slots li .set-usage {
   margin-left: auto;
   color: #c9ced6;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .spinner {
   width: 14px;
@@ -1932,4 +1933,19 @@ fieldset.edge-smoothing {
 /* X125: model yokken araç penceresi soluk, tıklanmaz (inert) */
 .tool-window.no-model {
   opacity: 0.5;
+}
+/* X127: meşgul kartında aşama çubuğu */
+.msg.busy .busy-progress {
+  display: block;
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: #ffffff33;
+  overflow: hidden;
+}
+.msg.busy .busy-progress > span {
+  display: block;
+  height: 100%;
+  background: #fff;
+  transition: width 0.2s ease;
 }

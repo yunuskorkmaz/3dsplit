@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CutMode, EdgeSmoothing, PinShape } from '../core/cut';
 import { PIN_THIN_HINT } from '../core/cutPins';
+import { remainingSeconds, stageProgress } from '../core/cutStages';
 import { formatNumber } from '../core/format';
 import {
   activeIslands,
@@ -651,6 +652,7 @@ function BusyCard() {
   const busy = useStore((s) => s.busy);
   const stage = useStore((s) => s.busyStage);
   const started = useStore((s) => s.busyStarted);
+  const plan = useStore((s) => s.busyPlan);
   const [, tick] = useState(0);
   useEffect(() => {
     if (!busy) return;
@@ -658,15 +660,37 @@ function BusyCard() {
     return () => window.clearInterval(t);
   }, [busy]);
   if (!busy) return null;
-  const seconds = Math.max(0, Math.round((Date.now() - started) / 1000));
+  const elapsed = Math.max(0, Date.now() - started);
+  const seconds = Math.round(elapsed / 1000);
+  // X127: kesimde aşama sırası, ilerleme çubuğu ve bu tarayıcıdaki hızlara göre tahmin
+  const step = plan ? stageProgress(plan.stages, stage) : null;
+  const left = plan ? remainingSeconds(plan.triangles, plan.speeds, elapsed) : null;
   return (
     <div className="msg busy" role="status">
       <span className="spinner" aria-hidden="true" />
       <span className="busy-text">
         <b>{busy}</b>
-        {stage && <span className="busy-stage">{stage}…</span>}
+        {stage && (
+          <span className="busy-stage">
+            {step ? `Aşama ${step.index}/${step.total} · ${stage}…` : `${stage}…`}
+          </span>
+        )}
+        {step && (
+          <span
+            className="busy-progress"
+            role="progressbar"
+            aria-label="Kesim aşaması"
+            aria-valuemin={0}
+            aria-valuemax={step.total}
+            aria-valuenow={step.index}
+          >
+            <span style={{ width: `${(100 * step.index) / step.total}%` }} />
+          </span>
+        )}
       </span>
-      <span className="busy-time">{seconds} sn</span>
+      <span className="busy-time">
+        {seconds} sn{left !== null && ` · ~${left} sn kaldı`}
+      </span>
       <button
         type="button"
         onClick={() => cancelGeometry()}

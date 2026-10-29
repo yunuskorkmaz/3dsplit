@@ -22,7 +22,9 @@ test('X54: küp arkaya, köşeye ve üste bakar', async ({ page }) => {
     });
     if (!point) throw new Error(`${name} tıklanamıyor`);
     await page.mouse.click(point.x, point.y);
-    await page.waitForTimeout(320);
+    // küpün dönüş geçişi bitsin: yarım dönmüş küpte sonraki yüz tıklanamaz
+    await page.waitForTimeout(100);
+    await page.waitForFunction(() => document.querySelector('.cube')?.getAnimations().length === 0);
     return page.evaluate(() => {
       // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
       const vp = (window as any).viewport;

@@ -49,6 +49,7 @@ export default defineConfig({
     'split-model.spec.ts',
     'no-model.spec.ts',
     'export-name.spec.ts',
+    'cut-progress.spec.ts',
   ],
   timeout: 120_000,
   use: {

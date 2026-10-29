@@ -637,3 +637,5 @@ Uygulamada: Yerine aç (X121) adı yeni dosyanınkiyle değiştirir; Sahneye ekl
 Karar (seçilen: a): ilerleme (a) aşama sayısıyla (önerilen; Worker zaten `stage()` gönderiyor, M) ya da (b) yalnız süre tahmini (aşama değişmez, S; ilk kesimde hiç bilgi yok).
 
 Kabul: birim testi kesim türü başına aşama listesi ve tahmin hesabı; e2e Bluey (dosya varsa): kartta "Aşama n/m" görünür.
+
+Uygulamada: Tapa'nın ağır kısmı tek aşamada ("Tapa ve yuva hacmi kuruluyor"); çubuk orada uzun durur, tahmin bu yüzden süreye göre. Hız ortanca ile hesaplanır: tek yavaş kesim tahmini bozmasın.

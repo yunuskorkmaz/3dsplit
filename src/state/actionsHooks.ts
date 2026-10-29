@@ -51,6 +51,6 @@ export async function busy(label: string, fn: () => Promise<void>): Promise<void
     if (!(e instanceof GeometryAbort)) console.error(e);
     notify('error', e instanceof Error ? e.message : String(e));
   } finally {
-    set({ busy: null, busyStage: null });
+    set({ busy: null, busyStage: null, busyPlan: null });
   }
 }

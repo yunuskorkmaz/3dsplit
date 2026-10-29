@@ -285,6 +285,8 @@ export interface AppState {
   /** X97: meşgul işin o anki aşaması ve başlama anı (geçen süre için). */
   busyStage: string | null;
   busyStarted: number;
+  /** X127: kesimin aşama listesi, üçgen sayısı ve bu türün son hızları (üçgen/s). */
+  busyPlan: { stages: string[]; triangles: number; speeds: number[] } | null;
   messages: Message[];
   /** X110: son Bambu 3MF'in filament eşlemesi (sayfa yenilenene kadar). */
   lastExport: ExportFilament[] | null;
@@ -413,6 +415,7 @@ export const useStore = create<AppState>(() => ({
   busy: null,
   busyStage: null,
   busyStarted: 0,
+  busyPlan: null,
   messages: [],
   lastExport: null,
   sourceName: null,

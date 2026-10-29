@@ -1,4 +1,5 @@
 import type { CutMode, CutOptions } from '../core/cut';
+import { cutStages, pushSpeed } from '../core/cutStages';
 import { formatNumber } from '../core/format';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { GeometryAbort, geometry } from '../worker/client';
@@ -407,9 +408,11 @@ export async function runCut(): Promise<void> {
   const modeLabel =
     opts.mode === 'socket' ? 'Tapa' : opts.mode === 'keys' ? 'Pimli kes' : 'Yapıştır';
   await busy(`Kesiliyor · ${modeLabel} · ${slotLabel} · ${part.name}`, async () => {
+    const done = planCut(opts.mode, part.mesh.labels.length, opts, false);
     const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh), (stage) =>
       set({ busyStage: stage }),
     );
+    if (r.ok) done();
     if (!r.ok) {
       set({ errorLoops: r.loops.length ? r.loops : null });
       notify('error', r.loops.length ? `${r.error} Sorunlu sınır kırmızıyla gösterildi.` : r.error);
@@ -483,9 +486,11 @@ export async function runCut(): Promise<void> {
 async function runSeamCut(part: Part, loop: number[]): Promise<void> {
   const opts = seamOptions(loop);
   await busy(`Kesiliyor · Dikiş · ${part.name}`, async () => {
+    const done = planCut(opts.mode, part.mesh.labels.length, opts, true);
     const r = await geometry.cut(part.mesh, opts, geomKey(part.mesh), (stage) =>
       set({ busyStage: stage }),
     );
+    if (r.ok) done();
     if (!r.ok) {
       set({ errorLoops: r.loops.length ? r.loops : null, line: { ...get().line, bad: true } });
       notify('error', r.loops.length ? `${r.error} Halka kırmızıyla gösterildi.` : r.error);
@@ -549,6 +554,53 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
       { ...tag, action: SHOW_APART },
     );
   });
+}
+
+/** X127: tür başına son kesim hızları (üçgen/s) bu tarayıcıda saklanır. */
+const SPEED_KEY = '3dsplit.cutSpeed';
+
+function loadSpeeds(): Record<string, number[]> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SPEED_KEY) ?? '{}');
+    return raw && typeof raw === 'object' ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * X127: meşgul kartı için aşama listesi ve tahmin girdileri. Dönen fonksiyon kesim
+ * başarıyla bitince çağrılır: hız geçmişe yazılır.
+ */
+function planCut(
+  mode: CutMode,
+  triangles: number,
+  opts: { smoothEdge?: boolean; planar?: boolean },
+  seam: boolean,
+): () => void {
+  const kind = seam ? `seam-${mode}` : mode;
+  const all = loadSpeeds();
+  const speeds = Array.isArray(all[kind]) ? all[kind].filter((v) => v > 0) : [];
+  set({
+    busyPlan: {
+      stages: cutStages(mode, { smoothEdge: !!opts.smoothEdge, planar: !!opts.planar, seam }),
+      triangles,
+      speeds,
+    },
+  });
+  const start = performance.now();
+  return () => {
+    const seconds = (performance.now() - start) / 1000;
+    if (seconds <= 0) return;
+    try {
+      localStorage.setItem(
+        SPEED_KEY,
+        JSON.stringify({ ...loadSpeeds(), [kind]: pushSpeed(speeds, triangles / seconds) }),
+      );
+    } catch {
+      // depolama kapalı: tahmin yapılmaz
+    }
+  };
 }
 
 /** X123: kesim iletisindeki düğme: parçalar Aralıklı görünümde ayrık görünür. */

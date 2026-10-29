@@ -68,6 +68,7 @@ export function CutActions() {
   const blocked = useStore(blockedReason);
   // X103: mod öneriyi izliyorsa öneri gelene kadar Kes bekler
   const waiting = useStore((s) => s.suggesting && !s.cutModeManual && s.tool !== 'seam');
+  const working = useStore((s) => !!s.busy);
   return (
     <div className="cut-actions">
       <label className="field preview-toggle" title={`Kesimi uygulamadan göster (${keys.preview})`}>
@@ -81,8 +82,10 @@ export function CutActions() {
         <kbd>{keys.preview}</kbd>
       </label>
       <div className="row">
+        {/* X123: iş sürerken tek İptal meşgul kartında; bu düğme işi durdurmazdı */}
         <button
           type="button"
+          hidden={working}
           disabled={!previewOn && tool === 'smart'}
           onClick={() => {
             if (get().previewActive) togglePreview();
@@ -691,6 +694,18 @@ export function StatusBar() {
         >
           {m.text}
           {m.filaments && <FilamentList filaments={m.filaments} />}
+          {m.action && (
+            <button
+              type="button"
+              className="msg-action"
+              onClick={(e) => {
+                e.stopPropagation();
+                m.action?.run();
+              }}
+            >
+              {m.action.label}
+            </button>
+          )}
           <button
             type="button"
             className="msg-close"

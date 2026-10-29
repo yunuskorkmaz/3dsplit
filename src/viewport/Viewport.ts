@@ -129,7 +129,8 @@ export class Viewport {
       new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }),
     );
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.selectOutline = outlinePass(this.scene, this.camera, '#ff5a00', 5, 4);
+    // X123: seçili parçanın arkada kalan kenarı da belirgin: gövdenin içindeki tapa görünsün
+    this.selectOutline = outlinePass(this.scene, this.camera, '#ff5a00', 5, 4, 0.7);
     this.hoverOutline = outlinePass(this.scene, this.camera, '#d8dde6', 2, 1);
     this.composer.addPass(this.selectOutline);
     this.composer.addPass(this.hoverOutline);
@@ -1682,6 +1683,7 @@ function outlinePass(
   color: string,
   strength: number,
   thickness: number,
+  hidden = 0.35,
 ): OutlinePass {
   const pass = new OutlinePass(new THREE.Vector2(1, 1), scene, camera);
   pass.downSampleRatio = 1;
@@ -1689,7 +1691,7 @@ function outlinePass(
   pass.edgeThickness = thickness;
   pass.edgeGlow = 0;
   pass.visibleEdgeColor.set(color);
-  pass.hiddenEdgeColor.set(color).multiplyScalar(0.35);
+  pass.hiddenEdgeColor.set(color).multiplyScalar(hidden);
   return pass;
 }
 

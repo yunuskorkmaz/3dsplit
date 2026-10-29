@@ -601,6 +601,8 @@ Karar (seçilen: a): (a) yeni parça seçilir + iletide "Ayrık göster" (öneri
 
 Kabul: e2e figür burun kesimi: seçili parça burun tapası; "Ayrık göster" Aralıklı'yı açar; Ctrl+Z sonrası "Kes 1" iletisi yok; kesim sürerken araç penceresinde İptal yok.
 
+Uygulamada: Kesimden sonra boyaya devam etmek için gövdeyi seçmek gerekir (önceden gövde seçili kalıyordu); karar (a)'nın sonucu.
+
 ## X124 Parçalara bölünmüş modelde yönlendirme
 
 - Açılan dosyada birden çok gövde var ve hiçbirinde boya yoksa (Grogu gibi) ileti: "{N} gövde ayrı parça olarak geldi; renkler zaten ayrı. Kesmeden dışa aktarabilirsin; bir gövdenin içinden renk ayırmak için onu seçip boya." Adım şeridi bu durumda "Aktar"ı da etkin gösterir.

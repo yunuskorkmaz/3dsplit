@@ -97,7 +97,14 @@ export interface Message {
   sticky?: boolean;
   /** X110: dışa aktarma eşlemesi, renk kutularıyla gösterilir. */
   filaments?: ExportFilament[];
+  /** X123: iletideki düğme (ör. "Ayrık göster"). */
+  action?: { label: string; run: () => void };
+  /** X123: iletinin anlattığı parçalar; parça sahneden kalkınca (geri al) ileti kapanır. */
+  parts?: string[];
 }
+
+/** X123: ekranda en çok bu kadar ileti; daha eskisi kapanır. */
+export const MAX_MESSAGES = 3;
 
 /**
  * Undo kaydı: boyamada değişen üçgenler, kesimde parça listesinin önceki hali.
@@ -466,14 +473,17 @@ let messageId = 0;
 export function notify(
   kind: Message['kind'],
   text: string,
-  extra: Pick<Message, 'sticky' | 'filaments'> = {},
+  extra: Pick<Message, 'sticky' | 'filaments' | 'action' | 'parts'> = {},
 ): void {
   // X114: aynı ileti ekranda varsa yenisi eklenmez, süresi yenilenir
   const same = get().messages.find((m) => m.kind === kind && m.text === text);
   const id = same?.id ?? ++messageId;
   if (same)
     set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, ...extra } : m)) }));
-  else set((s) => ({ messages: [...s.messages.slice(-4), { id, kind, text, ...extra }] }));
+  else
+    set((s) => ({
+      messages: [...s.messages.slice(1 - MAX_MESSAGES), { id, kind, text, ...extra }],
+    }));
   const old = messageTimers.get(id);
   if (old) clearTimeout(old);
   if (kind !== 'error' && !extra.sticky)
@@ -488,6 +498,13 @@ const messageTimers = new Map<number, ReturnType<typeof setTimeout>>();
 export function dismiss(id: number): void {
   messageTimers.delete(id);
   set((s) => ({ messages: s.messages.filter((m) => m.id !== id) }));
+}
+
+/** X123: sahnede olmayan parçaları anlatan iletiler kapanır (kesim geri alındı). */
+export function dismissStaleMessages(): void {
+  const ids = new Set(get().parts.map((p) => p.id));
+  for (const m of get().messages)
+    if (m.parts?.some((id) => !ids.has(id))) dismiss(m.id);
 }
 
 /** X111: yeni set rengi bu paletten (tabanın grisi hariç). */

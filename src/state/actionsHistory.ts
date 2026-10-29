@@ -3,7 +3,7 @@ import { BASE_SLOT } from '../core/types';
 import { bumpGeometry, onGeometryChanged, onLabelsChanged } from './actionsHooks';
 import { clearLastSmart } from './actionsPaint';
 import { replaceMeshArrays } from './actionsSmooth';
-import { get, type HistoryEntry, set } from './store';
+import { dismissStaleMessages, get, type HistoryEntry, set } from './store';
 import { refreshGeometry } from './topologyCache';
 
 // ---------- geri al / yinele ----------
@@ -91,6 +91,7 @@ function applyEntry(entry: HistoryEntry, reverse: boolean): void {
         }),
       };
     });
+    dismissStaleMessages();
   }
 }
 

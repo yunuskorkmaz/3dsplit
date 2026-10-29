@@ -41,7 +41,15 @@ test('X95: yenileyince kaldığın yerden devam', async ({ page }) => {
   await page.mouse.click(nose.x, nose.y);
   await page.locator('.cut-actions').getByRole('button', { name: 'Kes', exact: true }).click();
   await expect(page.locator('.msg', { hasText: /Kes \d+: / })).toBeVisible({ timeout: 60_000 });
-  // ikinci boya: kesimden sonra da yazılsın
+  // ikinci boya: kesimden sonra da yazılsın. X123: kesimden sonra tapa seçili; gövdeye dön
+  await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    const w = window as any;
+    const body = w.app.store
+      .get()
+      .parts.find((p: { name: string; badge: string }) => p.name === 'figure' && p.badge === 'new');
+    w.app.actions.selectPart(body.id);
+  });
   const { paintVersion } = await state(page);
   await page.keyboard.press('2');
   // açılıştaki ve kesimdeki kayıtlar da "Kaydedildi" yazar: boyadan sonra alınan kaydı bekle.

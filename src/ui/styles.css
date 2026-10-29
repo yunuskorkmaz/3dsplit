@@ -1897,6 +1897,13 @@ fieldset.edge-smoothing {
 .msg-close:focus-visible {
   opacity: 1;
 }
+/* X123: iletideki düğme (Ayrık göster) */
+.msg-action {
+  margin-left: 8px;
+  padding: 1px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
 /* X118: odak alan öğe yapışkan Önizleme / İptal / Kes alanının altında kalmaz */
 .float.side-right {
   scroll-padding-bottom: 130px;

@@ -416,9 +416,6 @@ export async function runCut(): Promise<void> {
       return;
     }
     set({ errorLoops: null });
-    // X113: iç renk iletisi uyarılardan sonra: ekranda en çok 5 ileti kalır, en önemlisi düşmesin
-    for (const w of r.warnings) notify('warn', w);
-    for (const w of innerMessages(r.inner, get().slots, opts.mode, true)) notify('warn', w);
     const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Set ${opts.slot}`;
     const modeName =
       opts.mode === 'socket' ? 'Tapa' : opts.mode === 'keys' ? 'Pimli kes' : 'Yapıştır';
@@ -470,11 +467,15 @@ export async function runCut(): Promise<void> {
       { kind: 'parts', before, after, region: { before: regionBefore, after: regionState() } },
       `${origin.feature} · ${origin.detail} → ${made.join(', ')}`,
     );
-    // X118: Kes düğmesi kapanınca odak kaybolmasın: kesilen parçanın satırına gider
-    set({ previewActive: false, preview: null, focusPartId: newParts[1]?.id ?? newParts[0].id });
+    afterCut(newParts);
+    const tag = { parts: newParts.map((p) => p.id) };
+    // X113: iç renk iletisi uyarılardan sonra, kesim iletisi en sonda: ekranda en çok 3 ileti kalır
+    for (const w of r.warnings) notify('warn', w, tag);
+    for (const w of innerMessages(r.inner, get().slots, opts.mode, true)) notify('warn', w, tag);
     notify(
       'info',
       `${origin.feature}: ${made.join(', ')} ayrıldı (${origin.detail}). Kesilmeden önceki hal Önceki haller'de gizli.`,
+      { ...tag, action: SHOW_APART },
     );
   });
 }
@@ -491,7 +492,6 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
       return;
     }
     set({ errorLoops: null });
-    for (const w of r.warnings) notify('warn', w);
     const n = nextNumbers(get().parts);
     const origin = { feature: `Kes ${n.cut}`, detail: 'Dikiş' };
     const newParts: Part[] = [
@@ -540,13 +540,30 @@ async function runSeamCut(part: Part, loop: number[]): Promise<void> {
       { kind: 'parts', before, after, region: { before: regionBefore, after: regionState() } },
       `${origin.feature} · Dikiş → ${made.join(', ')}`,
     );
-    // X118: Kes düğmesi kapanınca odak kaybolmasın: kesilen parçanın satırına gider
-    set({ previewActive: false, preview: null, focusPartId: newParts[1]?.id ?? newParts[0].id });
+    afterCut(newParts);
+    const tag = { parts: newParts.map((p) => p.id) };
+    for (const w of r.warnings) notify('warn', w, tag);
     notify(
       'info',
       `${origin.feature}: ${made.join(', ')} ayrıldı (dikiş${opts.mode === 'keys' ? ', kesite pim kondu' : ', yapıştırmalık'}). Kesilmeden önceki hal Önceki haller'de gizli.`,
+      { ...tag, action: SHOW_APART },
     );
   });
+}
+
+/** X123: kesim iletisindeki düğme: parçalar Aralıklı görünümde ayrık görünür. */
+const SHOW_APART = {
+  label: 'Ayrık göster',
+  run: () => set((s) => ({ explode: s.explode > 0 ? s.explode : 0.6 })),
+};
+
+/**
+ * Kesimden sonra önizleme kapanır. X123: kesilen yeni parça seçili olur (çerçevesi
+ * gövdenin içinden de görünür). X118: odak onun satırına gider.
+ */
+function afterCut(newParts: Part[]): void {
+  const cut = newParts[1] ?? newParts[0];
+  set({ previewActive: false, preview: null, selectedPartId: cut.id, focusPartId: cut.id });
 }
 
 export async function refineSelected(): Promise<void> {

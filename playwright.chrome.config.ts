@@ -45,6 +45,7 @@ export default defineConfig({
     'cube-flip.spec.ts',
     'open-ask.spec.ts',
     'pin-delete.spec.ts',
+    'after-cut.spec.ts',
   ],
   timeout: 120_000,
   use: {

@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-29):** A1–E2 ve X1–X114 bitti (Sprint 8–13: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-29):** A1–E2 ve X1–X115 bitti (Sprint 8–13: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 davranışları onaylandı. Sıradaki: X115.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 davranışları onaylandı. Sıradaki: X116.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -137,7 +137,7 @@ Kurallar:
 
 | ID | İş | Neden | Kaynak | Emek | Onay | Durum |
 | --- | --- | --- | --- | --- | --- | --- |
-| X115 | Deneme parçasına model olmadan (boş ekran) ve komut aramadan ulaşılır. Üretilen parça modele karışmadan ayrı indirilir; adım şeridini etkilemez | Bulmak 6 boşa eylem; parça modelin yanına düşüyor, her gövde elle gizleniyor | #8, 02b-3 | M | onaylandı | [ ] |
+| X115 | Deneme parçasına model olmadan (boş ekran) ve komut aramadan ulaşılır. Üretilen parça modele karışmadan ayrı indirilir; adım şeridini etkilemez | Bulmak 6 boşa eylem; parça modelin yanına düşüyor, her gövde elle gizleniyor | #8, 02b-3 | M | onaylandı || [x] |
 | X116 | Seçilen tolerans tarayıcıda kalıcı (Tabla ayarı gibi). Sıkı/Normal/Gevşek mm ve çentik sayısını yazar; çentik → değer eşlemesi kalıcı görünür; boşluk 0 iken ileti doğru delik sayısını söyler | Deneme baskısının sonucu sonraki modelde 0,2'ye dönüyor | #8, 02b-1, 02b-2 | S | onaylandı | [ ] |
 
 ### Sprint 15 — metin, klavye, erişilebilirlik, pürüzler
@@ -445,3 +445,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-29 | X112: Çizgi kendini kesen halkayı boyamaz ve söyler (`loopSelfIntersects`). Yumuşatmadan sonra boya kalmadıysa boyama geri alınır, geçmişe adım girmez; başarı iletisi yumuşatmadan sonraki sayıyı yazar. Halka yalnız ilk noktanın üstüne tıklayınca kapanır; imleç oradayken nokta büyür ve beyazlaşır. Modelin arkasındaki yol ve noktalar soluk. Pimli kes "pin için çok ince" uyarısı ve yüzeysel bölgede Pimli kes seçiliyken öneri satırı sonraki adımı söyler. Birim `lasso.test.ts`, e2e `line-feedback.spec.ts`. npm test 125, Chrome e2e 41, e2e 44 | — |
 | 2026-10-29 | X113: Bölgenin içinde kalıp tapaya katılan başka renk adıyla ve üçgen sayısıyla söylenir, sonraki adım verilir; boyasız delik "N boyasız alan" olarak. Çekirdek bilgiyi `CutResult.inner` / `CutPreview.inner` olarak verir, metni `src/state/innerMessages.ts` kurar. Önizleme açıkken aynı bilgi panelde. 1 mm²'den küçük başka renk kırıntısı ileti olmaz. Birim `core.test.ts`, `innerMessages.test.ts`; e2e `inner-paint.spec.ts` (Bluey). npm test 127, Chrome e2e 42, e2e 45 | — |
 | 2026-10-29 | X114: Önizleme kesim hatası bulursa Kes kapanır, neden seçim satırının altında yazar; ileti bir kez çıkar. Parça, set, boya, mod, ayar ya da pim değişince Kes açılır (`previewError` + `previewKey`). Aynı metinli ileti ekranda varsa yenisi eklenmez, süresi yenilenir. Seçimin en büyük boyutu 3 mm'den azsa "Seçim N mm; basılamayabilir." Kesim hata ve uyarı metinleri sonraki adımı söyler. Birim `core.test.ts`, `notify.test.ts`; e2e `cut-blocked.spec.ts`. npm test 129, Chrome e2e 43, e2e 46 | — |
+| 2026-10-29 | X115: Deneme parçası boş ekrandaki düğmeden, komut aramadan ("tolerans", "deneme") ve kesim panelinden açılır; ayrı deneme görünümünde gösterilir (`store.coupon`, `src/state/actionsCoupon.ts`, `src/ui/CouponBar.tsx`). Şerit: Tapa / Pimli kes, pim tarifi, boşluklar ve çentikler, İndir (Bambu 3MF, genel 3MF, STL ZIP; `tolerans-deneme.*`), Kapat (Esc). Sahneye, geçmişe, oturuma ve modelin dışa aktarmasına girmez; açıkken araçlar, geçmiş ve paneller kapalı, komut arama açık. Model açılınca görünüm kapanır. e2e `coupon.spec.ts`; `tools.spec.ts` yeni davranışa göre. npm test 129, Chrome e2e 45, e2e 48 | — |

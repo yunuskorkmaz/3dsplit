@@ -1,7 +1,7 @@
+export { closeCoupon, exportCoupon, openCoupon } from './actionsCoupon';
 export {
   activePaintCount,
   isSlowPreview,
-  makeToleranceCoupon,
   previewKey,
   refineSelected,
   regionFrame,

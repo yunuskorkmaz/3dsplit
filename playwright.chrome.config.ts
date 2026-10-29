@@ -37,6 +37,7 @@ export default defineConfig({
     'line-feedback.spec.ts',
     'inner-paint.spec.ts',
     'cut-blocked.spec.ts',
+    'coupon.spec.ts',
   ],
   timeout: 120_000,
   use: {

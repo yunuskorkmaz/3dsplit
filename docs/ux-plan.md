@@ -494,6 +494,8 @@ Karar (seçilen: a): (a) ayrı deneme görünümü (önerilen; parça görülür
 
 Kabul: e2e boş ekran: düğmeyle deneme görünümü açılır, İndir 3MF'te yalnız plaka + pimler; Kapat sonrası parça listesi boş, geçmiş boş. Figür açıkken: komut aramadan açılır, Kapat sonrası figür aynı, adım şeridi "Seç"te.
 
+Uygulamada: şerit sol üstte (görünüm küpüyle çakışmasın diye). Açıkken üst şerit ve geçmiş çubuğu soluk ve tıklanmaz; başlıktaki Aç, Kaydet ve Dışa aktar modelle çalışmaya devam eder (Aç ya da dosya bırakma görünümü kapatır). Bugünkü kesim panelindeki düğme seçili moda göre açar; boş ekran ve komut arama son kullanılan ya da kesim ayarındaki modu kullanır. Eski "Deneme parçası eklendi…" iletisi yerine bilgi şeritte.
+
 ## X116 Seçilen tolerans kalıcı, deneme parçasından değer seçilir
 
 - Tolerans (`cut.clearance`) tarayıcıda kalıcıdır (Tabla ayarı gibi). Yeni model, "Yok say" ve sayfa yenileme son seçilen değeri kullanır. "Devam et" ile açılan oturum kendi değerini getirir ve o değer yeni tercih olur.

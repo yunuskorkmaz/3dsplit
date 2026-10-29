@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import {
   clearActiveSlot,
+  closeCoupon,
   discardSession,
   hideSelectedPart,
   importFiles,
   lineCancel,
   lineClose,
   lineUndo,
+  openCoupon,
   openSample,
   redo,
   removePin,
@@ -25,6 +27,7 @@ import { type Command, commandFor, keyName, shortcutCapture } from '../state/key
 import { get, set, type Tool, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
 import { CommandPalette } from './CommandPalette';
+import { CouponBar } from './CouponBar';
 import { Header } from './Header';
 import { HelpDialog } from './HelpDialog';
 import { HistoryBar } from './HistoryPanel';
@@ -109,7 +112,8 @@ function SimplifyOffer() {
 
 function EmptyStage() {
   const parts = useStore((s) => s.parts);
-  if (parts.length) return null;
+  const coupon = useStore((s) => !!s.coupon);
+  if (parts.length || coupon) return null;
   return (
     <div className="empty-stage">
       <SessionOffer />
@@ -126,6 +130,13 @@ function EmptyStage() {
           Örnek modeli aç
         </button>
       </div>
+      <button
+        type="button"
+        onClick={() => openCoupon()}
+        title="Modelden önce bas: pim/tapa için hangi boşluğun oturduğunu gösterir"
+      >
+        Tolerans deneme parçası
+      </button>
     </div>
   );
 }
@@ -176,6 +187,11 @@ function useShortcuts() {
       if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         set((s) => ({ paletteOpen: !s.paletteOpen }));
+        return;
+      }
+      // X115: deneme görünümünde araç kısayolu yok; Esc modele döner (komut arama açık)
+      if (get().coupon) {
+        if (e.key === 'Escape') closeCoupon();
         return;
       }
       if (mod && e.key.toLowerCase() === 'z') {
@@ -248,6 +264,7 @@ function useShortcuts() {
 
 export function App() {
   useShortcuts();
+  const coupon = useStore((s) => !!s.coupon);
   useEffect(() => startSessionAutosave(), []);
   useEffect(() => startSuggestionWatch(), []);
   return (
@@ -260,25 +277,35 @@ export function App() {
       }}
     >
       <Header />
-      <ToolBar />
+      {/* X115: deneme görünümünde araçlar ve geçmiş kapalı */}
+      <div className="contents" inert={coupon}>
+        <ToolBar />
+      </div>
       <main className="stage">
         <ViewportHost />
         <EmptyStage />
-        <SimplifyOffer />
+        <CouponBar />
+        {!coupon && <SimplifyOffer />}
         <ViewCube />
         <NavBar />
-        <ValueTags />
-        <div className="float side-left">
-          <ModelPanel />
-        </div>
-        <div className="float side-right tool-window">
-          <ToolPanel />
-          <CutPanel />
-          <CutActions />
-        </div>
+        {!coupon && <ValueTags />}
+        {!coupon && (
+          <div className="float side-left">
+            <ModelPanel />
+          </div>
+        )}
+        {!coupon && (
+          <div className="float side-right tool-window">
+            <ToolPanel />
+            <CutPanel />
+            <CutActions />
+          </div>
+        )}
         <StatusBar />
       </main>
-      <HistoryBar />
+      <div className="contents" inert={coupon}>
+        <HistoryBar />
+      </div>
       <HelpDialog />
       <CommandPalette />
     </div>

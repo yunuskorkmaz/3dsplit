@@ -11,6 +11,7 @@ import {
 import { type ImportedObject, importFile } from '../io/importFile';
 import { PROJECT_EXTENSION, readProject, writeProject } from '../io/project';
 import { geometry } from '../worker/client';
+import { closeCoupon } from './actionsCoupon';
 import { busy } from './actionsHooks';
 import { clearPaintSession } from './actionsPaint';
 import { startNewSession } from './actionsSession';
@@ -27,6 +28,8 @@ import {
 } from './store';
 
 export async function importFiles(files: FileList | File[]): Promise<void> {
+  // X115: model açılınca deneme görünümü kapanır
+  closeCoupon();
   for (const file of Array.from(files)) {
     if (file.name.toLowerCase().endsWith(PROJECT_EXTENSION)) {
       await openProject(file);
@@ -40,6 +43,7 @@ export async function importFiles(files: FileList | File[]): Promise<void> {
 
 /** X83: örnek figür tarayıcıda üretilir, dosya gibi açılır. */
 export async function openSample(): Promise<void> {
+  closeCoupon();
   await busy('Örnek model hazırlanıyor…', async () => {
     const m = await geometry.sample();
     await addObjects([{ name: 'örnek figür', positions: m.positions, indices: m.indices }]);

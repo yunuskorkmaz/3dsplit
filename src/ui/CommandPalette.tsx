@@ -9,6 +9,7 @@ import {
   export3mfGeneric,
   exportPartStl,
   exportStlZip,
+  openCoupon,
   openSample,
   redo,
   refineSelected,
@@ -231,6 +232,13 @@ function useItems(): Item[] {
         words: 'dosya figür',
         icon: 'open',
         run: () => openSample(),
+      },
+      {
+        id: 'file.coupon',
+        label: 'Tolerans deneme parçası',
+        words: 'deneme tolerans pim boşluk test kupon',
+        icon: 'keys',
+        run: () => openCoupon(),
       },
       {
         id: 'file.previous',

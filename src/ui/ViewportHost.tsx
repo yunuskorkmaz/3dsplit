@@ -63,6 +63,10 @@ let activeViewport: Viewport | null = null;
  * konmaz: büyük modelde her kesim GPU'da bir kopya daha tutuyordu. Gösterilince kurulur.
  */
 function partViews(parts: Part[], selectedPartId: string | null) {
+  // X115: deneme görünümünde yalnız deneme parçası çizilir
+  const coupon = get().coupon;
+  if (coupon)
+    return coupon.parts.map((p) => ({ id: p.id, mesh: p.mesh, visible: true, selected: false }));
   return parts
     .filter((p) => p.visible || p.badge !== 'source')
     .map((p) => ({
@@ -188,6 +192,8 @@ export function ViewportHost() {
 
     const vp = new Viewport(ref.current, {
       onDown(hit: Hit, e: PointerEvent) {
+        // X115: deneme görünümünde araç yok; sürükleme kamerayı döndürür
+        if (get().coupon) return false;
         const { tool, selectedPartId: sel } = get();
         // X79: seçili olmayan parçaya tık yalnız onu seçer; araç seçili parçada çalışır
         if (hit.partId !== sel) {
@@ -330,9 +336,19 @@ export function ViewportHost() {
     };
   }, []);
 
+  const coupon = useStore((s) => s.coupon);
   useEffect(() => {
+    void coupon;
     vpRef.current?.sync(partViews(parts, selectedPartId), colorsFor);
-  }, [parts, selectedPartId, slots]);
+  }, [parts, selectedPartId, slots, coupon]);
+  // X115: deneme görünümü açılınca ve kapanınca görünüm sığdırılır
+  const couponOpen = !!coupon;
+  const couponWas = useRef(false);
+  useEffect(() => {
+    if (couponOpen === couponWas.current) return;
+    couponWas.current = couponOpen;
+    vpRef.current?.fitAll();
+  }, [couponOpen]);
 
   // X80: boş sahneye açılan dosyanın bütün parçaları gelince görünüm yeniden sığdırılır
   // (ilk sığdırma ilk parçaya göre yapılıyor; çok parçalı dosyada diğerleri dışarıda kalıyordu)

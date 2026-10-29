@@ -139,9 +139,27 @@ test('X36 çizgi aracı, X35 deneme parçası, X27 ayrık görünüm', async ({ 
   expect(sides.left).toBeGreaterThan(20);
   expect(Math.abs(sides.left - sides.right) / sides.right).toBeLessThan(0.3);
 
-  // tolerans deneme parçası: plaka + 3 pim
+  // tolerans deneme parçası: plaka + 3 pim, ayrı görünümde (X115)
   await page.getByRole('button', { name: 'Deneme parçası üret' }).click();
-  await expect(page.locator('ul.parts li')).toHaveCount(5, { timeout: 30_000 });
+  await expect(page.getByRole('toolbar', { name: 'Tolerans deneme parçası' })).toBeVisible({
+    timeout: 30_000,
+  });
+  expect((await state(page)).coupon.parts.length).toBe(4);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('ul.parts li')).toHaveCount(1);
+
+  // ayrık görünüm için yana kaydırılmış ikinci gövde (deneme parçası artık sahneye girmiyor)
+  await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: geliştirme kancası
+    const { store } = (window as any).app;
+    const p = store.get().parts[0];
+    const positions = Float32Array.from(p.mesh.positions);
+    for (let i = 0; i < positions.length; i += 3) positions[i] += 80;
+    store.set({
+      parts: [...store.get().parts, { ...p, id: 'copy', mesh: { ...p.mesh, positions } }],
+    });
+  });
+  await expect(page.locator('ul.parts li')).toHaveCount(2);
 
   // ayrık görünüm: parçalar merkezden uzaklaşır
   await page.keyboard.press('x');

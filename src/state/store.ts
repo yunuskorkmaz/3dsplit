@@ -17,6 +17,15 @@ export type Tool = 'smart' | 'brush' | 'erase' | 'smooth' | 'bucket' | 'pin' | '
 /** source: kesilmiş eski parça (sarı rozet), new: kesimden yeni çıkan parça (mavi rozet). */
 export type PartBadge = 'source' | 'new' | null;
 
+/** X115: deneme görünümünde gösterilen tolerans deneme parçası. */
+export interface CouponView {
+  mode: 'socket' | 'keys';
+  clearances: number[];
+  /** Şeritte pimin tarifi, ör. "silindir Ø4 × 8 mm". */
+  pinText: string;
+  parts: { id: string; name: string; mesh: LabeledMesh }[];
+}
+
 export interface Part {
   id: string;
   name: string;
@@ -224,6 +233,11 @@ export interface AppState {
   };
   /** X27: patlatılmış görünüm çarpanı (0: kapalı). Sadece görüntü. */
   explode: number;
+  /**
+   * X115: deneme görünümü. Plaka ve pimler sahneye, geçmişe ve oturuma girmez;
+   * açıkken görünümde yalnız bunlar çizilir.
+   */
+  coupon: CouponView | null;
   /** X26: yardım penceresi açık mı. */
   helpOpen: boolean;
   /** X96: 1M üçgeni aşan model açılınca sadeleştirme önerisi (parçalar ve toplam üçgen). */
@@ -326,6 +340,7 @@ export const useStore = create<AppState>(() => ({
   hiddenSlots: [],
   line: { partId: null, anchors: [], path: [] },
   explode: 0,
+  coupon: null,
   helpOpen: false,
   session: { saving: false, savedAt: null, offer: null },
   simplifyOffer: null,

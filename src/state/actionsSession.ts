@@ -5,6 +5,7 @@ import {
   type SessionSlot,
   saveSession,
 } from '../io/session';
+import { closeCoupon } from './actionsCoupon';
 import { clearPaintSession } from './actionsPaint';
 import { type AppState, get, notify, reservePartIds, set, useStore } from './store';
 
@@ -113,6 +114,7 @@ export function startSessionAutosave(): () => void {
 
 /** Kayıtlı oturumu açar; `previous`: bir önceki (ezilmiş) oturum. */
 export async function restoreSession(slot: SessionSlot = 'current'): Promise<void> {
+  closeCoupon();
   const [meta, data] = await Promise.all([loadSessionMeta(slot), loadSession(slot)]);
   if (!data?.parts.length) {
     set((s) => ({ session: { ...s.session, offer: null } }));

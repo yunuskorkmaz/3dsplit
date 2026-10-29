@@ -7,7 +7,7 @@ import {
   clearActiveSlot,
   clearPins,
   isSlowPreview,
-  makeToleranceCoupon,
+  openCoupon,
   previewKey,
   runCut,
   setSocketDirection,
@@ -458,7 +458,7 @@ export function CutPanel() {
             </p>
             <button
               type="button"
-              onClick={makeToleranceCoupon}
+              onClick={() => openCoupon(mode === 'keys' ? 'keys' : 'socket')}
               title="Seçili pim/tapa ile boşluğun −0.1, kendisi ve +0.1 mm'si için delikli küçük plaka ve pimler üretir; önce bunu basıp en iyi oturanı seçin"
             >
               Deneme parçası üret

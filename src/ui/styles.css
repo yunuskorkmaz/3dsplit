@@ -1811,3 +1811,42 @@ fieldset.edge-smoothing {
   font-size: 12px;
   color: #aab2c0;
 }
+/* X115: deneme görünümünün şeridi */
+.coupon-bar {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  /* sağda görünüm küpüne yer kalır */
+  max-width: calc(100% - 180px);
+  padding: 6px 10px;
+  background: #1f2024ee;
+  border: 1px solid #3a3c42;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.coupon-bar .row.segmented {
+  margin: 0;
+}
+.coupon-bar button {
+  white-space: nowrap;
+}
+.coupon-bar .coupon-info {
+  color: #bbb;
+}
+.coupon-bar .menu-list {
+  left: auto;
+  right: 0;
+  min-width: 240px;
+}
+/* X115: düzeni bozmayan sarmalayıcı (inert için) */
+.contents {
+  display: contents;
+}
+.contents[inert] > * {
+  opacity: 0.4;
+}

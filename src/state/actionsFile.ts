@@ -5,6 +5,7 @@ import { assignFilaments, write3mfBambu } from '../io/bambu3mf';
 import {
   downloadBytes,
   type ExportObject,
+  fileSafeName,
   write3mf,
   writeStl,
   writeStlZip,
@@ -75,6 +76,7 @@ function clearScene(): void {
     focusPartId: null,
     suggestion: null,
     simplifyOffer: null,
+    sourceName: null,
     undoStack: [],
     redoStack: [],
   });
@@ -88,9 +90,13 @@ async function openFiles(list: File[], replaced = false): Promise<void> {
       await openProject(file);
       continue;
     }
-    await busy(`${file.name} yükleniyor…`, async () =>
-      addObjects(await importFile(file), file.name.replace(/\.[^.]+$/, ''), replaced && i === 0),
-    );
+    const stem = file.name.replace(/\.[^.]+$/, '');
+    // X126: boş sahneye açılan dosya dışa aktarılan dosyalara adını verir
+    const first = !get().parts.length;
+    await busy(`${file.name} yükleniyor…`, async () => {
+      await addObjects(await importFile(file), stem, replaced && i === 0);
+      if (first) set({ sourceName: stem });
+    });
   }
 }
 
@@ -99,7 +105,9 @@ export async function openSample(): Promise<void> {
   closeCoupon();
   await busy('Örnek model hazırlanıyor…', async () => {
     const m = await geometry.sample();
+    const first = !get().parts.length;
     await addObjects([{ name: 'örnek figür', positions: m.positions, indices: m.indices }]);
+    if (first) set({ sourceName: 'ornek-figur' });
   });
 }
 
@@ -286,6 +294,7 @@ async function openProject(file: File): Promise<void> {
       cutModeManual: false,
       undoStack: [],
       redoStack: [],
+      sourceName: file.name.replace(/\.[^.]+$/, ''),
     });
     notify('info', `${file.name}: ${data.parts.length} parça açıldı.`);
   });
@@ -336,6 +345,16 @@ function ensureFilamentSlots(ids: number[], colors: string[]): void {
   set({ slots });
 }
 
+/**
+ * X126: dışa aktarılan dosyanın adı açılan ilk dosyadan gelir:
+ * `Bluey_Color` → `Bluey_Color-parcalar.3mf`. Yoksa ilk gövdenin adı.
+ */
+function exportName(suffix: string): string {
+  const { sourceName, parts } = get();
+  const base = sourceName ?? parts.find((p) => p.badge !== 'source')?.name ?? '';
+  return `${fileSafeName(base, '3dsplit')}-${suffix}`;
+}
+
 function exportObjects(): ExportObject[] {
   const { parts, slots } = get();
   return parts
@@ -367,7 +386,7 @@ export function export3mf(): void {
           );
       },
     }),
-    `${title}.3mf`,
+    `${exportName('parcalar')}.3mf`,
     'model/3mf',
   );
   // X110: renkler dosyaya yazılamıyor (bkz. bambu3mf.ts): eşleme kapanmayan iletide ve menüde
@@ -383,16 +402,17 @@ export function export3mf(): void {
 export function export3mfGeneric(): void {
   const objs = exportObjects();
   if (!objs.length) return notify('warn', 'Dışa aktarılacak görünür parça yok.');
-  downloadBytes(write3mf(objs), 'parts-generic.3mf', 'model/3mf');
+  downloadBytes(write3mf(objs), `${exportName('genel')}.3mf`, 'model/3mf');
 }
 
 export function exportStlZip(): void {
   const objs = exportObjects();
   if (!objs.length) return notify('warn', 'Dışa aktarılacak görünür parça yok.');
-  downloadBytes(writeStlZip(objs), 'parts.zip', 'application/zip');
+  downloadBytes(writeStlZip(objs), `${exportName('parcalar')}.zip`, 'application/zip');
 }
 
 export function exportPartStl(id: string): void {
   const p = get().parts.find((x) => x.id === id);
-  if (p) downloadBytes(writeStl(p.mesh, p.name), `${p.name}.stl`, 'model/stl');
+  if (p)
+    downloadBytes(writeStl(p.mesh, p.name), `${fileSafeName(p.name, 'parça')}.stl`, 'model/stl');
 }

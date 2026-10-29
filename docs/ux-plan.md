@@ -627,6 +627,8 @@ Kabul: e2e boş ekran: Fırça düğmesi disabled; Space ileti "Önce bir model 
 
 Kabul: birim testi dosya adı temizleme; e2e figure.stl açılıp Bambu 3MF indirilince ad `figure-parcalar.3mf`.
 
+Uygulamada: Yerine aç (X121) adı yeni dosyanınkiyle değiştirir; Sahneye ekle değiştirmez. Projeyi kaydet (.3dsplit) adı değişmedi (ilk gövde).
+
 ## X127 Uzun kesimde ilerleme
 
 - Meşgul kartı aşamayı sırayla yazar: "Aşama 3/6 · Tapa hacmi" ve bir ilerleme çubuğu (aşama sayısına göre). Aşama listesi her kesim türü için sabit (Karar a).

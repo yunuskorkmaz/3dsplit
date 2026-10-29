@@ -56,6 +56,7 @@ function snapshot(s: AppState): SessionData {
     selectedPartId: s.selectedPartId,
     cut: s.cut,
     pins: s.pins,
+    sourceName: s.sourceName,
   };
 }
 
@@ -142,6 +143,7 @@ export async function restoreSession(slot: SessionSlot = 'current'): Promise<voi
     selectedPartId: data.selectedPartId,
     cut: { ...s.cut, ...(data.cut as object) },
     pins: Array.isArray(data.pins) ? data.pins : [],
+    sourceName: data.sourceName ?? null,
     selectedPin: -1,
     preview: null,
     previewActive: false,

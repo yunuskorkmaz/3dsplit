@@ -288,6 +288,8 @@ export interface AppState {
   messages: Message[];
   /** X110: son Bambu 3MF'in filament eşlemesi (sayfa yenilenene kadar). */
   lastExport: ExportFilament[] | null;
+  /** X126: sahneye açılan ilk dosyanın uzantısız adı; dışa aktarılan dosyalar bu adı alır. */
+  sourceName: string | null;
   /** X116: son üretilen deneme parçasının çentik → boşluk eşlemesi (tarayıcıda kalır). */
   lastCoupon: LastCoupon | null;
   /** Etiketler yerinde değiştiği için yeniden boyamayı tetikleyen sayaç. */
@@ -413,6 +415,7 @@ export const useStore = create<AppState>(() => ({
   busyStarted: 0,
   messages: [],
   lastExport: null,
+  sourceName: null,
   lastCoupon: toolPrefs.lastCoupon,
   paintVersion: 0,
   undoStack: [],

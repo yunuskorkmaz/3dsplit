@@ -35,6 +35,8 @@ export interface SessionData {
   /** Kesim ayarları ve pimler: biçimi store'da; burada olduğu gibi saklanır. */
   cut: unknown;
   pins: unknown;
+  /** X126: dışa aktarılan dosyaların adı (açılan ilk dosya). Eski kayıtta yok. */
+  sourceName?: string | null;
 }
 
 function open(): Promise<IDBDatabase> {

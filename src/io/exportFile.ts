@@ -57,7 +57,7 @@ export function writeStlZip(objects: ExportObject[]): Uint8Array {
   const files: Record<string, Uint8Array> = {};
   const used = new Set<string>();
   for (const o of objects)
-    files[`${uniqueName(safeName(o.name), used)}.stl`] = writeStl(o.mesh, o.name);
+    files[`${uniqueName(fileSafeName(o.name, 'parça'), used)}.stl`] = writeStl(o.mesh, o.name);
   return zipSync(files);
 }
 
@@ -123,8 +123,16 @@ function fmt(v: number): string {
   return Number.isInteger(v) ? String(v) : v.toFixed(5);
 }
 
-function safeName(name: string): string {
-  return name.replace(/[^\p{L}\p{N}_ -]+/gu, '_').trim() || 'part';
+/**
+ * X126: dosya adı okunur kalır: Türkçe harfler, boşluk, nokta ve parantez korunur;
+ * yalnız dosya sisteminde geçersiz karakterler (`/ \ : * ? " < > |` ve kontrol
+ * karakterleri) `-` olur.
+ */
+export function fileSafeName(name: string, fallback = 'parçalar'): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: kontrol karakterleri dosya adında geçersiz
+  const clean = name.replace(/[/\\:*?"<>|\u0000-\u001f]/g, '-').trim();
+  // baştaki ve sondaki nokta gizli dosya ya da uzantısız ad üretir
+  return clean.replace(/^\.+|\.+$/g, '').trim() || fallback;
 }
 
 function uniqueName(name: string, used: Set<string>): string {

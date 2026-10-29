@@ -56,7 +56,9 @@ export function findIslands(
   }
   if (selected === 0) throw new CutError('Bu slotta boyalı üçgen yok.');
   if (selected === triCount)
-    throw new CutError('Bölge parçanın tamamını kaplıyor; kesilecek sınır yok.');
+    throw new CutError(
+      'Bölge bütün gövdeyi kaplıyor; kesilecek sınır yok. Bir kısmını Silgi ile çıkar.',
+    );
 
   const { adj, normals, areas } = meshTopology(mesh);
   const { component, count } = connectedComponents(triCount, adj, mask);
@@ -107,7 +109,10 @@ export function findIslands(
       key: group[0],
     });
   }
-  if (dropped) warnings.push(`${dropped} çok küçük boyalı kırıntı atlandı (1 mm² altı).`);
+  if (dropped)
+    warnings.push(
+      `${dropped} küçük boya lekesi atlandı (1 mm² altı). Kesmek istiyorsan Fırça ile büyüt.`,
+    );
   if (inner) inner.push(...innerPaint(mesh.labels, adj, areas, absorbedAll, slot));
   return islands;
 }
@@ -355,7 +360,9 @@ function cutRegionImpl(mesh: LabeledMesh, opts: CutOptions): CutResult {
       // hacimsiz parça (ör. yön bölgeye paralel) başarı sayılmaz
       const solid = r.parts.filter((p) => Math.abs(signedVolume(p)) >= 1e-3);
       if (solid.length < r.parts.length)
-        r.warnings.push(`${r.parts.length - solid.length} hacimsiz parça atlandı.`);
+        r.warnings.push(
+          `${r.parts.length - solid.length} parça hacimsiz çıktı ve atlandı; Tapa yönünü değiştir.`,
+        );
       const parts = mergeNestedParts(solid, r.warnings);
       if (!parts.length)
         throw new CutError('Kesim hacimli bir parça üretmedi (yön bölgeye paralel olabilir).');

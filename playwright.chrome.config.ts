@@ -36,6 +36,7 @@ export default defineConfig({
     'region-color.spec.ts',
     'line-feedback.spec.ts',
     'inner-paint.spec.ts',
+    'cut-blocked.spec.ts',
   ],
   timeout: 120_000,
   use: {

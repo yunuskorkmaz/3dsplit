@@ -465,3 +465,5 @@ Uygulamada: ad eki çekimlenmez, ileti "…tapayı seçip Filament 4 setini kes.
   - "N hacimsiz parça atlandı" → "N parça hacimsiz çıktı ve atlandı; Tapa yönünü değiştir."
 
 Kabul: e2e figür: Kova ile bütün gövde boyanınca Kes kapalı ve neden yazılı, ileti bir kez; tek üçgenlik seçimde boyut uyarısı; birim testi yeni hata metinleri.
+
+Uygulamada: Kes yalnız önizleme çalıştıysa kapanır (önizleme kapalıyken hata bilinmez). Önizleme açıkken girdi değişince önizleme yeniden hesaplanır ve aynı hata yine Kes'i kapatır; ileti tekrar çıkmaz. Dikiş önizlemesi bu kurala girmez (Kes zaten halka hazır olunca açık). "süpürme kullanıldı" ve "süpürme + prizma" uyarıları aynı metne indi. Boyut uyarısı bölgenin sınır kutusunun en uzun kenarıdır. E2e'de tek üçgen yerine küçük fırça (0,3 mm) tıklaması.

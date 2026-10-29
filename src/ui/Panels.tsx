@@ -8,6 +8,7 @@ import {
   clearPins,
   isSlowPreview,
   makeToleranceCoupon,
+  previewKey,
   runCut,
   setSocketDirection,
   togglePreview,
@@ -61,6 +62,8 @@ export function CutActions() {
   }, [paintVersion, selectedPartId, activeSlot, hasParts]);
   // X107: Dikiş'te boya kesilmez; Kes yalnız halka hazırsa açık
   const disabled = !hasParts || (tool === 'seam' ? !seamReady : !painted);
+  // X114: önizleme kesimin olmayacağını bulduysa girdiler değişene kadar Kes kapalı
+  const blocked = useStore(blockedReason);
   // X103: mod öneriyi izliyorsa öneri gelene kadar Kes bekler
   const waiting = useStore((s) => s.suggesting && !s.cutModeManual && s.tool !== 'seam');
   return (
@@ -89,10 +92,16 @@ export function CutActions() {
         </button>
         <button
           type="button"
-          disabled={disabled || waiting}
+          disabled={disabled || waiting || (tool !== 'seam' && !!blocked)}
           className="primary"
           onClick={runCut}
-          title={waiting ? 'Kesim modu belirleniyor; öneri gelince açılır' : undefined}
+          title={
+            waiting
+              ? 'Kesim modu belirleniyor; öneri gelince açılır'
+              : tool !== 'seam' && blocked
+                ? blocked
+                : undefined
+          }
         >
           Kes
         </button>
@@ -101,17 +110,42 @@ export function CutActions() {
   );
 }
 
+/** X114: önizlemenin bulduğu, girdiler değişmeden geçerli kesim hatası. */
+function blockedReason(s: ReturnType<typeof get>): string | null {
+  return s.previewError && s.previewError.key === previewKey(s) ? s.previewError.text : null;
+}
+
+/** X114: bundan küçük seçim basılamayabilir (en büyük boyut), mm. */
+const MIN_PRINT_SIZE = 3;
+
 /** X86: kesilecek seçim: renk, parça, üçgen sayısı; × o boyayı siler (Ctrl+Z geri getirir). */
 function SelectionRow() {
   const slot = useStore((s) => s.slots.find((x) => x.id === s.activeSlot));
   const part = useStore((s) => s.parts.find((p) => p.id === s.selectedPartId));
   const paintVersion = useStore((s) => s.paintVersion);
-  const count = useMemo(() => {
+  const blocked = useStore(blockedReason);
+  // üçgen sayısı ve bölgenin en büyük boyutu (sınır kutusu)
+  const { count, size } = useMemo(() => {
     void paintVersion;
-    if (!part || !slot || slot.id === 0) return 0;
+    if (!part || !slot || slot.id === 0) return { count: 0, size: 0 };
+    const { labels, indices, positions } = part.mesh;
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
     let n = 0;
-    for (const l of part.mesh.labels) if (l === slot.id) n++;
-    return n;
+    for (let t = 0; t < labels.length; t++) {
+      if (labels[t] !== slot.id) continue;
+      n++;
+      for (let k = 0; k < 3; k++) {
+        const v = indices[3 * t + k];
+        for (let a = 0; a < 3; a++) {
+          const x = positions[3 * v + a];
+          if (x < lo[a]) lo[a] = x;
+          if (x > hi[a]) hi[a] = x;
+        }
+      }
+    }
+    const extent = n ? Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) : 0;
+    return { count: n, size: extent };
   }, [part, slot, paintVersion]);
   if (!part) return null;
   // X104: Taban aktifken kesilecek renk seçilmemiştir; boyamak değil renge tıklamak gerekir
@@ -125,22 +159,35 @@ function SelectionRow() {
     return (
       <div className="selection-row empty">Seçim yok: önce bir bölge boyayın ({slot.name}).</div>
     );
+  const notes: string[] = [];
+  if (blocked) notes.push(blocked);
+  if (size < MIN_PRINT_SIZE)
+    notes.push(
+      `Seçim ${size.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} mm; basılamayabilir.`,
+    );
   return (
-    <div className="selection-row" title="Kesilecek bölge">
-      <span className="swatch" style={{ background: slot.color }} />
-      <span className="sel-text">
-        <b>{slot.name}</b> · {part.name} · {count.toLocaleString('tr-TR')} üçgen
-      </span>
-      <button
-        type="button"
-        className="sel-clear"
-        aria-label="Seçimi temizle"
-        title="Bu boyayı siler (Ctrl+Z geri getirir)"
-        onClick={clearActiveSlot}
-      >
-        ×
-      </button>
-    </div>
+    <>
+      <div className="selection-row" title="Kesilecek bölge">
+        <span className="swatch" style={{ background: slot.color }} />
+        <span className="sel-text">
+          <b>{slot.name}</b> · {part.name} · {count.toLocaleString('tr-TR')} üçgen
+        </span>
+        <button
+          type="button"
+          className="sel-clear"
+          aria-label="Seçimi temizle"
+          title="Bu boyayı siler (Ctrl+Z geri getirir)"
+          onClick={clearActiveSlot}
+        >
+          ×
+        </button>
+      </div>
+      {notes.map((n) => (
+        <div key={n} className="selection-note">
+          {n}
+        </div>
+      ))}
+    </>
   );
 }
 

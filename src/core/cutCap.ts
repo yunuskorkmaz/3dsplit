@@ -39,7 +39,9 @@ export function triangulateLoop(positions: Float32Array, loop: number[], normal?
     kept.pop();
   }
   if (kept.length < 3)
-    throw new CutError('Sınır halkası kapak düzleminde çökük; kapak üretilemedi.');
+    throw new CutError(
+      "Sınır kapak için fazla kıvrık. Kenarı düzelt'i aç, Yumuşat ile kenarı düzelt ya da Düzlemle kes'i dene.",
+    );
 
   const poly = kept.map((i) => pts[i]);
   // izdüşüm yönüne göre halka saat yönünde de olabilir; üçgenler halkayla aynı yöne çevrilir

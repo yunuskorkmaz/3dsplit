@@ -100,7 +100,7 @@ export function planeSplit(
     }
     if (!chosen)
       throw new CutError(
-        'Düzlem kesimi bölgeyi içeren bir parça üretmedi (düzlem bölgenin arkasında kalıyor olabilir).',
+        'Bu halkadan düzlemle kesilemiyor. Halkayı bölgenin daha düz yerinden geçir ya da Tapa ile kes.',
       );
     parts.push(chosen);
     if (gap > 0) {

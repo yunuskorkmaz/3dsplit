@@ -246,6 +246,8 @@ export interface AppState {
   /** Socket yön gizmosu açık mı. */
   directionGizmo: boolean;
   preview: CutPreview | null;
+  /** X114: önizlemenin bulduğu kesim hatası; `key` girdiler değişmedikçe Kes kapalı. */
+  previewError: { key: string; text: string } | null;
   /** D5: son kesim hatasının sorunlu sınır halkaları (kırmızı gösterilir). */
   errorLoops: Vec3[][] | null;
   /** X5: aktif slot bölgesi için kesim modu önerisi. */
@@ -330,6 +332,7 @@ export const useStore = create<AppState>(() => ({
   paletteOpen: false,
   directionGizmo: false,
   preview: null,
+  previewError: null,
   previewActive: false,
   slowPreview: [],
   suggestion: null,
@@ -388,12 +391,25 @@ export function notify(
   text: string,
   extra: Pick<Message, 'sticky' | 'filaments'> = {},
 ): void {
-  const id = ++messageId;
-  set((s) => ({ messages: [...s.messages.slice(-4), { id, kind, text, ...extra }] }));
-  if (kind !== 'error' && !extra.sticky) setTimeout(() => dismiss(id), 8000);
+  // X114: aynı ileti ekranda varsa yenisi eklenmez, süresi yenilenir
+  const same = get().messages.find((m) => m.kind === kind && m.text === text);
+  const id = same?.id ?? ++messageId;
+  if (same)
+    set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, ...extra } : m)) }));
+  else set((s) => ({ messages: [...s.messages.slice(-4), { id, kind, text, ...extra }] }));
+  const old = messageTimers.get(id);
+  if (old) clearTimeout(old);
+  if (kind !== 'error' && !extra.sticky)
+    messageTimers.set(
+      id,
+      setTimeout(() => dismiss(id), 8000),
+    );
 }
 
+const messageTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
 export function dismiss(id: number): void {
+  messageTimers.delete(id);
   set((s) => ({ messages: s.messages.filter((m) => m.id !== id) }));
 }
 

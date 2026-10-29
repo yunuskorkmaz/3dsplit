@@ -2,6 +2,7 @@ export {
   activePaintCount,
   isSlowPreview,
   makeToleranceCoupon,
+  previewKey,
   refineSelected,
   regionFrame,
   runCut,

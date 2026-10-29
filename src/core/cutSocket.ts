@@ -21,6 +21,10 @@ import { boundaryLoops } from './topology';
 import { BASE_SLOT, type LabeledMesh, type MeshData, type Vec3 } from './types';
 import { add, normalize, scale, sub, vertexAt } from './vec';
 
+/** X114: tapa tek yönden tam görünmeyen bölgede yaklaşık; sonraki adım. */
+const NOT_VISIBLE =
+  'Bölge tek yönden tam görünmüyor; tapa yaklaşık. Tapa yönünü değiştir ya da bölgeyi küçült.';
+
 /**
  * Yükseklik alanı olmayan bölgeler için yedek: `dir`'e bakan üçgenler tek
  * parça süpürülür, bakmayanlar için üçgen başına prizma eklenir.
@@ -69,7 +73,7 @@ function prismUnion(
   let prismTris = sweptAll ? bad : island.tris;
   if (prismTris.length > PRISM_LIMIT) {
     if (sweptAll && pieces.length) {
-      warnings.push('Bölge çok yoğun; süpürme kullanıldı, arkaya bakan üçgenler atlandı.');
+      warnings.push(NOT_VISIBLE);
       return pieces.length === 1 ? pieces[0] : scope.keep(kernel().Manifold.union(pieces));
     }
     prismTris = prismTris
@@ -222,7 +226,7 @@ export function socketVolume(
       ),
     );
   }
-  warnings.push('Bölge seçilen yönden tam görünmüyor; yedek yöntem (süpürme + prizma) kullanıldı.');
+  warnings.push(NOT_VISIBLE);
   return prismUnion(mesh, island, dir, depthOf(island, opts), eps, scope, warnings);
 }
 

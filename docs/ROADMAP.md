@@ -4,9 +4,9 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 Özellik numaraları [proje dokümanındaki](project-brief.md) tabloya karşılık gelir. Ek işler `X` ile numaralanır.
 
-**Durum (2026-10-29):** A1–E2 ve X1–X113 bitti (Sprint 8–12: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
+**Durum (2026-10-29):** A1–E2 ve X1–X114 bitti (Sprint 8–13: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 davranışları onaylandı. Sıradaki: X114.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sıradaki: Sprint 14 (X115–X120) davranışlarının yazılıp onaylanması.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -131,7 +131,7 @@ Kurallar:
 | X111 | Boyalı bölgeden seçilen set o bölgenin rengini alır; yeni set modelde olmayan bir renk alır | Beyaz göz tapası turuncu filamente gidiyor | #7 | S | onaylandı | [x] |
 | X112 | Çizgi: boyanan alan sıfırsa ya da yumuşatmadan sonra kalmadıysa başarı iletisi yok, neden söylenir. Halka tek yüzü sardıysa ve mod Pimli kes ise kolun etrafından geçmek ya da Dikiş önerilir. Kapatma yalnız ilk noktanın üstünde; örtülen noktalar soluk | "16 üçgen boyandı" deyip boş; kol görevinde 2,5 dk takılma | #5, #24, #25 | M | onaylandı || [x] |
 | X113 | Bölge içindeki başka renkli alan "boyanmamış delik" diye tapaya katılmaz | Siyah göz bebeği beyaz göz tapasına giriyor | #17 | M | onaylandı || [x] |
-| X114 | Kesim olmayacağı bilinirken Kes kapalı ve nedeni yazılı. Basılamayacak kadar küçük seçim uyarılır. Kesim hataları ne yapılacağını söyler (Kenarı düzelt, Yumuşat, Düzlemle kes) | Aynı hata 3 kez; 1 üçgenden 2,6 mm tapa; "kapak düzleminde çökük" gibi iletiler | #12, #19, 02b-10 | S | onaylandı | [ ] |
+| X114 | Kesim olmayacağı bilinirken Kes kapalı ve nedeni yazılı. Basılamayacak kadar küçük seçim uyarılır. Kesim hataları ne yapılacağını söyler (Kenarı düzelt, Yumuşat, Düzlemle kes) | Aynı hata 3 kez; 1 üçgenden 2,6 mm tapa; "kapak düzleminde çökük" gibi iletiler | #12, #19, 02b-10 | S | onaylandı || [x] |
 
 ### Sprint 14 — deneme parçası döngüsü
 
@@ -444,3 +444,4 @@ Değerlendirilip alınmayan: pmp-library remesh (WASM derleme yükü; X30'un kö
 | 2026-10-29 | X111: Boş sete ilk boya (fırça, Akıllı seç, kova, Çizgi) bölgenin rengini verir: başka setin boyası üzerindeyse o setin rengi, boyasız yüzeyse gövde rengi (taban grisi verilmez). Elle renk seçilen (`Slot.customColor`) ve 3MF'ten gelen setlere dokunulmaz. "+ Seçim seti" set ve gövde renklerine en uzak rengi alır (`src/state/slotColor.ts`). Birim `slotColor.test.ts`, e2e `region-color.spec.ts`. npm test 124, Chrome e2e 40, e2e 43 | — |
 | 2026-10-29 | X112: Çizgi kendini kesen halkayı boyamaz ve söyler (`loopSelfIntersects`). Yumuşatmadan sonra boya kalmadıysa boyama geri alınır, geçmişe adım girmez; başarı iletisi yumuşatmadan sonraki sayıyı yazar. Halka yalnız ilk noktanın üstüne tıklayınca kapanır; imleç oradayken nokta büyür ve beyazlaşır. Modelin arkasındaki yol ve noktalar soluk. Pimli kes "pin için çok ince" uyarısı ve yüzeysel bölgede Pimli kes seçiliyken öneri satırı sonraki adımı söyler. Birim `lasso.test.ts`, e2e `line-feedback.spec.ts`. npm test 125, Chrome e2e 41, e2e 44 | — |
 | 2026-10-29 | X113: Bölgenin içinde kalıp tapaya katılan başka renk adıyla ve üçgen sayısıyla söylenir, sonraki adım verilir; boyasız delik "N boyasız alan" olarak. Çekirdek bilgiyi `CutResult.inner` / `CutPreview.inner` olarak verir, metni `src/state/innerMessages.ts` kurar. Önizleme açıkken aynı bilgi panelde. 1 mm²'den küçük başka renk kırıntısı ileti olmaz. Birim `core.test.ts`, `innerMessages.test.ts`; e2e `inner-paint.spec.ts` (Bluey). npm test 127, Chrome e2e 42, e2e 45 | — |
+| 2026-10-29 | X114: Önizleme kesim hatası bulursa Kes kapanır, neden seçim satırının altında yazar; ileti bir kez çıkar. Parça, set, boya, mod, ayar ya da pim değişince Kes açılır (`previewError` + `previewKey`). Aynı metinli ileti ekranda varsa yenisi eklenmez, süresi yenilenir. Seçimin en büyük boyutu 3 mm'den azsa "Seçim N mm; basılamayabilir." Kesim hata ve uyarı metinleri sonraki adımı söyler. Birim `core.test.ts`, `notify.test.ts`; e2e `cut-blocked.spec.ts`. npm test 129, Chrome e2e 43, e2e 46 | — |

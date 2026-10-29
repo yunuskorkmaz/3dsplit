@@ -121,6 +121,14 @@ let suggestedFor: string | null = null;
 /** X103: son öneri İptal ile kesildi mi (o zaman bekleyen kesim de yapılmaz). */
 let suggestionAborted = false;
 
+/**
+ * X114: önizleme hatasının geçerli olduğu girdiler: parça, set, boya, mod ve ayarlar,
+ * pimler. Biri değişince Kes yeniden açılır.
+ */
+export function previewKey(s = get()): string {
+  return `${s.selectedPartId}:${s.activeSlot}:${s.paintVersion}:${JSON.stringify(s.cut)}:${JSON.stringify(s.pins)}`;
+}
+
 function suggestionKey(): string {
   const s = get();
   return `${s.selectedPartId}:${s.activeSlot}:${s.paintVersion}`;
@@ -287,10 +295,17 @@ async function refreshPreview(loud = false): Promise<void> {
       if (loud)
         for (const w of [...p.warnings, ...innerMessages(p.inner, get().slots, opts.mode, false)])
           notify('warn', w);
-      set({ preview: p });
+      set({ preview: p, previewError: null });
     } catch (e) {
       if (seq !== previewSeq) return;
-      notify('error', `Önizleme: ${e instanceof Error ? e.message : String(e)}`);
+      const text = e instanceof Error ? e.message : String(e);
+      // X114: kesim olmayacak: Kes kapanır, neden seçim satırında; ileti bir kez
+      if (!seam && !(e instanceof GeometryAbort)) {
+        if (get().previewError?.text !== text) notify('error', `Önizleme: ${text}`);
+        set({ preview: null, previewError: { key: previewKey(), text } });
+        return;
+      }
+      notify('error', `Önizleme: ${text}`);
       set({ preview: null });
     }
   };

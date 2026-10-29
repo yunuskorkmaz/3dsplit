@@ -413,6 +413,27 @@ describe('kesim', () => {
     expect(volume(r.parts[0]) + volume(r.body)).toBeCloseTo(8000, 1);
   });
 
+  it('X114: hata ve uyarılar ne yapılacağını söyler', () => {
+    const all = labelWhere(cube, 1, () => true);
+    expect(() => previewCut(all, { ...baseOpts, mode: 'fast' })).toThrow(
+      'Bölge bütün gövdeyi kaplıyor; kesilecek sınır yok. Bir kısmını Silgi ile çıkar.',
+    );
+    // ana bölge + uzak köşede tek küçük üçgen: leke atlanır
+    const fine = subdividedCube(20, 40);
+    const speck = labelWhere(fine, 1, (_x, _y, z) => z > 5);
+    const c = faceCentroids(speck);
+    const { areas } = faceNormalsAndAreas(speck);
+    let t0 = -1;
+    for (let t = 0; t < speck.labels.length && t0 < 0; t++)
+      if (c[3 * t + 2] < -9.99 && areas[t] < 1) t0 = t;
+    expect(t0).toBeGreaterThanOrEqual(0);
+    speck.labels[t0] = 1;
+    const p = previewCut(speck, { ...baseOpts, mode: 'fast' });
+    expect(p.warnings).toContain(
+      '1 küçük boya lekesi atlandı (1 mm² altı). Kesmek istiyorsan Fırça ile büyüt.',
+    );
+  });
+
   it('X113: bölge içindeki başka renk rengi ve üçgen sayısıyla bildirilir', () => {
     const holed = { ...capRegion, labels: Uint16Array.from(capRegion.labels) };
     const c = faceCentroids(holed);

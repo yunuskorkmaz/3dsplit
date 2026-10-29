@@ -688,6 +688,14 @@ section .scrub .scrub-label {
 .selection-row .sel-clear:hover {
   color: #fff;
 }
+/* X114: seçim satırının altında Kes'in neden kapalı olduğu ve boyut uyarısı */
+.selection-note {
+  margin: -2px 0 6px;
+  padding: 2px 6px;
+  border-left: 3px solid #f1c40f;
+  color: #f1c40f;
+  font-size: 12px;
+}
 .cut-actions {
   flex-direction: column;
 }

@@ -12,6 +12,7 @@ import {
   setSocketDirection,
   togglePreview,
 } from '../state/actions';
+import { innerMessages } from '../state/innerMessages';
 import { useKeymap } from '../state/keymap';
 import { type CutSettings, dismiss, get, set, useStore } from '../state/store';
 import { cancelGeometry } from '../worker/client';
@@ -170,6 +171,13 @@ export function CutPanel() {
   const previewWarnings = useStore((s) =>
     s.previewActive ? (s.preview?.warnings ?? NO_WARNINGS) : NO_WARNINGS,
   );
+  // X113: bölgenin içindeki başka renk kesimden önce görünür
+  const previewInner = useStore((s) => (s.previewActive ? s.preview?.inner : undefined));
+  const slots = useStore((s) => s.slots);
+  const notes = useMemo(
+    () => [...innerMessages(previewInner, slots, cut.mode, false), ...previewWarnings],
+    [previewInner, slots, cut.mode, previewWarnings],
+  );
   // X78: önizlemesi uzun süren parçada canlı önizleme kapalı
   const slowPreview = useStore((s) => {
     const part = s.parts.find((p) => p.id === s.selectedPartId);
@@ -247,9 +255,9 @@ export function CutPanel() {
             )}
           </div>
         )}
-        {previewWarnings.length > 0 && (
+        {notes.length > 0 && (
           <ul className="preview-warnings">
-            {previewWarnings.map((w) => (
+            {notes.map((w) => (
               <li key={w}>{w}</li>
             ))}
           </ul>

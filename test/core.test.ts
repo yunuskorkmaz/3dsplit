@@ -409,8 +409,27 @@ describe('kesim', () => {
     holed.labels[hole] = 0;
     const r = cutRegion(holed, { ...baseOpts, mode: 'fast' });
     expect(r.parts.length).toBe(1);
-    expect(r.warnings.some((w) => w.includes('delik'))).toBe(true);
+    expect(r.inner).toMatchObject([{ slot: 0, tris: 1, regions: 1 }]);
     expect(volume(r.parts[0]) + volume(r.body)).toBeCloseTo(8000, 1);
+  });
+
+  it('X113: bölge içindeki başka renk rengi ve üçgen sayısıyla bildirilir', () => {
+    const holed = { ...capRegion, labels: Uint16Array.from(capRegion.labels) };
+    const c = faceCentroids(holed);
+    const inside: number[] = [];
+    for (let t = 0; t < holed.labels.length; t++) {
+      if (c[3 * t + 2] > 9.99 && Math.abs(c[3 * t]) < 2 && Math.abs(c[3 * t + 1]) < 2)
+        inside.push(t);
+    }
+    expect(inside.length).toBeGreaterThan(1);
+    // ortadaki üçgenler başka sete (4) boyalı
+    for (const t of inside) holed.labels[t] = 4;
+    const expected = [{ slot: 4, tris: inside.length, regions: 1 }];
+    expect(previewCut(holed, { ...baseOpts, mode: 'fast' }).inner).toMatchObject(expected);
+    const r = cutRegion(holed, { ...baseOpts, mode: 'fast' });
+    expect(r.inner).toMatchObject(expected);
+    expect(r.inner?.[0].area).toBeGreaterThan(0);
+    expect(r.parts.length).toBe(1);
   });
 
   it('önizleme: pim yuvası çevresinde ince duvarı işaretler', () => {

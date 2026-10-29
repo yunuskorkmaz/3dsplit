@@ -4,6 +4,7 @@ import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { GeometryAbort, geometry } from '../worker/client';
 import { busy, geomKey } from './actionsHooks';
 import { lineCancel } from './actionsLine';
+import { innerMessages } from './innerMessages';
 import {
   get,
   newPartId,
@@ -283,7 +284,9 @@ async function refreshPreview(loud = false): Promise<void> {
       if (!seam) markSlow(target.mesh, opts.mode, performance.now() - started > SLOW_PREVIEW_MS);
       // bu arada yeni istek geldiyse ya da mod kapandıysa eski sonucu gösterme
       if (seq !== previewSeq || !get().previewActive) return;
-      if (loud) for (const w of p.warnings) notify('warn', w);
+      if (loud)
+        for (const w of [...p.warnings, ...innerMessages(p.inner, get().slots, opts.mode, false)])
+          notify('warn', w);
       set({ preview: p });
     } catch (e) {
       if (seq !== previewSeq) return;
@@ -398,6 +401,7 @@ export async function runCut(): Promise<void> {
       return;
     }
     set({ errorLoops: null });
+    for (const w of innerMessages(r.inner, get().slots, opts.mode, true)) notify('warn', w);
     for (const w of r.warnings) notify('warn', w);
     const slotName = get().slots.find((s) => s.id === opts.slot)?.name ?? `Slot ${opts.slot}`;
     const modeName =

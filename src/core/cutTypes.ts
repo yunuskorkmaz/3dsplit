@@ -104,10 +104,23 @@ export interface CutOptions {
   faceGap?: number;
 }
 
+/**
+ * X113: bölgenin içinde kalıp kesime katılan başka renk. `slot` 0 (taban) ise
+ * boyasız alandır; `regions` bağlı alan sayısı, `tris` üçgen sayısı, `area` mm².
+ */
+export interface InnerPaint {
+  slot: number;
+  tris: number;
+  regions: number;
+  area: number;
+}
+
 export interface CutResult {
   body: LabeledMesh;
   parts: LabeledMesh[];
   warnings: string[];
+  /** X113: bölgenin içinde kalıp parçaya katılan renkler. */
+  inner?: InnerPaint[];
 }
 
 export interface CutPreview {
@@ -119,6 +132,8 @@ export interface CutPreview {
   /** C6: tapa alt halkasındaki 8 kontrol yönünün noktaları (ilki 0°). */
   ringMarkers: Vec3[];
   warnings: string[];
+  /** X113: bölgenin içinde kalıp parçaya katılacak renkler. */
+  inner?: InnerPaint[];
 }
 
 /** Kesim hatası. `loops`: sorunlu bölgenin sınır halkaları (arayüzde kırmızı gösterilir). */

@@ -20,6 +20,7 @@ import {
   type CutOptions,
   type CutPreview,
   type CutResult,
+  type InnerPaint,
   type Island,
   type ModelProvider,
   modelOf,
@@ -34,7 +35,16 @@ import { boundaryLoops, connectedComponents, extractTriangles } from './topology
 import { BASE_SLOT, type LabeledMesh, type MeshData, type Vec3 } from './types';
 import { add, dot, normalize, scale, sub, vertexAt } from './vec';
 
-export function findIslands(mesh: LabeledMesh, slot: number, warnings: string[] = []): Island[] {
+/**
+ * Boyalı bölgenin adaları. Adanın içinde kalan delikler (boyasız ya da başka renk)
+ * adaya katılır; `inner` verilirse katılan renkler oraya yazılır (X113).
+ */
+export function findIslands(
+  mesh: LabeledMesh,
+  slot: number,
+  warnings: string[] = [],
+  inner?: InnerPaint[],
+): Island[] {
   const triCount = mesh.labels.length;
   const mask = new Uint8Array(triCount);
   let selected = 0;
@@ -59,7 +69,6 @@ export function findIslands(mesh: LabeledMesh, slot: number, warnings: string[] 
   let dropped = 0;
 
   const absorbedAll = new Uint8Array(triCount);
-  let absorbedHoles = 0;
   const islands: Island[] = [];
   for (const [gi, group] of groups.entries()) {
     if (absorbedAll[group[0]]) continue; // başka adanın deliğinin içinde kalmış
@@ -67,8 +76,7 @@ export function findIslands(mesh: LabeledMesh, slot: number, warnings: string[] 
       dropped++;
       continue;
     }
-    const { tris, holes } = closeHoles(adj, areas, group);
-    absorbedHoles += holes;
+    const { tris } = closeHoles(adj, areas, group);
     const islandMask = new Uint8Array(triCount);
     let n: Vec3 = [0, 0, 0];
     for (const t of tris) {
@@ -100,9 +108,41 @@ export function findIslands(mesh: LabeledMesh, slot: number, warnings: string[] 
     });
   }
   if (dropped) warnings.push(`${dropped} çok küçük boyalı kırıntı atlandı (1 mm² altı).`);
-  if (absorbedHoles)
-    warnings.push(`Bölgenin içinde kalan ${absorbedHoles} boyanmamış delik kesime dahil edildi.`);
+  if (inner) inner.push(...innerPaint(mesh.labels, adj, areas, absorbedAll, slot));
   return islands;
+}
+
+/** X113: adalara katılan, seçili renkten başka üçgenler; renge göre, üçgen sayısı büyükten. */
+export function innerPaint(
+  labels: Uint16Array,
+  adj: Int32Array,
+  areas: Float32Array,
+  absorbed: Uint8Array,
+  slot: number,
+): InnerPaint[] {
+  const bySlot = new Map<number, Uint8Array>();
+  const count = new Map<number, number>();
+  const area = new Map<number, number>();
+  for (let t = 0; t < labels.length; t++) {
+    const l = labels[t];
+    if (!absorbed[t] || l === slot) continue;
+    let mask = bySlot.get(l);
+    if (!mask) {
+      mask = new Uint8Array(labels.length);
+      bySlot.set(l, mask);
+    }
+    mask[t] = 1;
+    count.set(l, (count.get(l) ?? 0) + 1);
+    area.set(l, (area.get(l) ?? 0) + areas[t]);
+  }
+  return [...bySlot]
+    .map(([s, mask]) => ({
+      slot: s,
+      tris: count.get(s) ?? 0,
+      regions: connectedComponents(labels.length, adj, mask).count,
+      area: area.get(s) ?? 0,
+    }))
+    .sort((a, b) => b.tris - a.tris);
 }
 
 export function previewCut(mesh: LabeledMesh, opts: CutOptions, model?: ModelProvider): CutPreview {
@@ -114,7 +154,8 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
   const scope = new Scope();
   const warnings: string[] = [];
   try {
-    const islands = findIslands(mesh, opts.slot, warnings);
+    const inner: InnerPaint[] = [];
+    const islands = findIslands(mesh, opts.slot, warnings, inner);
     const volumes: MeshData[] = [];
     const pins: MeshData[] = [];
     const ringMarkers: Vec3[] = [];
@@ -281,7 +322,7 @@ function previewCutImpl(mesh: LabeledMesh, opts: CutOptions): CutPreview {
         }
       }
     }
-    return { volumes, pins, thin, ringMarkers, warnings };
+    return { volumes, pins, thin, ringMarkers, warnings, inner };
   } finally {
     scope.dispose();
   }
@@ -307,7 +348,8 @@ function cutRegionImpl(mesh: LabeledMesh, opts: CutOptions): CutResult {
   try {
     const warnings: string[] = [];
     stage('Seçim bölgeleri bulunuyor');
-    const islands = findIslands(mesh, opts.slot, warnings);
+    const inner: InnerPaint[] = [];
+    const islands = findIslands(mesh, opts.slot, warnings, inner);
     try {
       const r = cutIslands(mesh, islands, opts, scope, warnings);
       // hacimsiz parça (ör. yön bölgeye paralel) başarı sayılmaz
@@ -317,7 +359,7 @@ function cutRegionImpl(mesh: LabeledMesh, opts: CutOptions): CutResult {
       const parts = mergeNestedParts(solid, r.warnings);
       if (!parts.length)
         throw new CutError('Kesim hacimli bir parça üretmedi (yön bölgeye paralel olabilir).');
-      return { ...r, parts };
+      return { ...r, parts, inner };
     } catch (e) {
       // D5: hatanın hangi bölgede olduğunu göster
       if (e instanceof CutError && !e.loops) {

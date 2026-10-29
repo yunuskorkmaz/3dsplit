@@ -449,6 +449,8 @@ Karar (seçilen: a): başka renkli iç bölge (a) tapaya katılır, ileti doğru
 
 Kabul: birim testi `cutRun` iç bölge uyarısı rengi ve üçgen sayısını taşır; e2e Bluey: göz akı kesilince ileti "Filament 4" der; tapa seçilip Filament 4 kesilince ikinci tapa çıkar.
 
+Uygulamada: ad eki çekimlenmez, ileti "…tapayı seçip Filament 4 setini kes." der (set adı her şey olabilir). Pimli kes ve Yapıştır'da "tapa" yerine "kesilen parça". Önizlemede fiil "katılacak". Başka rengin 1 mm²'den küçük kırıntısı ileti olmaz (Bluey'de 1–5 üçgenlik kırıntılar vardı). Bluey'de "göz akı" ayrı boya değil (gövde Filament 1); kabul testi turuncu bölgeyle (Filament 5, içinde 9.102 üçgen Filament 4) yazıldı. Tapadan Filament 4 kesilince siyah tek değil birkaç parça çıkıyor (tapadaki siyah birden çok yerde).
+
 ## X114 Olmayacak kesimde Kes kapalı, hatalar ne yapılacağını söyler
 
 - Önizleme kesimin olmayacağını bulduysa (ör. "bölge parçanın tamamını kaplıyor") Kes kapanır ve neden seçim satırında yazar; ileti bir kez çıkar. Boya, set, mod ya da ayar değişince Kes yeniden açılır.

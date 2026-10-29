@@ -35,6 +35,7 @@ export default defineConfig({
     'export-report.spec.ts',
     'region-color.spec.ts',
     'line-feedback.spec.ts',
+    'inner-paint.spec.ts',
   ],
   timeout: 120_000,
   use: {

@@ -6,7 +6,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 **Durum (2026-10-29):** A1–E2 ve X1–X116 bitti (Sprint 8–14: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sıradaki: Sprint 15 (X117–X127) davranışlarının yazılıp onaylanması.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 bitti. Sprint 15 davranışları onaylandı. Sıradaki: X117.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -144,17 +144,17 @@ Kurallar:
 
 | ID | İş | Neden | Kaynak | Emek | Onay | Durum |
 | --- | --- | --- | --- | --- | --- | --- |
-| X117 | Metin birliği: ham İngilizce hata yerine Türkçe ve eylemli ileti; "slot", "Smart Fill", "Keys" arayüzden çıkar; desteklenmeyen dosyada desteklenenler sayılır; ondalık virgül tek biçim | "Invalid typed array length"; aynı kavrama dört ad | #11, #20, #29, #30, 02b-10 | M | bekliyor | [ ] |
-| X118 | Klavye ve ekran okuyucu: odaklanan öğe yapışkan Kes alanının altında kalmaz; Yardım odağı tutar; kesimden sonra odak kaybolmaz; bildirimler ve panel başlıkları düğme; bildirim alanında `aria-live` | WCAG 2.4.11, 2.1.1, 4.1.2 | #14, 02b-11 | M | bekliyor | [ ] |
-| X119 | Kontrast: Kes düğmesi metni, set rengiyle yazılan rozet ve durum satırı en az 4,5:1, seçili segment en az 3:1 | 2,51:1 ve 1,11–1,21:1 (WCAG 1.4.3, 1.4.11) | #13 | S | bekliyor | [ ] |
-| X120 | Görünüş küpünden arka ve alt görünüşe geçilir | Arkaya yalnız ⌘K ile dönülüyor | #15 | S | bekliyor | [ ] |
-| X121 | Model açıkken ikinci "Aç" ne yapacağını sorar (değiştir / ekle); çok plakalı 3MF plakaları yığılmaz | İki figür üst üste; Grogu'nun 3 plakası tek sahnede | #16 | M | bekliyor | [ ] |
-| X122 | Delete yalnız seçili pimi siler; pim seçili değilse seti silmez | İpucu "seçili pimi sil" derken bütün set gidiyor | #18 | S | bekliyor | [ ] |
-| X123 | Kesimden sonra yeni parça görünür; geri alınınca eski "kesildi" iletisi kalkar, iletiler yığılmaz; aynı anda iki farklı "İptal" olmaz | Parça görünmüyor; ~150 px ileti yığını | #21, #23 | S | bekliyor | [ ] |
-| X124 | Zaten parçalara bölünmüş modelde (Grogu) bunu söyleyen yönlendirme | Kullanıcı olmayan boyayı arıyor | #22 | S | bekliyor | [ ] |
-| X125 | Model yokken araçlar soluk; Space "Önce bir model açın" der | Boş sahnede araçlar etkin, ileti yanlış | #26 | S | bekliyor | [ ] |
-| X126 | Dışa aktarılan dosya adı kaynak dosyadan gelir; deneme parçası kendi adını alır | `quant_1.3mf`, `figure.3mf` | #27 | S | bekliyor | [ ] |
-| X127 | Uzun kesimde kalan süre ya da yüzde | ~11 s'lik kesimde yalnız geçen süre var | #28 | M | bekliyor | [ ] |
+| X117 | Metin birliği: ham İngilizce hata yerine Türkçe ve eylemli ileti; "slot", "Smart Fill", "Keys" arayüzden çıkar; desteklenmeyen dosyada desteklenenler sayılır; ondalık virgül tek biçim | "Invalid typed array length"; aynı kavrama dört ad | #11, #20, #29, #30, 02b-10 | M | onaylandı | [ ] |
+| X118 | Klavye ve ekran okuyucu: odaklanan öğe yapışkan Kes alanının altında kalmaz; Yardım odağı tutar; kesimden sonra odak kaybolmaz; bildirimler ve panel başlıkları düğme; bildirim alanında `aria-live` | WCAG 2.4.11, 2.1.1, 4.1.2 | #14, 02b-11 | M | onaylandı | [ ] |
+| X119 | Kontrast: Kes düğmesi metni, set rengiyle yazılan rozet ve durum satırı en az 4,5:1, seçili segment en az 3:1 | 2,51:1 ve 1,11–1,21:1 (WCAG 1.4.3, 1.4.11) | #13 | S | onaylandı | [ ] |
+| X120 | Görünüş küpünden arka ve alt görünüşe geçilir | Arkaya yalnız ⌘K ile dönülüyor | #15 | S | onaylandı | [ ] |
+| X121 | Model açıkken ikinci "Aç" ne yapacağını sorar (değiştir / ekle); çok plakalı 3MF plakaları yığılmaz | İki figür üst üste; Grogu'nun 3 plakası tek sahnede | #16 | M | onaylandı | [ ] |
+| X122 | Delete yalnız seçili pimi siler; pim seçili değilse seti silmez | İpucu "seçili pimi sil" derken bütün set gidiyor | #18 | S | onaylandı | [ ] |
+| X123 | Kesimden sonra yeni parça görünür; geri alınınca eski "kesildi" iletisi kalkar, iletiler yığılmaz; aynı anda iki farklı "İptal" olmaz | Parça görünmüyor; ~150 px ileti yığını | #21, #23 | S | onaylandı | [ ] |
+| X124 | Zaten parçalara bölünmüş modelde (Grogu) bunu söyleyen yönlendirme | Kullanıcı olmayan boyayı arıyor | #22 | S | onaylandı | [ ] |
+| X125 | Model yokken araçlar soluk; Space "Önce bir model açın" der | Boş sahnede araçlar etkin, ileti yanlış | #26 | S | onaylandı | [ ] |
+| X126 | Dışa aktarılan dosya adı kaynak dosyadan gelir; deneme parçası kendi adını alır | `quant_1.3mf`, `figure.3mf` | #27 | S | onaylandı | [ ] |
+| X127 | Uzun kesimde kalan süre ya da yüzde | ~11 s'lik kesimde yalnız geçen süre var | #28 | M | onaylandı | [ ] |
 
 Alınmayan: #31 (1,89 M üçgende fırça takılması, L). Sadeleştirme önerisi (X96) bu durumu karşılıyor; yeniden ölçülünce karar verilir.
 

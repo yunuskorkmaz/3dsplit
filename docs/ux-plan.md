@@ -512,3 +512,110 @@ Karar (seçilen: a): kalıcı olan (a) yalnız tolerans (önerilen; roadmap madd
 Kabul: birim testi tolerans 0'da 3 boşluk; e2e: Gevşek seçilir, sayfa yenilenip "Yok say" denince Gevşek seçili; deneme parçası üretilince eşleme satırı görünür, "3 çentik" düğmesi toleransı değiştirir, yenilemeden sonra eşleme durur.
 
 Uygulamada: tolerans 0'ın altına düşen her değerde (ör. 0,05) üç delik yukarı kayar: 0,05 / 0,15 / 0,25. Deneme şeridinde eşleme "Oturan delik: 1 çentik 0,1 · …" olarak durur; ayrı "soldan 1, 2, 3 çentik" yazısı kalktı. Paneldeki "Tapa ile yuva arası 0,2 mm" yazısı da virgülle.
+
+# Sprint 15: metin, klavye, erişilebilirlik, pürüzler
+
+Kaynak: `docs/review/00-ozet.md` #11, #13–16, #18, #20–23, #26–30; `docs/review/03-arayuz.md` (W, K, C tabloları); `docs/review/02b-audit-ux.md` 10, 11. Davranışlar 2026-10-29'da onaylandı; "Karar" satırlarında önerilen (a) seçildi.
+
+## X117 Metin birliği
+
+- Dosya açılamazsa ham istisna metni gösterilmez:
+  - Okunamayan STL/OBJ/3MF: "Dosya okunamadı: {ad}. Bozuk ya da başka bir biçimde olabilir. Slicer'dan yeniden STL ya da 3MF olarak kaydedip dene."
+  - Desteklenmeyen tür: ".txt açılamaz. STL, OBJ, 3MF ya da .3dsplit dosyası seç."
+  - Ayrıntı (istisna metni) konsola yazılır.
+- Arayüzden çıkan adlar (iletiler, Yardım, Kısayollar, komut arama, ipuçları):
+  - "slot" → "seçim seti" ya da "set" ("Taban slotu kesilemez" → "Taban kesilemez; kesilecek seti seç.", "0–9 slot seç" → "0–9 set seç").
+  - "Smart Fill" → "Akıllı seç"; "Keys" → "Pimli kes"; "Socket" → "Tapa"; "Fast" → "Yapıştır".
+  - Kod tanımlayıcıları değişmez.
+- İnce ayar etiketleri (03-arayuz W18): "Gövdede pay %" → "Pimin gövdeye giren kısmı (%)", "Uç pahı" → "Pim ucu eğimi", "Duvar" → "Delik çevresinde en az et", "Sıkıştır %" → "Tapayı daralt (%)". Kısa ad + mevcut ipucu (title) korunur.
+- Ondalık tek biçim: arayüzde görünen bütün sayılar `tr-TR` (0,2 mm; 12.131 üçgen; ~17,5 mm). Ortak bir `formatNumber` yardımcısı.
+- Dar alanda kesilen adlar (set listesi, gövde listesi) tam adı `title` ile gösterir.
+
+Kabul: e2e: rastgele baytlı `.stl` ve `.txt` bırakılınca yeni metinler; birim testi `formatNumber`; arayüz metinlerinde (`src/ui`, `src/state` iletileri) "slot", "Smart Fill", "Keys" geçmez (grep testi).
+
+## X118 Klavye ve ekran okuyucu
+
+- Araç penceresinde odak alan öğe yapışkan Önizleme / İptal / Kes alanının altında kalmaz: kaydırma alanına `scroll-padding-bottom` (alt alanın yüksekliği).
+- Yardım ve komut arama gerçek modal: açılınca odak içeri girer, Tab içeride döner, kapanınca odak açan öğeye döner; `aria-modal="true"`.
+- Kesimden sonra odak `body`'ye düşmez: yeni parçanın Model ağacındaki satırına gider.
+- Bildirimler `button` (Enter/Space kapatır). Bildirim alanı `aria-live="polite"`, hata bildirimi `role="alert"`. Hata bildirimleri Esc ile kapanmaz (Esc başka işlere ayrılmış); odaklanıp Enter ile kapanır.
+- Panel başlıkları (`h3 onClick`) `button` olur; `aria-expanded` taşır.
+
+Kabul: e2e klavye: Tolerans düğmesine Tab ile gelinince düğme görünür alanda (`elementFromPoint` kendisi); `?` ile Yardım açılınca odak içeride, 40 Tab sonra hâlâ içeride; Kes'e Enter sonrası `document.activeElement` yeni parça satırı; bildirim Enter ile kapanır.
+
+## X119 Kontrast
+
+- Metin en az 4,5:1, seçili segment ve odak halkası en az 3:1 (03-arayuz C1–C11):
+  - Kes düğmesi: koyu yeşil zemin (`#1f7a45`) + beyaz metin.
+  - Set rengiyle yazılan rozet ve durum satırı: renk metne değil yanındaki kutuya; metin açık gri. Rozet zemini set rengi kalırsa metin rengi zemine göre siyah/beyaz seçilir (`contrastColor`, sınır çizgisinde zaten kullanılıyor).
+  - Seçili satırdaki sayılar, gelecek adımlar, menü açıklamaları, set numaraları: gri tonları açılır.
+  - Seçili segment: `#2f6fd6` yerine `#2558b0` + beyaz metin.
+  - Odak halkası: uygulama kendi halkasını çizer (2 px `#ffd400`), her zeminde 3:1 üstü.
+
+Kabul: e2e: listelenen 11 öğe için `getComputedStyle` renklerinden WCAG oranı hesaplanır, eşiğin üstünde.
+
+## X120 Görünüş küpünden arka ve alt
+
+- Küpte o an bakılan yüze tıklamak karşı yüze çevirir: Ön'deyken Ön → Arka, Üst'teyken Üst → Alt (Karar a). Yüzün `title`'ı bunu söyler ("Ön · tekrar tıkla: Arka").
+- Arkada kalan yüzlerin düğmeleri tıklanamaz ve odak almaz (bugün 14 düğmenin 9'u başka öğenin altında).
+
+Karar (seçilen: a): (a) bakılan yüze tekrar tık karşı yüz (önerilen; küp değişmez, S) ya da (b) küpün altına iki küçük düğme "Arka", "Alt" (görünür ama kalabalık).
+
+Kabul: e2e: Ön görünüşte küpün Ön yüzüne tık kamerayı arkaya çevirir; ikinci tık öne döner.
+
+## X121 İkinci "Aç" ne yapacağını sorar; çok plakalı 3MF dağılmaz
+
+- Model açıkken yeni dosya açılınca (Aç ya da sürükle bırak) kart sorar: "{dosya} açılıyor. [Yerine aç] [Sahneye ekle] [Vazgeç]". Yerine aç bugünkü sahneyi "Önceki oturum"a bırakır (X106 gibi) ve yeni oturum başlatır; Sahneye ekle bugünkü davranış. `.3dsplit` açarken yalnız Yerine aç ve Vazgeç.
+- Çok plakalı Bambu 3MF'te her plakanın nesneleri kendi plakasındaki yerleşimiyle gelir; plakalar X ekseninde yan yana, aralarında 20 mm (Karar a). Gövde adları plaka adını taşır ("Plaka 2 · Kafa"). Tek plakalı dosya değişmez.
+
+Karar (seçilen: a): çok plakalı dosyada (a) bütün plakalar yan yana açılır (önerilen; hepsi bir arada kesilir, S–M) ya da (b) hangi plakanın açılacağı sorulur (yalnız o plaka gelir; diğerleri için dosya yeniden açılır).
+
+Kabul: e2e figür açıkken ikinci figür: kart çıkar, Yerine aç sonrası 1 gövde, "Önceki oturumu aç" ilk sahneyi getirir; Sahneye ekle sonrası 2 gövde. Birim testi Grogu benzeri iki plakalı 3MF'te nesnelerin plakalara göre ayrı X aralıklarında olması.
+
+## X122 Delete yalnız seçili pimi siler
+
+- Önizleme açıkken ya da Pim aracında Delete/Backspace yalnız seçili pimi siler; pim seçili değilse hiçbir şey yapmaz ve ileti: "Silinecek pim seçili değil. Pime tıkla, sonra Delete."
+- Bu durumların dışında Delete bugünkü gibi seti temizler, ama artık iletiyle: "Seçim 2 temizlendi (2.738 üçgen). Ctrl+Z geri getirir."
+
+Kabul: e2e figür kolu Pimli kes önizlemesi: pim seçiliyken Delete pim sayısını 1 azaltır, seçili değilken boya ve pimler aynı, ileti çıkar.
+
+## X123 Kesimden sonra parça görünür, iletiler yığılmaz, tek İptal
+
+- Kesimden sonra yeni parça seçili olur (turuncu çerçeve, gövdenin içindeyse de görünür). Kesim iletisinde "Ayrık göster" düğmesi Aralıklı görünümü açar (Karar a).
+- Geri alınınca o kesimin iletileri ("Kes 1: …" ve uyarıları) kapanır. Ekranda en çok 3 ileti; daha eskisi kapanır (bugün 5).
+- Meşgul kartı açıkken araç penceresindeki İptal gizlenir; tek İptal kartta (işi durdurur).
+
+Karar (seçilen: a): (a) yeni parça seçilir + iletide "Ayrık göster" (önerilen; görünüm değişmez) ya da (b) kesimden sonra Aralıklı kendiliğinden 2 s açılıp kapanır.
+
+Kabul: e2e figür burun kesimi: seçili parça burun tapası; "Ayrık göster" Aralıklı'yı açar; Ctrl+Z sonrası "Kes 1" iletisi yok; kesim sürerken araç penceresinde İptal yok.
+
+## X124 Parçalara bölünmüş modelde yönlendirme
+
+- Açılan dosyada birden çok gövde var ve hiçbirinde boya yoksa (Grogu gibi) ileti: "{N} gövde ayrı parça olarak geldi; renkler zaten ayrı. Kesmeden dışa aktarabilirsin; bir gövdenin içinden renk ayırmak için onu seçip boya." Adım şeridi bu durumda "Aktar"ı da etkin gösterir.
+- Tek gövdeli boyasız modelde değişiklik yok.
+
+Kabul: e2e Grogu (dosya varsa): ileti çıkar; figürde çıkmaz.
+
+## X125 Model yokken araçlar kapalı
+
+- Model yokken şerit araçları, araç penceresi ve Kes alanı soluk ve tıklanmaz (`disabled`); ipucu "Önce bir model aç." Deneme parçası (X115) ve komut arama açık.
+- Space ve araç kısayolları model yokken tek ileti verir: "Önce bir model aç." (bugün yanlış ileti).
+
+Kabul: e2e boş ekran: Fırça düğmesi disabled; Space ileti "Önce bir model aç."; model açılınca araçlar etkin.
+
+## X126 Dışa aktarılan dosyanın adı kaynaktan gelir
+
+- Dosya adı açılan ilk dosyanın adından (uzantısız) gelir: `Bluey_Color.3mf` açıldıysa `Bluey_Color-parcalar.3mf` (Bambu), `Bluey_Color-genel.3mf`, `Bluey_Color-parcalar.zip`. Örnek modelde "ornek-figur". `.3dsplit` açıldıysa projenin adı.
+- Dosya içindeki STL adları okunur kalır: Türkçe harfler ve boşluk korunur, yalnız dosya sisteminde geçersiz karakterler (`/ \ : * ? " < > |`) `-` olur ("Tolerans plakası (0,1 - 0,2 - 0,3 mm).stl").
+- Deneme parçası X115'te `tolerans-deneme.*` aldı; değişmez.
+
+Kabul: birim testi dosya adı temizleme; e2e figure.stl açılıp Bambu 3MF indirilince ad `figure-parcalar.3mf`.
+
+## X127 Uzun kesimde ilerleme
+
+- Meşgul kartı aşamayı sırayla yazar: "Aşama 3/6 · Tapa hacmi" ve bir ilerleme çubuğu (aşama sayısına göre). Aşama listesi her kesim türü için sabit (Karar a).
+- 5 s'yi geçen işte, bu tarayıcıda aynı türden son kesimlerin hızına (üçgen/s) göre "~8 sn kaldı" tahmini; geçmiş yoksa yazmaz.
+
+Karar (seçilen: a): ilerleme (a) aşama sayısıyla (önerilen; Worker zaten `stage()` gönderiyor, M) ya da (b) yalnız süre tahmini (aşama değişmez, S; ilk kesimde hiç bilgi yok).
+
+Kabul: birim testi kesim türü başına aşama listesi ve tahmin hesabı; e2e Bluey (dosya varsa): kartta "Aşama n/m" görünür.

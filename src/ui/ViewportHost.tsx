@@ -9,6 +9,7 @@ import {
   endSmoothStroke,
   endStroke,
   lineClick,
+  lineOverFirst,
   linePreview,
   mirrorOffset,
   pinClick,
@@ -290,6 +291,10 @@ export function ViewportHost() {
       },
       onHover(hit) {
         cursor(hit);
+        const t = get().tool;
+        vp.setLineHot(
+          !!hit && (t === 'line' || t === 'seam') && lineOverFirst(hit.partId, hit.point),
+        );
       },
       onContextLost() {
         notify(

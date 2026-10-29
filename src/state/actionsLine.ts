@@ -1,5 +1,5 @@
 import { CutError, seamSeparates } from '../core/cut';
-import { regionInsideLoop, surfacePath, vertexNeighbors } from '../core/lasso';
+import { loopSelfIntersects, regionInsideLoop, surfacePath, vertexNeighbors } from '../core/lasso';
 import { smoothStrokeSplit } from '../core/smooth';
 import { BASE_SLOT, type LabeledMesh, type Vec3 } from '../core/types';
 import { onLabelsChanged } from './actionsHooks';
@@ -40,7 +40,27 @@ function neighborsOf(mesh: LabeledMesh) {
   return n;
 }
 
-/** Çizgi aracı tıklaması: nokta ekler; ilk noktaya yakınsa halkayı kapatır. */
+/** Nokta işaretinin yarıçapı (ekrandaki küre). */
+function markerSize(mesh: LabeledMesh): number {
+  return Math.max(0.2, topologyOf(mesh).meanEdge * 1.5);
+}
+
+/**
+ * X112: imleç açık halkanın ilk noktasının üstünde mi (en az 3 nokta). Yalnız
+ * işaretin kendisi sayılır; yakın ama dışarıdaki nokta yeni nokta olur.
+ */
+export function lineOverFirst(partId: string, point: Vec3): boolean {
+  const line = get().line;
+  if (line.partId !== partId || line.closed || line.anchors.length < 3) return false;
+  const part = partById(partId);
+  if (!part) return false;
+  const p = part.mesh.positions;
+  const f = line.anchors[0];
+  const d = Math.hypot(p[3 * f] - point[0], p[3 * f + 1] - point[1], p[3 * f + 2] - point[2]);
+  return d <= markerSize(part.mesh) * 1.2;
+}
+
+/** Çizgi aracı tıklaması: nokta ekler; ilk noktanın üstündeyse halkayı kapatır. */
 export function lineClick(partId: string, tri: number, point: Vec3): void {
   const part = partById(partId);
   if (!part) return;
@@ -48,19 +68,7 @@ export function lineClick(partId: string, tri: number, point: Vec3): void {
   if (line.partId !== partId || line.closed) line = { partId, anchors: [], path: [] };
   const mesh = part.mesh;
   const v = nearestCorner(mesh, tri, point);
-  if (line.anchors.length >= 3) {
-    const first = line.anchors[0];
-    const d = Math.hypot(
-      mesh.positions[3 * v] - mesh.positions[3 * first],
-      mesh.positions[3 * v + 1] - mesh.positions[3 * first + 1],
-      mesh.positions[3 * v + 2] - mesh.positions[3 * first + 2],
-    );
-    if (v === first || d < Math.max(3 * topologyOf(mesh).meanEdge, get().brushRadius / 2)) {
-      set({ line });
-      lineClose();
-      return;
-    }
-  }
+  if (lineOverFirst(partId, point)) return lineClose();
   if (!line.anchors.length) {
     set({ line: { partId, anchors: [v], path: [v] } });
     return;
@@ -80,7 +88,7 @@ export function linePreview(): { path: Vec3[]; anchors: Vec3[]; size: number } {
   return {
     path: line.path.map(at),
     anchors: line.anchors.map(at),
-    size: Math.max(0.2, topologyOf(part.mesh).meanEdge * 1.5),
+    size: markerSize(part.mesh),
   };
 }
 
@@ -147,6 +155,9 @@ export function lineClose(): void {
       loops.push(closeLoop(mirroredAnchors, path));
     }
   }
+  // X112: kendini kesen halka küçük bir cep ayırır; boyanmaz
+  if (loops.some(loopSelfIntersects))
+    return notify('warn', 'Çizgi kendini kesiyor; noktaları kesişmeyecek sırayla koy.');
   const topo = topologyOf(mesh);
   const tris: number[] = [];
   for (const loop of loops) {
@@ -161,7 +172,34 @@ export function lineClose(): void {
   const unique = [...new Set(tris)];
   if (!unique.length) return;
   const before = Uint16Array.from(unique, (t) => mesh.labels[t]);
-  for (const t of unique) mesh.labels[t] = slot;
+  const labels = mesh.labels;
+  for (const t of unique) labels[t] = slot;
+  // zikzakı düzelt: çizgi boyunca yumuşatıp üçgenlerin içinden geçir
+  const pts: Vec3[] = loops.flatMap((loop) => [...loop, loop[0]].map(at));
+  const radius = Math.max(3 * topo.meanEdge, get().smoothRadius || 0);
+  const diff = smoothStrokeSplit(
+    mesh,
+    slot,
+    pts,
+    radius,
+    1,
+    (t) => labels[t] === BASE_SLOT,
+    (t) => neighborLabel(topo.adj, labels, t, slot),
+  );
+  const split = diff && (diff.changedTris.length || diff.addedIndices.length) ? diff : null;
+  // X112: yumuşatmadan sonra kalan boya; hiç kalmadıysa boyama geri alınır
+  let painted = unique.length;
+  if (split) {
+    for (const l of split.oldLabels) if (l === slot) painted--;
+    for (const l of split.newLabels) if (l === slot) painted++;
+    for (const l of split.addedLabels) if (l === slot) painted++;
+  }
+  if (painted <= 0) {
+    unique.forEach((t, i) => {
+      labels[t] = before[i];
+    });
+    return notify('warn', 'Çizginin içi çok dar; boya kalmadı. Halkayı genişlet.');
+  }
   pushHistory({
     kind: 'paint',
     mesh,
@@ -173,24 +211,11 @@ export function lineClose(): void {
   adoptRegionColor(part, unique, before, new Uint16Array(unique.length).fill(slot));
   onLabelsChanged?.(part.id, unique);
   lineCancel();
-  // zikzakı düzelt: çizgi boyunca yumuşatıp üçgenlerin içinden geçir
-  const pts: Vec3[] = loops.flatMap((loop) => [...loop, loop[0]].map(at));
-  const labels = mesh.labels;
-  const radius = Math.max(3 * topo.meanEdge, get().smoothRadius || 0);
-  const diff = smoothStrokeSplit(
-    mesh,
-    slot,
-    pts,
-    radius,
-    1,
-    (t) => labels[t] === BASE_SLOT,
-    (t) => neighborLabel(topo.adj, labels, t, slot),
-  );
-  if (diff && (diff.changedTris.length || diff.addedIndices.length)) applyMeshSplit(mesh, diff);
+  if (split) applyMeshSplit(mesh, split);
   else set((s) => ({ paintVersion: s.paintVersion + 1 }));
   notify(
     'info',
-    `Çizgi kapatıldı: ${unique.length} üçgen boyandı${loops.length > 1 ? ' (aynayla iki halka)' : ''}.`,
+    `Çizgi kapatıldı: ${painted} üçgen boyandı${loops.length > 1 ? ' (aynayla iki halka)' : ''}.`,
   );
 }
 

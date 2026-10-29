@@ -431,6 +431,8 @@ export interface CutSuggestion {
   /** X72: bölgenin kalınlığı, 3 × hacim / yüzey alanı (kürede yarıçap), mm. */
   thickness: number;
   reason: string;
+  /** X112: yüzeysel bölge (çıkıntı değil); pim kesitte tutunamaz. */
+  surface: boolean;
 }
 
 /** X72: kesit alanı bölge yüzeyinin bu oranından küçükse bölge çıkıntıdır (düz boya ~0,5). */
@@ -486,6 +488,7 @@ export function suggestCutMode(mesh: LabeledMesh, slot: number): CutSuggestion |
   const t = thickness.toFixed(1);
   return {
     mode: keys ? 'keys' : 'socket',
+    surface: !protrusion,
     capRadius,
     height,
     thickness,

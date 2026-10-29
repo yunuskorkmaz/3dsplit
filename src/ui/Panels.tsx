@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CutMode, EdgeSmoothing, PinShape } from '../core/cut';
+import { PIN_THIN_HINT } from '../core/cutPins';
 import {
   activeIslands,
   activePaintCount,
@@ -236,6 +237,9 @@ export function CutPanel() {
           <div className={`suggestion ${suggestion.mode === mode ? 'ok' : ''}`}>
             {suggestion.mode === mode ? '✓ ' : 'Öneri: '}
             <b>{suggestion.mode === 'keys' ? 'Pimli kes' : 'Tapa'}</b> — {suggestion.reason}
+            {suggestion.surface && mode === 'keys' && (
+              <span className="suggestion-hint"> {PIN_THIN_HINT}</span>
+            )}
             {suggestion.mode !== mode && (
               <button type="button" onClick={() => update({ mode: suggestion.mode })}>
                 Uygula

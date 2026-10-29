@@ -193,10 +193,14 @@ export function pinCenters(
   const bare = out.length ? 0 : thin.size;
   if (bare)
     warnings?.push(
-      `${bare > 1 ? `${bare} bölgede ` : ''}kesit pin için çok ince; pin konmadı (en küçük pim ${MIN_PIN_RADIUS} mm yarıçap + tolerans + duvar sığmıyor).`,
+      `${bare > 1 ? `${bare} bölgede ` : ''}kesit pin için çok ince; pin konmadı (en küçük pim ${MIN_PIN_RADIUS} mm yarıçap + tolerans + duvar sığmıyor). ${PIN_THIN_HINT}`,
     );
   return out;
 }
+
+/** X112: pim sığmayınca sonraki adım. */
+export const PIN_THIN_HINT =
+  "Kolu ayırmak için halkayı kolun çevresinden geçir ya da Dikiş'i kullan.";
 
 /** Otomatik boyutta denenen en küçük pim yarıçapı, mm. */
 const MIN_PIN_RADIUS = 0.8;

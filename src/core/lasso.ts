@@ -101,3 +101,11 @@ export function regionInsideLoop(
   if (best < 0 || touching.size < 2) return null;
   return Uint8Array.from(comp, (c) => (c === best ? 1 : 0));
 }
+
+/**
+ * X112: kapalı köşe halkası kendini kesiyor ya da kendine değiyor mu. Kenar yolları
+ * yalnız köşelerde buluşur; aynı köşeden iki kez geçen halka kesişiyordur.
+ */
+export function loopSelfIntersects(loop: number[]): boolean {
+  return new Set(loop).size !== loop.length;
+}

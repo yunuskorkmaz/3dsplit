@@ -34,6 +34,7 @@ export default defineConfig({
     'filament-colors.spec.ts',
     'export-report.spec.ts',
     'region-color.spec.ts',
+    'line-feedback.spec.ts',
   ],
   timeout: 120_000,
   use: {

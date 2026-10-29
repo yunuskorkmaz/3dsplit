@@ -94,6 +94,8 @@ export class Viewport {
   private onPinCommit: ((point: Vec3, axis: Vec3) => void) | null = null;
   /** X36: çizgi aracının yolu ve noktaları. */
   private lineGroup = new THREE.Group();
+  private lineFirst: THREE.Mesh[] = [];
+  private lineHot = false;
   /**
    * Seçili parçaya bağlı yardımcılar (önizleme, pimler, yön oku, ayna, hata
    * halkaları). Patlatılmış görünümde parçayla birlikte kayar.
@@ -868,29 +870,57 @@ export class Viewport {
     return best;
   }
 
-  /** X36: çizgi aracının yüzeydeki yolu (sarı) ve tıklanan noktalar. */
+  /**
+   * X36: çizgi aracının yüzeydeki yolu (sarı) ve tıklanan noktalar. X112: modelin
+   * arkasında kalan kısım soluk çizilir; öndeki kısım tam renk.
+   */
   setLinePath(path: Vec3[], anchors: Vec3[], markerSize: number): void {
     for (const c of [...this.lineGroup.children]) {
       this.lineGroup.remove(c);
       if (c instanceof THREE.Line || c instanceof THREE.Mesh) c.geometry.dispose();
     }
-    if (path.length > 1) {
-      const line = new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(path.map((p) => new THREE.Vector3(...p))),
-        new THREE.LineBasicMaterial({ color: '#ffd400', depthTest: false }),
-      );
-      line.renderOrder = 8;
-      this.lineGroup.add(line);
+    this.lineFirst = [];
+    // önce soluk (derinlik testi yok), sonra öndeki tam renk (derinlik testi var)
+    const passes = [
+      { depthTest: false, opacity: 0.3, order: 8 },
+      { depthTest: true, opacity: 1, order: 9 },
+    ];
+    for (const pass of passes) {
+      const material = {
+        depthTest: pass.depthTest,
+        depthFunc: THREE.LessEqualDepth,
+        transparent: pass.opacity < 1,
+        opacity: pass.opacity,
+      };
+      if (path.length > 1) {
+        const line = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(path.map((p) => new THREE.Vector3(...p))),
+          new THREE.LineBasicMaterial({ color: '#ffd400', ...material }),
+        );
+        line.renderOrder = pass.order;
+        this.lineGroup.add(line);
+      }
+      anchors.forEach((p, i) => {
+        const m = new THREE.Mesh(
+          new THREE.SphereGeometry(markerSize, 12, 8),
+          new THREE.MeshBasicMaterial({ color: i === 0 ? '#ff9900' : '#ffd400', ...material }),
+        );
+        m.position.set(...p);
+        m.renderOrder = pass.order + 1;
+        this.lineGroup.add(m);
+        if (i === 0) this.lineFirst.push(m);
+      });
     }
-    anchors.forEach((p, i) => {
-      const m = new THREE.Mesh(
-        new THREE.SphereGeometry(markerSize, 12, 8),
-        new THREE.MeshBasicMaterial({ color: i === 0 ? '#ff9900' : '#ffd400', depthTest: false }),
-      );
-      m.position.set(...p);
-      m.renderOrder = 9;
-      this.lineGroup.add(m);
-    });
+    this.setLineHot(this.lineHot);
+  }
+
+  /** X112: imleç ilk noktanın üstünde: tık halkayı kapatır, nokta büyür ve beyazlaşır. */
+  setLineHot(hot: boolean): void {
+    this.lineHot = hot;
+    for (const m of this.lineFirst) {
+      m.scale.setScalar(hot ? 1.6 : 1);
+      (m.material as THREE.MeshBasicMaterial).color.set(hot ? '#ffffff' : '#ff9900');
+    }
     this.requestRender();
   }
 

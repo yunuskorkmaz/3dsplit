@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { faceCentroids, faceNormalsAndAreas } from '../src/core/geometry';
-import { regionInsideLoop, surfacePath, vertexNeighbors } from '../src/core/lasso';
+import {
+  loopSelfIntersects,
+  regionInsideLoop,
+  surfacePath,
+  vertexNeighbors,
+} from '../src/core/lasso';
 import { buildAdjacency } from '../src/core/topology';
 import { subdividedCube } from './fixtures';
 
@@ -58,5 +63,36 @@ describe('X36 çizgi aracı', () => {
     const { areas } = faceNormalsAndAreas(m);
     // gidip geri dönen "halka" alan ayırmaz
     expect(regionInsideLoop(m, adj, areas, [...loop, ...loop.slice(1, -1).reverse()])).toBeNull();
+  });
+  it('X112: kendini kesen halkayı ayırt eder', () => {
+    const loopOf = (pts: [number, number][]) => {
+      const vs = pts.map(([x, y]) => vAt(x, y, 10));
+      const loop: number[] = [];
+      for (let i = 0; i < vs.length; i++)
+        loop.push(...surfacePath(m, nbr, vs[i], vs[(i + 1) % vs.length]).slice(0, -1));
+      return loop;
+    };
+    // kare: kesişmez
+    expect(
+      loopSelfIntersects(
+        loopOf([
+          [-4, -4],
+          [4, -4],
+          [4, 4],
+          [-4, 4],
+        ]),
+      ),
+    ).toBe(false);
+    // papyon: köşegenler ortada kesişir
+    expect(
+      loopSelfIntersects(
+        loopOf([
+          [-4, -4],
+          [4, 4],
+          [4, -4],
+          [-4, 4],
+        ]),
+      ),
+    ).toBe(true);
   });
 });

@@ -30,7 +30,14 @@ export {
   setGeometryChangedHook,
   setLabelsChangedHook,
 } from './actionsHooks';
-export { lineCancel, lineClick, lineClose, linePreview, lineUndo } from './actionsLine';
+export {
+  lineCancel,
+  lineClick,
+  lineClose,
+  lineOverFirst,
+  linePreview,
+  lineUndo,
+} from './actionsLine';
 export {
   activeIslands,
   addSlot,

@@ -437,6 +437,8 @@ Kabul: birim testi renk seçici (mevcut renklere en uzak); e2e Bluey: yeni set b
 
 Kabul: birim testi `lasso` kendini kesen halkayı ayırt eder; e2e figür kolunda: kendini kesen halka boyamaz ve ileti verir; ilk noktaya yakın tık nokta ekler, ilk noktaya tık kapatır.
 
+Uygulamada: aynı köşeden iki kez geçen halka kesişiyor sayılır (kenar yolları yalnız köşelerde buluşur); kendine değen halka da boyanmaz. İlk nokta, imleç işaretin 1,2 katı yarıçap içindeyken "üstünde" sayılır. Arkadaki kısım derinlik testsiz, %30 opaklıkla çizilir. E2e kol yerine gövdenin önünde yazıldı (koordinatları bilinen geniş yüzey). Dar halka durumu e2e'de yok.
+
 ## X113 Bölge içindeki başka renk tapaya sessizce katılmaz
 
 - Seçili bölgenin içinde kalan başka setin boyası (ör. göz akının içindeki siyah gözbebeği) kesimde tapaya katılır, ama ileti rengi adıyla söyler ve sonraki adımı verir: "Bölgenin içinde Filament 4 var (3.753 üçgen); tapaya katıldı. Ayrı basmak için kesimden sonra tapayı seçip Filament 4'ü kes." Tapa o boyayı taşıdığı için bu ikinci kesim çalışır (iç içe tapa).

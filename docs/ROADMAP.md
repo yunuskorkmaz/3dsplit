@@ -6,7 +6,7 @@ Uygulamanın amacı: modelde göz, kaş, kol gibi bir bölgeyi Smart Fill ile se
 
 **Durum (2026-10-29):** A1–E2 ve X1–X114 bitti (Sprint 8–13: `docs/ux-plan.md`). Yeni iş **X128** ile eklenir. Hedef: [docs/HEDEF.md](HEDEF.md).
 
-**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sıradaki: Sprint 14 (X115–X120) davranışlarının yazılıp onaylanması.
+**Plan (2026-10-28):** ürün review'undan çıkan X102–X127, aşağıda "Review planı (Sprint 12–15)". Sprint 12 davranışları onaylandı (`docs/ux-plan.md`). Sprint 12 bitti. Sprint 13 bitti. Sprint 14 davranışları onaylandı. Sıradaki: X115.
 
 ## Sprint 6 — slicer öncesi parça ayırma
 
@@ -137,8 +137,8 @@ Kurallar:
 
 | ID | İş | Neden | Kaynak | Emek | Onay | Durum |
 | --- | --- | --- | --- | --- | --- | --- |
-| X115 | Deneme parçasına model olmadan (boş ekran) ve komut aramadan ulaşılır. Üretilen parça modele karışmadan ayrı indirilir; adım şeridini etkilemez | Bulmak 6 boşa eylem; parça modelin yanına düşüyor, her gövde elle gizleniyor | #8, 02b-3 | M | bekliyor | [ ] |
-| X116 | Seçilen tolerans tarayıcıda kalıcı (Tabla ayarı gibi). Sıkı/Normal/Gevşek mm ve çentik sayısını yazar; çentik → değer eşlemesi kalıcı görünür; boşluk 0 iken ileti doğru delik sayısını söyler | Deneme baskısının sonucu sonraki modelde 0,2'ye dönüyor | #8, 02b-1, 02b-2 | S | bekliyor | [ ] |
+| X115 | Deneme parçasına model olmadan (boş ekran) ve komut aramadan ulaşılır. Üretilen parça modele karışmadan ayrı indirilir; adım şeridini etkilemez | Bulmak 6 boşa eylem; parça modelin yanına düşüyor, her gövde elle gizleniyor | #8, 02b-3 | M | onaylandı | [ ] |
+| X116 | Seçilen tolerans tarayıcıda kalıcı (Tabla ayarı gibi). Sıkı/Normal/Gevşek mm ve çentik sayısını yazar; çentik → değer eşlemesi kalıcı görünür; boşluk 0 iken ileti doğru delik sayısını söyler | Deneme baskısının sonucu sonraki modelde 0,2'ye dönüyor | #8, 02b-1, 02b-2 | S | onaylandı | [ ] |
 
 ### Sprint 15 — metin, klavye, erişilebilirlik, pürüzler
 

@@ -467,3 +467,44 @@ Uygulamada: ad eki çekimlenmez, ileti "…tapayı seçip Filament 4 setini kes.
 Kabul: e2e figür: Kova ile bütün gövde boyanınca Kes kapalı ve neden yazılı, ileti bir kez; tek üçgenlik seçimde boyut uyarısı; birim testi yeni hata metinleri.
 
 Uygulamada: Kes yalnız önizleme çalıştıysa kapanır (önizleme kapalıyken hata bilinmez). Önizleme açıkken girdi değişince önizleme yeniden hesaplanır ve aynı hata yine Kes'i kapatır; ileti tekrar çıkmaz. Dikiş önizlemesi bu kurala girmez (Kes zaten halka hazır olunca açık). "süpürme kullanıldı" ve "süpürme + prizma" uyarıları aynı metne indi. Boyut uyarısı bölgenin sınır kutusunun en uzun kenarıdır. E2e'de tek üçgen yerine küçük fırça (0,3 mm) tıklaması.
+
+# Sprint 14: deneme parçası döngüsü
+
+Kaynak: `docs/review/01-yolculuk.md` görev (c), `docs/review/02-ux-audit.md` O7–O9, `docs/review/02b-audit-ux.md` 1–3. Davranışlar 2026-10-29'da onaylandı; "Karar" satırlarında önerilen (a) seçildi.
+
+Döngü: deneme parçasını bul → üret → indir → bas → en iyi oturan deliği seç → sonraki modellerde o tolerans kullanılır.
+
+## X115 Deneme parçası modelden ayrı, her yerden açılır
+
+- Deneme parçası üç yerden açılır:
+  - boş ekranda "Örnek modeli aç"ın altında ikinci düğme: "Tolerans deneme parçası";
+  - komut aramada "Tolerans deneme parçası" ("deneme", "tolerans", "pim", "boşluk", "test" ile bulunur);
+  - kesim panelindeki bugünkü "Deneme parçası üret" düğmesi.
+- Açılınca "deneme görünümü"ne geçilir (Karar a):
+  - Görünümde yalnız plaka ve pimler var, kameraya sığdırılmış. Model silinmez ve gizlenmez (göz durumları değişmez), yalnız bu görünümde çizilmez.
+  - Görünümün üstünde bir şerit:
+    "Tolerans deneme parçası · [Tapa | Pimli kes] · boşluklar 0,1 / 0,2 / 0,3 mm · [İndir ▾] [Kapat]".
+  - Tapa/Pimli kes seçimi parçayı yeniden üretir. Tapa: Ø8 silindir (bugünkü gibi). Pimli kes: kesim ayarlarındaki pim şekli ve ölçüsü; şeritte "Pim: silindir Ø4 × 8 mm" gibi yazar. Model yokken de çalışır.
+  - "İndir ▾" Dışa aktar menüsündeki biçimleri sunar (Bambu 3MF, genel 3MF, STL ZIP). Dosya adı `tolerans-deneme.3mf` / `tolerans-deneme.zip`. Dosyada yalnız plaka ve pimler var.
+  - "Kapat" ya da Esc modele döner. Deneme parçası sahneye, geçmişe (Ctrl+Z), oturum kaydına ve modelin dışa aktarmasına girmez. Adım şeridi değişmez.
+  - Görünüm açıkken Seç/Kes araçları ve sol panel kapalıdır; komut arama açık.
+- Model yokken boş ekran deneme görünümünden sonra yine boş ekrandır.
+
+Karar (seçilen: a): (a) ayrı deneme görünümü (önerilen; parça görülür, modele hiç karışmaz, M) ya da (b) düğme doğrudan `tolerans-deneme.3mf` indirir, ekranda gösterilmez (S; parça slicer'da görülür, ama hangi boşlukların üretildiği yalnız iletide kalır).
+
+Kabul: e2e boş ekran: düğmeyle deneme görünümü açılır, İndir 3MF'te yalnız plaka + pimler; Kapat sonrası parça listesi boş, geçmiş boş. Figür açıkken: komut aramadan açılır, Kapat sonrası figür aynı, adım şeridi "Seç"te.
+
+## X116 Seçilen tolerans kalıcı, deneme parçasından değer seçilir
+
+- Tolerans (`cut.clearance`) tarayıcıda kalıcıdır (Tabla ayarı gibi). Yeni model, "Yok say" ve sayfa yenileme son seçilen değeri kullanır. "Devam et" ile açılan oturum kendi değerini getirir ve o değer yeni tercih olur.
+- Tolerans düğmeleri değeri yazar: "Sıkı 0,1", "Normal 0,2", "Gevşek 0,3".
+- Deneme parçası deliğin önündeki çentikle boşluğu gösterir: soldan 1, 2, 3 çentik. Son üretilen deneme parçasının eşlemesi tarayıcıda kalır ve Tolerans grubunda (ve deneme görünümünün şeridinde) görünür:
+  "Son deneme parçası (Pimli kes, silindir Ø4): 1 çentik 0,1 · 2 çentik 0,2 · 3 çentik 0,3 mm"
+  Her değer bir düğmedir; basınca tolerans o değer olur. Böylece basılı parçada en iyi oturan deliğin çentiği sayılıp doğrudan seçilir.
+- Tolerans 0 iken boşluklar 0 / 0,1 / 0,2 mm olur (Karar a); her zaman 3 delik, ileti ve eşleme gerçek değerleri yazar.
+
+Karar (seçilen: a): tolerans 0 iken (a) üç delik yukarı kayar: 0 / 0,1 / 0,2 (önerilen; çentik sayısı hep 1–3, eşleme hep aynı biçim) ya da (b) bugünkü gibi iki delik (0 / 0,1) ve ileti "1, 2 çentik" der.
+
+Karar (seçilen: a): kalıcı olan (a) yalnız tolerans (önerilen; roadmap maddesi) ya da (b) tolerans + pim şekli, ölçüsü ve boy boşluğu (deneme parçası pimle basıldıysa pim de aynı kalmalı; ama pim ölçüsü modele göre değişir).
+
+Kabul: birim testi tolerans 0'da 3 boşluk; e2e: Gevşek seçilir, sayfa yenilenip "Yok say" denince Gevşek seçili; deneme parçası üretilince eşleme satırı görünür, "3 çentik" düğmesi toleransı değiştirir, yenilemeden sonra eşleme durur.

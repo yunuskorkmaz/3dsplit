@@ -65,3 +65,41 @@ npx vite build
 ```
 
 Arayüz değişikliği tarayıcıda denenir: `npm run dev`, test modeli `node samples/make-figure.mjs`.
+
+## İş takibi: GitHub Project panosu
+
+Bu reponun işleri tek panoda tutulur: https://github.com/users/yunuskorkmaz/projects/5
+Yapılacak işin kaynağı panodur; doküman ve plan dosyalarındaki checkbox'lar değil.
+Gereken: `gh` girişi ve `project` yetkisi (`gh auth refresh -s project`).
+
+Sabitler (değişmez):
+- Project: `5`, owner `yunuskorkmaz`, project ID `PVT_kwHOAE0cAs4Bp0x8`
+- Status alanı `PVTSSF_lAHOAE0cAs4Bp0x8zhoOlh8`: Backlog `56177274`, Planlandı `87026363`,
+  Yapılıyor `2c324072`, Review `a80ffcc5`, Bitti `1af6467d`
+- Öncelik alanı `PVTSSF_lAHOAE0cAs4Bp0x8zhoOlpE`: Yüksek `39db99ea`, Orta `ad7122a3`, Düşük `131a13ad`
+
+Komutlar:
+```sh
+# Bu reponun panodaki işleri
+gh project item-list 5 --owner yunuskorkmaz --format json -L 500 \
+  --jq ".items[] | select(.repository | endswith(\"/$(gh repo view --json name -q .name)\")) | \"\(.status)\t#\(.content.number)\t\(.title)\""
+
+# Durum değiştir (item-add, kart zaten varsa mevcut item ID'sini döndürür)
+ITEM=$(gh project item-add 5 --owner yunuskorkmaz --url <issue-url> --format json --jq .id)
+gh project item-edit --id "$ITEM" --project-id PVT_kwHOAE0cAs4Bp0x8 \
+  --field-id PVTSSF_lAHOAE0cAs4Bp0x8zhoOlh8 --single-select-option-id <durum-id>
+
+# Yeni iş: issue aç, sonra yukarıdaki iki komutla panoya ekleyip durumunu ver
+gh issue create -t "<başlık>" -b "<gövde>"
+```
+
+Akış:
+- **İş verildiğinde:** bu reponun işlerine bak. İş bir issue'ya karşılık geliyorsa onu
+  kullan. Karşılığı yoksa ve iş tek adımlık değilse issue aç, panoya ekle.
+- **Başlarken:** durum `Yapılıyor`. Branch adında issue numarası olsun (`feat/12-short-name`).
+- **Yalnız plan yazıldıysa:** durum `Planlandı`, planın yolunu issue'ya yorum olarak yaz.
+- **Önemli adımda ve oturum sonunda:** `gh issue comment <no> -b "..."` ile kısa not:
+  ne yapıldı, ne kaldı, engel var mı.
+- **PR açınca:** gövdeye `Closes #<no>` yaz, durum `Review`. İş bittiğinde `Bitti`.
+- **Fark edilen ama istenmeyen işler:** kendiliğinden yapma ve issue açma;
+  kullanıcıya listele, isterse `Backlog` olarak ekle.
